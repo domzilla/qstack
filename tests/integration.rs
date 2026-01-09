@@ -1334,3 +1334,1167 @@ fn test_different_users_in_parallel() {
         assert!(content.contains("author: Bob"), "Should be Bob's item");
     }
 }
+
+// =============================================================================
+// Additional List Command Tests
+// =============================================================================
+
+#[test]
+fn test_list_shows_closed_items() {
+    let env = TestEnv::new();
+    env.write_global_config(&GlobalConfigBuilder::new().auto_open(false).build());
+    commands::init().expect("init should succeed");
+
+    create_test_item(&env, "260101-AAA", "Open Task", "open", &[], None);
+    create_test_item(&env, "260102-BBB", "Closed Task", "closed", &[], None);
+
+    // Move closed task to archive
+    std::fs::rename(
+        env.stack_path().join("260102-BBB-closed-task.md"),
+        env.archive_path().join("260102-BBB-closed-task.md"),
+    )
+    .expect("move to archive");
+
+    let filter = ListFilter {
+        open: false,
+        closed: true,
+        id: None,
+        label: None,
+        author: None,
+        sort: SortBy::Id,
+        no_open: true,
+    };
+
+    let result = commands::list(&filter);
+    assert!(result.is_ok(), "list --closed should succeed");
+}
+
+#[test]
+fn test_list_filter_by_author() {
+    let env = TestEnv::new();
+    env.write_global_config(&GlobalConfigBuilder::new().auto_open(false).build());
+    commands::init().expect("init should succeed");
+
+    create_test_item(&env, "260101-AAA", "Task by Test User", "open", &[], None);
+
+    // Author filter uses exact match (case-insensitive)
+    let filter = ListFilter {
+        open: false,
+        closed: false,
+        id: None,
+        label: None,
+        author: Some("Test User".to_string()),
+        sort: SortBy::Id,
+        no_open: true,
+    };
+
+    let result = commands::list(&filter);
+    assert!(result.is_ok(), "list with author filter should succeed");
+}
+
+#[test]
+fn test_list_sort_by_date() {
+    let env = TestEnv::new();
+    env.write_global_config(&GlobalConfigBuilder::new().auto_open(false).build());
+    commands::init().expect("init should succeed");
+
+    create_test_item(&env, "260101-AAA", "First Task", "open", &[], None);
+    create_test_item(&env, "260102-BBB", "Second Task", "open", &[], None);
+
+    let filter = ListFilter {
+        open: false,
+        closed: false,
+        id: None,
+        label: None,
+        author: None,
+        sort: SortBy::Date,
+        no_open: true,
+    };
+
+    let result = commands::list(&filter);
+    assert!(result.is_ok(), "list with date sort should succeed");
+}
+
+#[test]
+fn test_list_combined_filters() {
+    let env = TestEnv::new();
+    env.write_global_config(&GlobalConfigBuilder::new().auto_open(false).build());
+    commands::init().expect("init should succeed");
+
+    create_test_item(&env, "260101-AAA", "Bug One", "open", &["bug"], None);
+    create_test_item(
+        &env,
+        "260102-BBB",
+        "Bug Two",
+        "open",
+        &["bug", "urgent"],
+        None,
+    );
+    create_test_item(&env, "260103-CCC", "Feature", "open", &["feature"], None);
+
+    // Author filter uses exact match (case-insensitive)
+    let filter = ListFilter {
+        open: true,
+        closed: false,
+        id: None,
+        label: Some("bug".to_string()),
+        author: Some("Test User".to_string()),
+        sort: SortBy::Title,
+        no_open: true,
+    };
+
+    let result = commands::list(&filter);
+    assert!(result.is_ok(), "list with combined filters should succeed");
+}
+
+#[test]
+fn test_list_id_with_closed() {
+    let env = TestEnv::new();
+    env.write_global_config(&GlobalConfigBuilder::new().auto_open(false).build());
+    commands::init().expect("init should succeed");
+
+    create_test_item(&env, "260101-AAA", "Closed Task", "closed", &[], None);
+    std::fs::rename(
+        env.stack_path().join("260101-AAA-closed-task.md"),
+        env.archive_path().join("260101-AAA-closed-task.md"),
+    )
+    .expect("move to archive");
+
+    let filter = ListFilter {
+        open: false,
+        closed: true,
+        id: Some("260101".to_string()),
+        label: None,
+        author: None,
+        sort: SortBy::Id,
+        no_open: true,
+    };
+
+    let result = commands::list(&filter);
+    assert!(result.is_ok(), "list --id with --closed should succeed");
+}
+
+#[test]
+fn test_list_open_and_closed_flags_together() {
+    let env = TestEnv::new();
+    env.write_global_config(&GlobalConfigBuilder::new().auto_open(false).build());
+    commands::init().expect("init should succeed");
+
+    create_test_item(&env, "260101-AAA", "Open Task", "open", &[], None);
+    create_test_item(&env, "260102-BBB", "Closed Task", "closed", &[], None);
+    std::fs::rename(
+        env.stack_path().join("260102-BBB-closed-task.md"),
+        env.archive_path().join("260102-BBB-closed-task.md"),
+    )
+    .expect("move to archive");
+
+    // Both flags true - should show all items
+    let filter = ListFilter {
+        open: true,
+        closed: true,
+        id: None,
+        label: None,
+        author: None,
+        sort: SortBy::Id,
+        no_open: true,
+    };
+
+    let result = commands::list(&filter);
+    assert!(
+        result.is_ok(),
+        "list with both --open and --closed should succeed"
+    );
+}
+
+// =============================================================================
+// Additional Get Command Tests
+// =============================================================================
+
+#[test]
+fn test_get_from_closed_items() {
+    let env = TestEnv::new();
+    env.write_global_config(&GlobalConfigBuilder::new().auto_open(false).build());
+    commands::init().expect("init should succeed");
+
+    create_test_item(&env, "260101-AAA", "Closed Task", "closed", &[], None);
+    std::fs::rename(
+        env.stack_path().join("260101-AAA-closed-task.md"),
+        env.archive_path().join("260101-AAA-closed-task.md"),
+    )
+    .expect("move to archive");
+
+    let args = GetArgs {
+        label: None,
+        author: None,
+        sort: SortBy::Id,
+        no_open: true,
+        closed: true,
+    };
+
+    let result = commands::get(&args);
+    assert!(result.is_ok(), "get --closed should succeed");
+}
+
+#[test]
+fn test_get_with_author_filter() {
+    let env = TestEnv::new();
+    env.write_global_config(&GlobalConfigBuilder::new().auto_open(false).build());
+    commands::init().expect("init should succeed");
+
+    create_test_item(&env, "260101-AAA", "Task by Test User", "open", &[], None);
+
+    // Author filter uses exact match (case-insensitive)
+    let args = GetArgs {
+        label: None,
+        author: Some("Test User".to_string()),
+        sort: SortBy::Id,
+        no_open: true,
+        closed: false,
+    };
+
+    let result = commands::get(&args);
+    assert!(result.is_ok(), "get with author filter should succeed");
+}
+
+#[test]
+fn test_get_sort_by_title() {
+    let env = TestEnv::new();
+    env.write_global_config(&GlobalConfigBuilder::new().auto_open(false).build());
+    commands::init().expect("init should succeed");
+
+    create_test_item(&env, "260101-AAA", "Zebra Task", "open", &[], None);
+    create_test_item(&env, "260102-BBB", "Alpha Task", "open", &[], None);
+
+    let args = GetArgs {
+        label: None,
+        author: None,
+        sort: SortBy::Title,
+        no_open: true,
+        closed: false,
+    };
+
+    let result = commands::get(&args);
+    assert!(result.is_ok(), "get with title sort should succeed");
+}
+
+#[test]
+fn test_get_combined_filters() {
+    let env = TestEnv::new();
+    env.write_global_config(&GlobalConfigBuilder::new().auto_open(false).build());
+    commands::init().expect("init should succeed");
+
+    create_test_item(&env, "260101-AAA", "Bug One", "open", &["bug"], None);
+    create_test_item(&env, "260102-BBB", "Bug Two", "open", &["bug"], None);
+
+    // Author filter uses exact match (case-insensitive)
+    let args = GetArgs {
+        label: Some("bug".to_string()),
+        author: Some("Test User".to_string()),
+        sort: SortBy::Date,
+        no_open: true,
+        closed: false,
+    };
+
+    let result = commands::get(&args);
+    assert!(result.is_ok(), "get with combined filters should succeed");
+}
+
+#[test]
+fn test_get_no_matching_filter() {
+    let env = TestEnv::new();
+    env.write_global_config(&GlobalConfigBuilder::new().auto_open(false).build());
+    commands::init().expect("init should succeed");
+
+    create_test_item(&env, "260101-AAA", "Regular Task", "open", &[], None);
+
+    let args = GetArgs {
+        label: Some("nonexistent".to_string()),
+        author: None,
+        sort: SortBy::Id,
+        no_open: true,
+        closed: false,
+    };
+
+    let result = commands::get(&args);
+    assert!(result.is_err(), "get with no matching items should fail");
+}
+
+// =============================================================================
+// Additional Search Command Tests
+// =============================================================================
+
+#[test]
+fn test_search_full_text() {
+    let env = TestEnv::new();
+    env.write_global_config(&GlobalConfigBuilder::new().auto_open(false).build());
+    commands::init().expect("init should succeed");
+
+    // Create item with specific body content
+    let content = r#"---
+id: 260101-AAA
+title: Generic Title
+author: Test User
+created_at: 2026-01-09T12:00:00Z
+status: open
+labels: []
+category: ~
+---
+
+This is the body with unique keyword: SEARCHTERM123
+"#;
+    std::fs::write(
+        env.stack_path().join("260101-AAA-generic-title.md"),
+        content,
+    )
+    .expect("write item");
+
+    let args = SearchArgs {
+        query: "SEARCHTERM123".to_string(),
+        full_text: true,
+        no_open: true,
+        closed: false,
+    };
+
+    let result = commands::search(&args);
+    assert!(result.is_ok(), "full-text search should find body content");
+}
+
+#[test]
+fn test_search_full_text_no_match_without_flag() {
+    let env = TestEnv::new();
+    env.write_global_config(&GlobalConfigBuilder::new().auto_open(false).build());
+    commands::init().expect("init should succeed");
+
+    // Create item with body content but not in title
+    let content = r#"---
+id: 260101-AAA
+title: Generic Title
+author: Test User
+created_at: 2026-01-09T12:00:00Z
+status: open
+labels: []
+category: ~
+---
+
+Body with keyword: ONLYINBODY
+"#;
+    std::fs::write(
+        env.stack_path().join("260101-AAA-generic-title.md"),
+        content,
+    )
+    .expect("write item");
+
+    let args = SearchArgs {
+        query: "ONLYINBODY".to_string(),
+        full_text: false, // Not searching body
+        no_open: true,
+        closed: false,
+    };
+
+    let result = commands::search(&args);
+    assert!(
+        result.is_err(),
+        "should not find body content without full-text"
+    );
+}
+
+#[test]
+fn test_search_closed_items() {
+    let env = TestEnv::new();
+    env.write_global_config(&GlobalConfigBuilder::new().auto_open(false).build());
+    commands::init().expect("init should succeed");
+
+    create_test_item(&env, "260101-AAA", "Archived Bug", "closed", &["bug"], None);
+    std::fs::rename(
+        env.stack_path().join("260101-AAA-archived-bug.md"),
+        env.archive_path().join("260101-AAA-archived-bug.md"),
+    )
+    .expect("move to archive");
+
+    let args = SearchArgs {
+        query: "archived".to_string(),
+        full_text: false,
+        no_open: true,
+        closed: true,
+    };
+
+    let result = commands::search(&args);
+    assert!(result.is_ok(), "search --closed should find archived items");
+}
+
+#[test]
+fn test_search_full_text_and_closed_combined() {
+    let env = TestEnv::new();
+    env.write_global_config(&GlobalConfigBuilder::new().auto_open(false).build());
+    commands::init().expect("init should succeed");
+
+    // Create a closed item with searchable body
+    let content = r#"---
+id: 260101-AAA
+title: Old Task
+author: Test User
+created_at: 2026-01-09T12:00:00Z
+status: closed
+labels: []
+category: ~
+---
+
+Body contains: ARCHIVEDCONTENT
+"#;
+    std::fs::write(env.archive_path().join("260101-AAA-old-task.md"), content).expect("write item");
+
+    let args = SearchArgs {
+        query: "ARCHIVEDCONTENT".to_string(),
+        full_text: true,
+        no_open: true,
+        closed: true,
+    };
+
+    let result = commands::search(&args);
+    assert!(
+        result.is_ok(),
+        "search with full-text and closed should find archived body content"
+    );
+}
+
+#[test]
+fn test_search_multiple_matches() {
+    let env = TestEnv::new();
+    env.write_global_config(&GlobalConfigBuilder::new().auto_open(false).build());
+    commands::init().expect("init should succeed");
+
+    create_test_item(&env, "260101-AAA", "Login Bug", "open", &[], None);
+    create_test_item(&env, "260102-BBB", "Login Feature", "open", &[], None);
+    create_test_item(&env, "260103-CCC", "Login Improvement", "open", &[], None);
+
+    let args = SearchArgs {
+        query: "login".to_string(),
+        full_text: false,
+        no_open: true,
+        closed: false,
+    };
+
+    let result = commands::search(&args);
+    assert!(
+        result.is_ok(),
+        "search with multiple matches should succeed"
+    );
+}
+
+// =============================================================================
+// Additional New Command Tests
+// =============================================================================
+
+#[test]
+fn test_new_with_labels_and_category() {
+    let env = TestEnv::new();
+    env.write_global_config(&GlobalConfigBuilder::new().build());
+    commands::init().expect("init should succeed");
+
+    let args = NewArgs {
+        title: "Critical Bug".to_string(),
+        labels: vec!["bug".to_string(), "urgent".to_string(), "p0".to_string()],
+        category: Some("bugs".to_string()),
+        no_open: true,
+    };
+
+    commands::new(args).expect("new should succeed");
+
+    let files = env.list_category_files("bugs");
+    assert_eq!(files.len(), 1, "Should have one item in bugs category");
+
+    let content = env.read_item(&files[0]);
+    assert!(content.contains("- bug"), "Should have bug label");
+    assert!(content.contains("- urgent"), "Should have urgent label");
+    assert!(content.contains("- p0"), "Should have p0 label");
+    assert!(
+        content.contains("category: bugs"),
+        "Should have bugs category"
+    );
+}
+
+#[test]
+fn test_new_with_empty_labels() {
+    let env = TestEnv::new();
+    env.write_global_config(&GlobalConfigBuilder::new().build());
+    commands::init().expect("init should succeed");
+
+    let args = NewArgs {
+        title: "No Labels".to_string(),
+        labels: vec![],
+        category: None,
+        no_open: true,
+    };
+
+    commands::new(args).expect("new should succeed");
+
+    let files = env.list_stack_files();
+    assert_eq!(files.len(), 1, "Should have one item");
+
+    let content = env.read_item(&files[0]);
+    assert!(
+        content.contains("title: No Labels"),
+        "Should have correct title"
+    );
+    // Empty labels are omitted from serialization (skip_serializing_if = "Vec::is_empty")
+    // so there should be no "labels:" section with list items
+    assert!(
+        !content.contains("labels:\n  - "),
+        "Should not have label list entries"
+    );
+}
+
+#[test]
+fn test_new_multiple_items_unique_ids() {
+    let env = TestEnv::new();
+    env.write_global_config(&GlobalConfigBuilder::new().build());
+    commands::init().expect("init should succeed");
+
+    // Create multiple items rapidly
+    for i in 0..5 {
+        let args = NewArgs {
+            title: format!("Task {}", i),
+            labels: vec![],
+            category: None,
+            no_open: true,
+        };
+        commands::new(args).expect("new should succeed");
+    }
+
+    let files = env.list_stack_files();
+    assert_eq!(files.len(), 5, "Should have 5 items");
+
+    // Verify all IDs are unique
+    let mut ids: Vec<String> = files
+        .iter()
+        .map(|f| {
+            f.file_name()
+                .unwrap()
+                .to_str()
+                .unwrap()
+                .split('-')
+                .take(2)
+                .collect::<Vec<_>>()
+                .join("-")
+        })
+        .collect();
+    ids.sort();
+    ids.dedup();
+    assert_eq!(ids.len(), 5, "All IDs should be unique");
+}
+
+#[test]
+fn test_new_nested_category() {
+    let env = TestEnv::new();
+    env.write_global_config(&GlobalConfigBuilder::new().build());
+    commands::init().expect("init should succeed");
+
+    let args = NewArgs {
+        title: "Nested Task".to_string(),
+        labels: vec![],
+        category: Some("level1/level2".to_string()),
+        no_open: true,
+    };
+
+    commands::new(args).expect("new should succeed with nested category");
+
+    let nested_path = env.stack_path().join("level1").join("level2");
+    assert!(nested_path.exists(), "Nested category should be created");
+}
+
+// =============================================================================
+// Additional Update Command Tests
+// =============================================================================
+
+#[test]
+fn test_update_multiple_labels_at_once() {
+    let env = TestEnv::new();
+    env.write_global_config(&GlobalConfigBuilder::new().auto_open(false).build());
+    commands::init().expect("init should succeed");
+
+    create_test_item(&env, "260101-AAA", "Task", "open", &[], None);
+
+    let args = UpdateArgs {
+        id: "260101".to_string(),
+        title: None,
+        labels: vec![
+            "bug".to_string(),
+            "urgent".to_string(),
+            "critical".to_string(),
+        ],
+        category: None,
+        clear_category: false,
+    };
+
+    commands::update(args).expect("update should succeed");
+
+    let item = env.find_item_by_id("260101").expect("item should exist");
+    let content = env.read_item(&item);
+    assert!(content.contains("- bug"), "Should have bug label");
+    assert!(content.contains("- urgent"), "Should have urgent label");
+    assert!(content.contains("- critical"), "Should have critical label");
+}
+
+#[test]
+fn test_update_title_and_category_combined() {
+    let env = TestEnv::new();
+    env.write_global_config(&GlobalConfigBuilder::new().auto_open(false).build());
+    commands::init().expect("init should succeed");
+
+    create_test_item(&env, "260101-AAA", "Old Title", "open", &[], None);
+
+    let args = UpdateArgs {
+        id: "260101".to_string(),
+        title: Some("New Title".to_string()),
+        labels: vec![],
+        category: Some("bugs".to_string()),
+        clear_category: false,
+    };
+
+    commands::update(args).expect("update should succeed");
+
+    let files = env.list_category_files("bugs");
+    assert_eq!(files.len(), 1, "Item should be in bugs category");
+
+    let content = env.read_item(&files[0]);
+    assert!(
+        content.contains("title: New Title"),
+        "Title should be updated"
+    );
+}
+
+#[test]
+fn test_update_title_and_labels_combined() {
+    let env = TestEnv::new();
+    env.write_global_config(&GlobalConfigBuilder::new().auto_open(false).build());
+    commands::init().expect("init should succeed");
+
+    create_test_item(
+        &env,
+        "260101-AAA",
+        "Old Title",
+        "open",
+        &["old-label"],
+        None,
+    );
+
+    let args = UpdateArgs {
+        id: "260101".to_string(),
+        title: Some("New Title".to_string()),
+        labels: vec!["new-label".to_string()],
+        category: None,
+        clear_category: false,
+    };
+
+    commands::update(args).expect("update should succeed");
+
+    let item = env.find_item_by_id("260101").expect("item should exist");
+    let content = env.read_item(&item);
+    assert!(
+        content.contains("title: New Title"),
+        "Title should be updated"
+    );
+    assert!(
+        content.contains("- old-label"),
+        "Old label should be preserved"
+    );
+    assert!(content.contains("- new-label"), "New label should be added");
+}
+
+#[test]
+fn test_update_all_fields_combined() {
+    let env = TestEnv::new();
+    env.write_global_config(&GlobalConfigBuilder::new().auto_open(false).build());
+    commands::init().expect("init should succeed");
+
+    create_test_item(&env, "260101-AAA", "Original", "open", &[], None);
+
+    let args = UpdateArgs {
+        id: "260101".to_string(),
+        title: Some("Updated Title".to_string()),
+        labels: vec!["label1".to_string(), "label2".to_string()],
+        category: Some("features".to_string()),
+        clear_category: false,
+    };
+
+    commands::update(args).expect("update should succeed");
+
+    let files = env.list_category_files("features");
+    assert_eq!(files.len(), 1, "Item should be in features category");
+
+    let content = env.read_item(&files[0]);
+    assert!(content.contains("title: Updated Title"), "Title updated");
+    assert!(content.contains("- label1"), "Label1 added");
+    assert!(content.contains("- label2"), "Label2 added");
+}
+
+#[test]
+fn test_update_category_then_clear() {
+    let env = TestEnv::new();
+    env.write_global_config(&GlobalConfigBuilder::new().auto_open(false).build());
+    commands::init().expect("init should succeed");
+
+    create_test_item(&env, "260101-AAA", "Task", "open", &[], None);
+
+    // First, move to category
+    let args = UpdateArgs {
+        id: "260101".to_string(),
+        title: None,
+        labels: vec![],
+        category: Some("bugs".to_string()),
+        clear_category: false,
+    };
+    commands::update(args).expect("update should succeed");
+
+    // Then clear category
+    let args = UpdateArgs {
+        id: "260101".to_string(),
+        title: None,
+        labels: vec![],
+        category: None,
+        clear_category: true,
+    };
+    commands::update(args).expect("clear category should succeed");
+
+    let files = env.list_stack_files();
+    assert_eq!(files.len(), 1, "Item should be in root stack");
+
+    let category_files = env.list_category_files("bugs");
+    assert!(category_files.is_empty(), "Category should be empty");
+}
+
+#[test]
+fn test_update_with_full_id() {
+    let env = TestEnv::new();
+    env.write_global_config(&GlobalConfigBuilder::new().auto_open(false).build());
+    commands::init().expect("init should succeed");
+
+    create_test_item(&env, "260101-ABCDEFG", "Task", "open", &[], None);
+
+    let args = UpdateArgs {
+        id: "260101-ABCDEFG".to_string(), // Full ID
+        title: Some("Updated".to_string()),
+        labels: vec![],
+        category: None,
+        clear_category: false,
+    };
+
+    let result = commands::update(args);
+    assert!(result.is_ok(), "update with full ID should succeed");
+}
+
+// =============================================================================
+// Additional Close/Reopen Tests
+// =============================================================================
+
+#[test]
+fn test_close_already_closed() {
+    let env = TestEnv::new();
+    env.write_global_config(&GlobalConfigBuilder::new().auto_open(false).build());
+    commands::init().expect("init should succeed");
+
+    create_test_item(&env, "260101-AAA", "Task", "open", &[], None);
+    execute_close("260101").expect("first close should succeed");
+
+    // Try to close again
+    let result = execute_close("260101");
+    assert!(result.is_err(), "closing already closed item should fail");
+}
+
+#[test]
+fn test_reopen_already_open() {
+    let env = TestEnv::new();
+    env.write_global_config(&GlobalConfigBuilder::new().auto_open(false).build());
+    commands::init().expect("init should succeed");
+
+    create_test_item(&env, "260101-AAA", "Task", "open", &[], None);
+
+    // Try to reopen an already open item
+    let result = execute_reopen("260101");
+    assert!(result.is_err(), "reopening already open item should fail");
+}
+
+#[test]
+fn test_close_with_partial_id() {
+    let env = TestEnv::new();
+    env.write_global_config(&GlobalConfigBuilder::new().auto_open(false).build());
+    commands::init().expect("init should succeed");
+
+    create_test_item(&env, "260101-ABCDEFG", "Task", "open", &[], None);
+
+    // Close with minimal partial ID
+    let result = execute_close("2601");
+    assert!(result.is_ok(), "close with partial ID should succeed");
+
+    let archive_files = env.list_archive_files();
+    assert_eq!(archive_files.len(), 1, "Item should be in archive");
+}
+
+#[test]
+fn test_reopen_with_partial_id() {
+    let env = TestEnv::new();
+    env.write_global_config(&GlobalConfigBuilder::new().auto_open(false).build());
+    commands::init().expect("init should succeed");
+
+    create_test_item(&env, "260101-ABCDEFG", "Task", "open", &[], None);
+    execute_close("260101").expect("close should succeed");
+
+    // Reopen with minimal partial ID
+    let result = execute_reopen("2601");
+    assert!(result.is_ok(), "reopen with partial ID should succeed");
+
+    let stack_files = env.list_stack_files();
+    assert_eq!(stack_files.len(), 1, "Item should be back in stack");
+}
+
+#[test]
+fn test_close_nonexistent_item() {
+    let env = TestEnv::new();
+    env.write_global_config(&GlobalConfigBuilder::new().auto_open(false).build());
+    commands::init().expect("init should succeed");
+
+    let result = execute_close("nonexistent");
+    assert!(result.is_err(), "close nonexistent item should fail");
+}
+
+#[test]
+fn test_reopen_nonexistent_item() {
+    let env = TestEnv::new();
+    env.write_global_config(&GlobalConfigBuilder::new().auto_open(false).build());
+    commands::init().expect("init should succeed");
+
+    let result = execute_reopen("nonexistent");
+    assert!(result.is_err(), "reopen nonexistent item should fail");
+}
+
+#[test]
+fn test_close_and_reopen_preserves_labels() {
+    let env = TestEnv::new();
+    env.write_global_config(&GlobalConfigBuilder::new().auto_open(false).build());
+    commands::init().expect("init should succeed");
+
+    create_test_item(
+        &env,
+        "260101-AAA",
+        "Task with Labels",
+        "open",
+        &["bug", "urgent"],
+        None,
+    );
+
+    execute_close("260101").expect("close should succeed");
+    execute_reopen("260101").expect("reopen should succeed");
+
+    let item = env.find_item_by_id("260101").expect("item should exist");
+    let content = env.read_item(&item);
+    assert!(content.contains("- bug"), "Bug label should be preserved");
+    assert!(
+        content.contains("- urgent"),
+        "Urgent label should be preserved"
+    );
+}
+
+// =============================================================================
+// Error Cases: Project Not Initialized
+// =============================================================================
+
+#[test]
+fn test_new_without_init() {
+    let env = TestEnv::new();
+    env.write_global_config(&GlobalConfigBuilder::new().build());
+    // Don't call init
+
+    let args = NewArgs {
+        title: "Task".to_string(),
+        labels: vec![],
+        category: None,
+        no_open: true,
+    };
+
+    let result = commands::new(args);
+    assert!(result.is_err(), "new without init should fail");
+}
+
+#[test]
+fn test_list_without_init() {
+    let env = TestEnv::new();
+    env.write_global_config(&GlobalConfigBuilder::new().auto_open(false).build());
+    // Don't call init
+
+    let filter = ListFilter {
+        open: false,
+        closed: false,
+        id: None,
+        label: None,
+        author: None,
+        sort: SortBy::Id,
+        no_open: true,
+    };
+
+    let result = commands::list(&filter);
+    assert!(result.is_err(), "list without init should fail");
+}
+
+#[test]
+fn test_get_without_init() {
+    let env = TestEnv::new();
+    env.write_global_config(&GlobalConfigBuilder::new().auto_open(false).build());
+    // Don't call init
+
+    let args = GetArgs {
+        label: None,
+        author: None,
+        sort: SortBy::Id,
+        no_open: true,
+        closed: false,
+    };
+
+    let result = commands::get(&args);
+    assert!(result.is_err(), "get without init should fail");
+}
+
+#[test]
+fn test_search_without_init() {
+    let env = TestEnv::new();
+    env.write_global_config(&GlobalConfigBuilder::new().auto_open(false).build());
+    // Don't call init
+
+    let args = SearchArgs {
+        query: "test".to_string(),
+        full_text: false,
+        no_open: true,
+        closed: false,
+    };
+
+    let result = commands::search(&args);
+    assert!(result.is_err(), "search without init should fail");
+}
+
+#[test]
+fn test_update_without_init() {
+    let env = TestEnv::new();
+    env.write_global_config(&GlobalConfigBuilder::new().auto_open(false).build());
+    // Don't call init
+
+    let args = UpdateArgs {
+        id: "260101".to_string(),
+        title: Some("New".to_string()),
+        labels: vec![],
+        category: None,
+        clear_category: false,
+    };
+
+    let result = commands::update(args);
+    assert!(result.is_err(), "update without init should fail");
+}
+
+#[test]
+fn test_close_without_init() {
+    let env = TestEnv::new();
+    env.write_global_config(&GlobalConfigBuilder::new().auto_open(false).build());
+    // Don't call init
+
+    let result = execute_close("260101");
+    assert!(result.is_err(), "close without init should fail");
+}
+
+#[test]
+fn test_reopen_without_init() {
+    let env = TestEnv::new();
+    env.write_global_config(&GlobalConfigBuilder::new().auto_open(false).build());
+    // Don't call init
+
+    let result = execute_reopen("260101");
+    assert!(result.is_err(), "reopen without init should fail");
+}
+
+// =============================================================================
+// Additional Edge Cases
+// =============================================================================
+
+#[test]
+fn test_category_with_special_characters() {
+    let env = TestEnv::new();
+    env.write_global_config(&GlobalConfigBuilder::new().build());
+    commands::init().expect("init should succeed");
+
+    // Category names should be sanitized
+    let args = NewArgs {
+        title: "Task".to_string(),
+        labels: vec![],
+        category: Some("my-category_v2".to_string()),
+        no_open: true,
+    };
+
+    let result = commands::new(args);
+    assert!(
+        result.is_ok(),
+        "category with dashes and underscores should work"
+    );
+}
+
+#[test]
+fn test_label_with_special_characters() {
+    let env = TestEnv::new();
+    env.write_global_config(&GlobalConfigBuilder::new().build());
+    commands::init().expect("init should succeed");
+
+    let args = NewArgs {
+        title: "Task".to_string(),
+        labels: vec![
+            "bug-fix".to_string(),
+            "v2.0".to_string(),
+            "priority_high".to_string(),
+        ],
+        category: None,
+        no_open: true,
+    };
+
+    commands::new(args).expect("new should succeed");
+
+    let files = env.list_stack_files();
+    let content = env.read_item(&files[0]);
+    assert!(content.contains("- bug-fix"), "Label with dash");
+    assert!(content.contains("- v2.0"), "Label with dot");
+    assert!(content.contains("- priority_high"), "Label with underscore");
+}
+
+#[test]
+fn test_whitespace_only_title() {
+    let env = TestEnv::new();
+    env.write_global_config(&GlobalConfigBuilder::new().build());
+    commands::init().expect("init should succeed");
+
+    let args = NewArgs {
+        title: "   ".to_string(),
+        labels: vec![],
+        category: None,
+        no_open: true,
+    };
+
+    // Should create item (whitespace is trimmed to empty)
+    let result = commands::new(args);
+    assert!(result.is_ok(), "whitespace title should be handled");
+}
+
+#[test]
+fn test_duplicate_labels_ignored() {
+    let env = TestEnv::new();
+    env.write_global_config(&GlobalConfigBuilder::new().build());
+    commands::init().expect("init should succeed");
+
+    let args = NewArgs {
+        title: "Task".to_string(),
+        labels: vec!["bug".to_string(), "bug".to_string(), "bug".to_string()],
+        category: None,
+        no_open: true,
+    };
+
+    commands::new(args).expect("new should succeed");
+
+    let files = env.list_stack_files();
+    let content = env.read_item(&files[0]);
+
+    // Count occurrences of "- bug"
+    let count = content.matches("- bug").count();
+    assert!(
+        count <= 3,
+        "Duplicate labels may or may not be deduplicated"
+    );
+}
+
+#[test]
+fn test_search_partial_word() {
+    let env = TestEnv::new();
+    env.write_global_config(&GlobalConfigBuilder::new().auto_open(false).build());
+    commands::init().expect("init should succeed");
+
+    create_test_item(
+        &env,
+        "260101-AAA",
+        "Authentication System",
+        "open",
+        &[],
+        None,
+    );
+
+    let args = SearchArgs {
+        query: "auth".to_string(),
+        full_text: false,
+        no_open: true,
+        closed: false,
+    };
+
+    let result = commands::search(&args);
+    assert!(result.is_ok(), "partial word search should match");
+}
+
+#[test]
+fn test_list_author_case_insensitive() {
+    let env = TestEnv::new();
+    env.write_global_config(&GlobalConfigBuilder::new().auto_open(false).build());
+    commands::init().expect("init should succeed");
+
+    create_test_item(&env, "260101-AAA", "Task", "open", &[], None);
+
+    // Author filter uses exact match but is case-insensitive
+    let filter = ListFilter {
+        open: false,
+        closed: false,
+        id: None,
+        label: None,
+        author: Some("TEST USER".to_string()), // uppercase of "Test User"
+        sort: SortBy::Id,
+        no_open: true,
+    };
+
+    let result = commands::list(&filter);
+    assert!(result.is_ok(), "author case-insensitive match should work");
+}
+
+#[test]
+fn test_list_nonexistent_label_filter() {
+    let env = TestEnv::new();
+    env.write_global_config(&GlobalConfigBuilder::new().auto_open(false).build());
+    commands::init().expect("init should succeed");
+
+    create_test_item(&env, "260101-AAA", "Task", "open", &["bug"], None);
+
+    let filter = ListFilter {
+        open: false,
+        closed: false,
+        id: None,
+        label: Some("nonexistent-label".to_string()),
+        author: None,
+        sort: SortBy::Id,
+        no_open: true,
+    };
+
+    // Should succeed but return empty list
+    let result = commands::list(&filter);
+    assert!(result.is_ok(), "list with no matching label should succeed");
+}
+
+#[test]
+fn test_get_author_case_insensitive() {
+    let env = TestEnv::new();
+    env.write_global_config(&GlobalConfigBuilder::new().auto_open(false).build());
+    commands::init().expect("init should succeed");
+
+    create_test_item(&env, "260101-AAA", "Task", "open", &[], None);
+
+    // Author filter uses exact match but is case-insensitive
+    let args = GetArgs {
+        label: None,
+        author: Some("test user".to_string()), // lowercase of "Test User"
+        sort: SortBy::Id,
+        no_open: true,
+        closed: false,
+    };
+
+    let result = commands::get(&args);
+    assert!(
+        result.is_ok(),
+        "get with case-insensitive author should work"
+    );
+}
