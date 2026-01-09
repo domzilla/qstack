@@ -83,7 +83,8 @@ The author is determined from (in order):\n  \
 qstack new \"Fix login bug\"\n  \
 qstack new \"Add dark mode\" --label feature --label ui\n  \
 qstack new \"Memory leak in parser\" --label bug --category bugs\n  \
-qstack new \"Update docs\" -l docs -c documentation\n\n\
+qstack new \"Update docs\" -l docs -c documentation\n  \
+qstack new \"Quick note\" --no-open              Skip editor\n\n\
 Output: Prints the relative path to the created file."
     )]
     New {
@@ -97,6 +98,10 @@ Output: Prints the relative path to the created file."
         /// Category subdirectory for the item
         #[arg(short, long)]
         category: Option<String>,
+
+        /// Don't open the item in editor
+        #[arg(long, help = "Don't open item in editor (just print path)")]
+        no_open: bool,
     },
 
     /// List items
@@ -296,10 +301,12 @@ fn run() -> Result<()> {
             title,
             label,
             category,
+            no_open,
         } => commands::new(NewArgs {
             title,
             labels: label,
             category,
+            no_open,
         }),
 
         Commands::List {

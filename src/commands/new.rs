@@ -20,6 +20,7 @@ pub struct NewArgs {
     pub title: String,
     pub labels: Vec<String>,
     pub category: Option<String>,
+    pub no_open: bool,
 }
 
 /// Executes the new command.
@@ -49,8 +50,8 @@ pub fn execute(args: NewArgs) -> Result<()> {
     // Save to disk
     let path = storage::create_item(&config, &item)?;
 
-    // Open editor if configured and TTY
-    if config.auto_open() {
+    // Open editor if configured and not suppressed
+    if config.auto_open() && !args.no_open {
         editor::open(&path, &config).context("Failed to open editor")?;
     }
 
