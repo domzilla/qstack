@@ -23,5 +23,5 @@ pub mod id;
 pub mod item;
 pub mod storage;
 
-pub use config::Config;
+pub use config::{set_home_override, Config};
 pub use item::{Frontmatter, Item, Status};

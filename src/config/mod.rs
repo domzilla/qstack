@@ -12,7 +12,10 @@ use std::path::{Path, PathBuf};
 
 use anyhow::Result;
 
-pub use self::{global::GlobalConfig, project::ProjectConfig};
+pub use self::{
+    global::{set_home_override, GlobalConfig},
+    project::ProjectConfig,
+};
 use crate::id::DEFAULT_PATTERN;
 
 /// Merged configuration with project settings overriding global

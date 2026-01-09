@@ -6,6 +6,7 @@
 //! Licensed under the MIT License.
 
 use std::{
+    cell::RefCell,
     fs,
     io::{self, IsTerminal, Write},
     path::PathBuf,
@@ -17,6 +18,26 @@ use owo_colors::OwoColorize;
 use serde::{Deserialize, Serialize};
 
 use crate::id::DEFAULT_PATTERN;
+
+thread_local! {
+    /// Thread-local override for the home directory path.
+    /// Used by integration tests to redirect config to a temp directory
+    /// without modifying environment variables.
+    static HOME_OVERRIDE: RefCell<Option<PathBuf>> = const { RefCell::new(None) };
+}
+
+/// Sets a thread-local override for the home directory.
+/// This is used by tests to redirect global config without modifying env vars.
+pub fn set_home_override(path: Option<PathBuf>) {
+    HOME_OVERRIDE.with(|cell| {
+        *cell.borrow_mut() = path;
+    });
+}
+
+/// Gets the current home directory override, if set.
+fn get_home_override() -> Option<PathBuf> {
+    HOME_OVERRIDE.with(|cell| cell.borrow().clone())
+}
 
 /// Global configuration file name
 const GLOBAL_CONFIG_FILE: &str = ".qstack";
@@ -68,7 +89,14 @@ fn default_id_pattern() -> String {
 
 impl GlobalConfig {
     /// Returns the path to the global config file (~/.qstack)
+    ///
+    /// Checks for a thread-local home override first (used by tests),
+    /// then falls back to the actual home directory.
     pub fn path() -> Option<PathBuf> {
+        // Check for thread-local test override first (no env var modification)
+        if let Some(home) = get_home_override() {
+            return Some(home.join(GLOBAL_CONFIG_FILE));
+        }
         dirs::home_dir().map(|home| home.join(GLOBAL_CONFIG_FILE))
     }
 
@@ -250,5 +278,23 @@ default_id_pattern = "%y%j-%RRR"
 "#;
         let config: GlobalConfig = toml::from_str(toml).unwrap();
         assert_eq!(config.id_pattern, "%y%j-%RRR");
+    }
+
+    #[test]
+    fn test_home_override() {
+        use tempfile::tempdir;
+
+        let temp = tempdir().unwrap();
+
+        // Set thread-local override
+        set_home_override(Some(temp.path().to_path_buf()));
+        let path = GlobalConfig::path().unwrap();
+        assert_eq!(path, temp.path().join(".qstack"));
+
+        // Clear override - should fall back to real home dir
+        set_home_override(None);
+        let path = GlobalConfig::path();
+        assert!(path.is_some());
+        assert_ne!(path.unwrap(), temp.path().join(".qstack"));
     }
 }
