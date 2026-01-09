@@ -64,7 +64,7 @@ impl Config {
         self.project
             .id_pattern
             .as_deref()
-            .unwrap_or(&self.global.default_id_pattern)
+            .unwrap_or(&self.global.id_pattern)
     }
 
     /// Returns the effective user name

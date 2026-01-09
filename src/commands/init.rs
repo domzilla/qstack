@@ -25,9 +25,9 @@ pub fn execute() -> Result<()> {
         );
     }
 
-    // Create project config
+    // Create project config with comments
     let project_config = ProjectConfig::default();
-    project_config.save(&config.project_root)?;
+    project_config.save_with_comments(&config.project_root)?;
 
     // Create stack directory
     let stack_path = project_config.stack_path(&config.project_root);

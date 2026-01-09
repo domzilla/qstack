@@ -40,9 +40,9 @@ pub struct GlobalConfig {
     #[serde(default = "default_true")]
     pub auto_open: bool,
 
-    /// Default ID pattern
-    #[serde(default = "default_id_pattern")]
-    pub default_id_pattern: String,
+    /// ID pattern for generating unique identifiers
+    #[serde(default = "default_id_pattern", alias = "default_id_pattern")]
+    pub id_pattern: String,
 }
 
 impl Default for GlobalConfig {
@@ -52,7 +52,7 @@ impl Default for GlobalConfig {
             use_git_user: true,
             editor: None,
             auto_open: true,
-            default_id_pattern: DEFAULT_PATTERN.to_string(),
+            id_pattern: DEFAULT_PATTERN.to_string(),
         }
     }
 }
@@ -79,9 +79,9 @@ impl GlobalConfig {
         };
 
         if !path.exists() {
-            // Auto-generate default config
+            // Auto-generate default config with comments
             let config = Self::default();
-            config.save()?;
+            Self::save_with_comments(&path, &config)?;
             eprintln!("{} Created global config: {}", "✓".green(), path.display());
             return Ok(config);
         }
@@ -99,9 +99,65 @@ impl GlobalConfig {
             anyhow::bail!("Could not determine home directory");
         };
 
+        // When saving after user input, just update the values without regenerating comments
         let content = toml::to_string_pretty(self).context("Failed to serialize global config")?;
 
         fs::write(&path, content)
+            .with_context(|| format!("Failed to write global config: {}", path.display()))
+    }
+
+    /// Saves config with detailed comments for all options
+    fn save_with_comments(path: &PathBuf, config: &Self) -> Result<()> {
+        let content = format!(
+            r#"# qstack Global Configuration
+# This file configures qstack behavior across all projects.
+# Location: ~/.qstack
+
+# Your display name used as the author when creating new items.
+# If not set, falls back to git user.name (if use_git_user is true).
+# user_name = "Your Name"
+
+# Whether to use `git config user.name` as a fallback when user_name is not set.
+# Default: true
+use_git_user = {use_git_user}
+
+# Editor command to open when creating new items.
+# Supports commands with arguments (e.g., "code --wait", "nvim").
+# If not set, falls back to $VISUAL, then $EDITOR, then "vi".
+# editor = "nvim"
+
+# Whether to automatically open the editor when creating a new item.
+# Set to false if you prefer to edit files manually or use qstack in scripts.
+# Default: true
+auto_open = {auto_open}
+
+# Pattern for generating unique item IDs.
+# Default: "%y%m%d-%T%RRR" (e.g., "260109-0A2BK4M")
+#
+# Available tokens:
+#   %y  - Year (2 digits, e.g., "26" for 2026)
+#   %m  - Month (2 digits, 01-12)
+#   %d  - Day of month (2 digits, 01-31)
+#   %j  - Day of year (3 digits, 001-366)
+#   %T  - Time as Base32 (4 chars) - seconds since midnight UTC
+#   %R  - Random Base32 character (repeat for more: %RRR = 3 chars)
+#   %%  - Literal percent sign
+#
+# Base32 uses Crockford's alphabet: 0-9, A-Z excluding I, L, O, U
+# This ensures IDs are human-readable and avoid ambiguous characters.
+#
+# Examples:
+#   "%y%m%d-%T%RRR"  -> "260109-0A2BK4M" (default, 14 chars)
+#   "%y%j-%T%RR"     -> "26009-0A2BK4"   (day-of-year variant, 12 chars)
+#   "%T%RRRR"        -> "0A2BK4MN"       (compact, 8 chars)
+# id_pattern = "{id_pattern}"
+"#,
+            use_git_user = config.use_git_user,
+            auto_open = config.auto_open,
+            id_pattern = config.id_pattern,
+        );
+
+        fs::write(path, content)
             .with_context(|| format!("Failed to write global config: {}", path.display()))
     }
 
@@ -173,7 +229,7 @@ mod tests {
         let config = GlobalConfig::default();
         assert!(config.use_git_user);
         assert!(config.auto_open);
-        assert_eq!(config.default_id_pattern, DEFAULT_PATTERN);
+        assert_eq!(config.id_pattern, DEFAULT_PATTERN);
     }
 
     #[test]
@@ -184,5 +240,15 @@ user_name = "Test User"
         let config: GlobalConfig = toml::from_str(toml).unwrap();
         assert_eq!(config.user_name, Some("Test User".to_string()));
         assert!(config.use_git_user); // default
+    }
+
+    #[test]
+    fn test_parse_old_field_name() {
+        // Test backwards compatibility with old field name
+        let toml = r#"
+default_id_pattern = "%y%j-%RRR"
+"#;
+        let config: GlobalConfig = toml::from_str(toml).unwrap();
+        assert_eq!(config.id_pattern, "%y%j-%RRR");
     }
 }

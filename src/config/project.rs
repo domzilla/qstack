@@ -101,6 +101,46 @@ impl ProjectConfig {
             .with_context(|| format!("Failed to write project config: {}", path.display()))
     }
 
+    /// Saves project config with detailed comments for all options
+    pub fn save_with_comments(&self, project_root: &Path) -> Result<()> {
+        let path = Self::path(project_root);
+
+        let content = format!(
+            r#"# qstack Project Configuration
+# This file configures qstack for this specific project.
+# Location: <project-root>/.qstack
+
+# Directory name for storing items (relative to project root).
+# Default: "qstack"
+stack_dir = "{stack_dir}"
+
+# Subdirectory name for archived (closed) items within the stack directory.
+# Default: "archive"
+archive_dir = "{archive_dir}"
+
+# Project-specific ID pattern override.
+# If not set, uses the pattern from global config (~/.qstack).
+# See global config for available tokens.
+#
+# Available tokens:
+#   %y  - Year (2 digits, e.g., "26" for 2026)
+#   %m  - Month (2 digits, 01-12)
+#   %d  - Day of month (2 digits, 01-31)
+#   %j  - Day of year (3 digits, 001-366)
+#   %T  - Time as Base32 (4 chars) - seconds since midnight UTC
+#   %R  - Random Base32 character (repeat for more: %RRR = 3 chars)
+#   %%  - Literal percent sign
+#
+# id_pattern = "%y%m%d-%T%RRR"
+"#,
+            stack_dir = self.stack_dir,
+            archive_dir = self.archive_dir,
+        );
+
+        fs::write(&path, content)
+            .with_context(|| format!("Failed to write project config: {}", path.display()))
+    }
+
     /// Returns the full path to the stack directory
     pub fn stack_path(&self, project_root: &Path) -> PathBuf {
         project_root.join(&self.stack_dir)
