@@ -44,6 +44,8 @@ qstack/
 │       ├── init.rs         # qstack init
 │       ├── new.rs          # qstack new <title>
 │       ├── list.rs         # qstack list [filters]
+│       ├── get.rs          # qstack get (first item)
+│       ├── search.rs       # qstack search <query>
 │       ├── update.rs       # qstack update --id <id>
 │       └── close.rs        # qstack close/reopen
 ├── Cargo.toml
@@ -70,13 +72,19 @@ qstack/
 - `rand` - Random ID generation
 - `comfy-table` - Table output
 - `owo-colors` - Colored terminal output
+- `dialoguer` - Interactive terminal prompts (search selection)
 
 ## CLI Commands
 ```bash
 qstack init                                    # Initialize project
 qstack new "Title" --label bug --category bugs # Create item
+qstack new "Title" --no-open                   # Create without opening editor
 qstack list --open --sort date                 # List items
 qstack list --id 260109                        # Show item details
+qstack get                                     # Get first item, open in editor
+qstack get --sort date --no-open               # Get most recent, print path only
+qstack search "query"                          # Search and select interactively
+qstack search "bug" --full-text --no-open      # Full-text search, list results
 qstack update --id 260109 --title "New Title"  # Update item
 qstack close --id 260109                       # Archive item
 qstack reopen --id 260109                      # Restore item
