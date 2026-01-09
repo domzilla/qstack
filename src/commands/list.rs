@@ -5,14 +5,16 @@
 //! Copyright (c) 2025 Dominic Rodemer. All rights reserved.
 //! Licensed under the MIT License.
 
-use std::cmp::Reverse;
+use std::{cmp::Reverse, io::IsTerminal};
 
-use anyhow::Result;
+use anyhow::{Context, Result};
 use comfy_table::{presets::UTF8_FULL_CONDENSED, Cell, Color, ContentArrangement, Table};
+use dialoguer::{theme::ColorfulTheme, Select};
 use owo_colors::OwoColorize;
 
 use crate::{
     config::Config,
+    editor,
     item::{Item, Status},
     storage,
 };
@@ -34,6 +36,7 @@ pub struct ListFilter {
     pub label: Option<String>,
     pub author: Option<String>,
     pub sort: SortBy,
+    pub no_open: bool,
 }
 
 impl Default for ListFilter {
@@ -45,6 +48,7 @@ impl Default for ListFilter {
             label: None,
             author: None,
             sort: SortBy::Id,
+            no_open: false,
         }
     }
 }
@@ -136,7 +140,41 @@ pub fn execute(filter: &ListFilter) -> Result<()> {
 
     print_table(&items);
 
+    // Non-interactive mode: just show table
+    if filter.no_open || !config.auto_open() {
+        return Ok(());
+    }
+
+    // Interactive selection (only in terminal)
+    if !std::io::stdout().is_terminal() {
+        return Ok(());
+    }
+
+    let selection = interactive_select(&items)?;
+    let item = &items[selection];
+    let path = item.path.as_ref().context("Item has no path")?;
+
+    println!("{}", config.relative_path(path).display());
+    editor::open(path, &config).context("Failed to open editor")?;
+
     Ok(())
+}
+
+/// Show interactive selection dialog.
+fn interactive_select(items: &[Item]) -> Result<usize> {
+    let options: Vec<String> = items
+        .iter()
+        .map(|item| format!("{} - {}", item.id(), item.title()))
+        .collect();
+
+    let selection = Select::with_theme(&ColorfulTheme::default())
+        .with_prompt("Select an item to open")
+        .items(&options)
+        .default(0)
+        .interact()
+        .context("Selection cancelled")?;
+
+    Ok(selection)
 }
 
 fn print_table(items: &[Item]) {

@@ -107,21 +107,21 @@ Output: Prints the relative path to the created file."
     /// List items
     #[command(
         long_about = "List items in the current project.\n\n\
-By default, shows all open items in a table format with ID, title, author, date, \
-and labels. Use filters to narrow down results or --id to show full details of \
-a specific item.\n\n\
+By default, shows all open items in a table format and then presents an interactive \
+selector to choose an item to open. Use filters to narrow down results or --id to \
+show full details of a specific item.\n\n\
 The --id option supports partial matching - you only need to provide enough \
-characters to uniquely identify an item (e.g., '260109' or even '2601').",
+characters to uniquely identify an item (e.g., '260109' or even '2601').\n\n\
+Use --no-open to just display the table without interactive selection.",
         after_help = "Examples:\n  \
-qstack list                        List all open items\n  \
+qstack list                        List items, select one to open\n  \
+qstack list --no-open              Just show the table\n  \
 qstack list --closed               List archived/closed items\n  \
-qstack list --open --closed        List all items (open and closed)\n  \
 qstack list --label bug            Filter by label\n  \
 qstack list --author \"John\"        Filter by author\n  \
 qstack list --sort date            Sort by creation date\n  \
-qstack list --sort title           Sort alphabetically by title\n  \
-qstack list --id 260109            Show details of item matching ID\n  \
-qstack list --id 26                Show item if ID prefix is unique"
+qstack list --id 260109            Show details of item matching ID\n\n\
+Interactive mode: Use arrow keys to navigate, Enter to select, Esc to cancel."
     )]
     List {
         /// Show only open items
@@ -152,6 +152,10 @@ qstack list --id 26                Show item if ID prefix is unique"
             help = "Sort order: id, date, or title"
         )]
         sort: SortBy,
+
+        /// Don't show interactive selection
+        #[arg(long, help = "Just show table without interactive selection")]
+        no_open: bool,
     },
 
     /// Get the first matching item and open it
@@ -351,6 +355,7 @@ fn run() -> Result<()> {
             label,
             author,
             sort,
+            no_open,
         } => commands::list(&ListFilter {
             open,
             closed,
@@ -358,6 +363,7 @@ fn run() -> Result<()> {
             label,
             author,
             sort,
+            no_open,
         }),
 
         Commands::Get {
