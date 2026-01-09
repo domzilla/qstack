@@ -121,6 +121,12 @@ Uses Crockford's Base32 (0-9, A-Z excluding I,L,O,U) with pattern `%y%m%d-%T%RRR
 - Provide context with `.context("message")?`
 - Colored error output via `owo-colors`
 
+## Config System
+When adding a new config option:
+1. Add the field to `GlobalConfig` (`src/config/global.rs`) or `ProjectConfig` (`src/config/project.rs`)
+2. Update the `save_with_comments()` method to include the new option with documentation
+3. Config files are auto-generated with all options documented (commented out if unused)
+
 ## Style & Conventions
 Follow the Rust style guide: `~/Agents/Style/rust-style-guide.md`
 
