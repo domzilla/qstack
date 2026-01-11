@@ -65,7 +65,7 @@ impl TuiApp for PromptScreen {
         }
     }
 
-    fn render(&self, frame: &mut Frame) {
+    fn render(&mut self, frame: &mut Frame) {
         let area = frame.area();
 
         // Layout: prompt, input, help

@@ -99,7 +99,6 @@ pub struct NewItemWizard<'a> {
     category_list: SelectList,
     category_input: TextInput,
     category_input_mode: bool,
-    labels: Vec<String>,
     labels_list: MultiSelect,
     label_input: TextInput,
     label_input_mode: bool,
@@ -108,27 +107,29 @@ pub struct NewItemWizard<'a> {
 impl NewItemWizard<'_> {
     /// Create a new wizard with existing categories and labels.
     pub fn new(existing_categories: Vec<String>, existing_labels: Vec<String>) -> Self {
-        // Build category list with "Create new..." option
-        let mut category_items = vec!["(none)".to_string(), "+ Create new...".to_string()];
+        // Build category list: (none), existing categories, Create new...
+        let mut category_items = vec!["(none)".to_string()];
         category_items.extend(existing_categories.iter().cloned());
+        category_items.push("Create new...".to_string());
 
-        // Build labels list with "Add new..." option
-        let mut label_items = vec!["+ Add new...".to_string()];
-        label_items.extend(existing_labels);
+        // Build labels list: existing labels, Create new... (at end, as action item)
+        let mut label_items = existing_labels;
+        label_items.push("Create new...".to_string());
 
         Self {
             step: WizardStep::Title,
             title_input: TextInput::new("Title"),
             content_area: TextAreaWidget::new("Content"),
             attachments: Vec::new(),
-            attachment_input: TextInput::new("Add attachment (path or URL)"),
+            attachment_input: TextInput::new("Add attachments (Space or Newline separated)"),
             category: None,
             existing_categories,
             category_list: SelectList::new(category_items).with_title("Category"),
             category_input: TextInput::new("New category name"),
             category_input_mode: false,
-            labels: Vec::new(),
-            labels_list: MultiSelect::new(label_items).with_title("Labels (Space to toggle)"),
+            labels_list: MultiSelect::new(label_items)
+                .with_title("Labels")
+                .with_action_item_last(),
             label_input: TextInput::new("New label"),
             label_input_mode: false,
         }
@@ -152,14 +153,13 @@ impl NewItemWizard<'_> {
     }
 
     fn complete(&self) -> WizardOutput {
-        // Collect selected labels (skip "Add new..." at index 0)
-        let selected = self.labels_list.selected_items();
-        let mut labels: Vec<String> = selected
+        // Collect selected labels (action item is automatically excluded by MultiSelect)
+        let labels: Vec<String> = self
+            .labels_list
+            .selected_items()
             .into_iter()
-            .filter(|s| *s != "+ Add new...")
             .map(String::from)
             .collect();
-        labels.extend(self.labels.clone());
 
         WizardOutput {
             title: self.title_input.content().trim().to_string(),
@@ -175,12 +175,17 @@ impl NewItemWizard<'_> {
         key: crossterm::event::KeyEvent,
     ) -> Option<AppResult<WizardOutput>> {
         match key.code {
-            KeyCode::Tab => {
+            KeyCode::Char('n') if key.modifiers.contains(KeyModifiers::CONTROL) => {
                 self.try_advance();
                 None
             }
-            KeyCode::BackTab => {
+            KeyCode::Char('p') if key.modifiers.contains(KeyModifiers::CONTROL) => {
                 self.go_back();
+                None
+            }
+            KeyCode::Enter => {
+                // Enter also advances to next step
+                self.try_advance();
                 None
             }
             KeyCode::Esc => Some(AppResult::Cancelled),
@@ -199,11 +204,11 @@ impl NewItemWizard<'_> {
         key: crossterm::event::KeyEvent,
     ) -> Option<AppResult<WizardOutput>> {
         match key.code {
-            KeyCode::Tab => {
+            KeyCode::Char('n') if key.modifiers.contains(KeyModifiers::CONTROL) => {
                 self.try_advance();
                 None
             }
-            KeyCode::BackTab => {
+            KeyCode::Char('p') if key.modifiers.contains(KeyModifiers::CONTROL) => {
                 self.go_back();
                 None
             }
@@ -223,11 +228,11 @@ impl NewItemWizard<'_> {
         key: crossterm::event::KeyEvent,
     ) -> Option<AppResult<WizardOutput>> {
         match key.code {
-            KeyCode::Tab => {
+            KeyCode::Char('n') if key.modifiers.contains(KeyModifiers::CONTROL) => {
                 self.try_advance();
                 None
             }
-            KeyCode::BackTab => {
+            KeyCode::Char('p') if key.modifiers.contains(KeyModifiers::CONTROL) => {
                 self.go_back();
                 None
             }
@@ -237,10 +242,14 @@ impl NewItemWizard<'_> {
             }
             KeyCode::Enter => {
                 let content = self.attachment_input.content().trim().to_string();
-                if !content.is_empty() {
+                if content.is_empty() {
+                    // Empty input: Enter acts as Next
+                    self.try_advance();
+                } else {
                     let paths = parse_shell_escaped_paths(&content);
                     self.attachments.extend(paths);
-                    self.attachment_input = TextInput::new("Add attachment (path or URL)");
+                    self.attachment_input =
+                        TextInput::new("Add attachments (Space or Newline separated)");
                 }
                 None
             }
@@ -282,11 +291,11 @@ impl NewItemWizard<'_> {
             }
         } else {
             match key.code {
-                KeyCode::Tab => {
+                KeyCode::Char('n') if key.modifiers.contains(KeyModifiers::CONTROL) => {
                     self.try_advance();
                     None
                 }
-                KeyCode::BackTab => {
+                KeyCode::Char('p') if key.modifiers.contains(KeyModifiers::CONTROL) => {
                     self.go_back();
                     None
                 }
@@ -296,15 +305,13 @@ impl NewItemWizard<'_> {
                 }
                 KeyCode::Enter => {
                     if let Some(idx) = self.category_list.selected_index() {
-                        if idx == 0 {
-                            // (none)
-                            self.category = None;
-                        } else if idx == 1 {
+                        if self.is_create_new_category(idx) {
                             // Create new...
                             self.category_input_mode = true;
                         } else {
-                            // Existing category (offset by 2 for the special items)
+                            // (none) or existing category - select and advance
                             self.category = self.get_category_at_index(idx);
+                            self.try_advance();
                         }
                     }
                     None
@@ -318,11 +325,22 @@ impl NewItemWizard<'_> {
     }
 
     fn get_category_at_index(&self, idx: usize) -> Option<String> {
-        // Index 0 = "(none)", 1 = "+ Create new...", 2+ = actual categories
-        match idx {
-            0 | 1 => None, // "(none)" or "+ Create new..."
-            _ => self.existing_categories.get(idx - 2).cloned(),
+        // Index 0 = "(none)", 1..n-1 = actual categories, last = "+ Create new..."
+        if idx == 0 {
+            None // "(none)"
+        } else {
+            self.existing_categories.get(idx - 1).cloned()
         }
+    }
+
+    fn is_create_new_category(&self, idx: usize) -> bool {
+        // Last index is "+ Create new..."
+        idx == self.existing_categories.len() + 1
+    }
+
+    fn is_add_new_label(&self) -> bool {
+        // Last index is "+ Add new..." (action item)
+        self.labels_list.selected_index() == Some(self.labels_list.len() - 1)
     }
 
     fn handle_labels_key(
@@ -334,7 +352,7 @@ impl NewItemWizard<'_> {
                 KeyCode::Enter => {
                     let content = self.label_input.content().trim().to_string();
                     if !content.is_empty() {
-                        self.labels.push(content.clone());
+                        // add_item adds as pre-selected and handles duplicates
                         self.labels_list.add_item(&content);
                     }
                     self.label_input_mode = false;
@@ -353,23 +371,11 @@ impl NewItemWizard<'_> {
             }
         } else {
             match key.code {
-                KeyCode::Tab | KeyCode::Enter => {
-                    // Check if "Add new..." is selected and Enter pressed
-                    if self.labels_list.selected_items().is_empty()
-                        && self.labels_list.selected_index() == Some(0)
-                        && key.code == KeyCode::Enter
-                    {
-                        self.label_input_mode = true;
-                        return None;
-                    }
-                    // On last step, Enter completes
-                    if key.code == KeyCode::Enter && self.step.is_last() {
-                        return Some(AppResult::Done(self.complete()));
-                    }
-                    // Tab on labels step doesn't advance (it's the last step)
-                    None
+                KeyCode::Char('n') if key.modifiers.contains(KeyModifiers::CONTROL) => {
+                    // Ctrl+N on last step completes the wizard
+                    Some(AppResult::Done(self.complete()))
                 }
-                KeyCode::BackTab => {
+                KeyCode::Char('p') if key.modifiers.contains(KeyModifiers::CONTROL) => {
                     self.go_back();
                     None
                 }
@@ -377,9 +383,9 @@ impl NewItemWizard<'_> {
                 KeyCode::Char('c') if key.modifiers.contains(KeyModifiers::CONTROL) => {
                     Some(AppResult::Cancelled)
                 }
-                KeyCode::Char(' ') => {
-                    // Check if on "Add new..."
-                    if self.labels_list.selected_index() == Some(0) {
+                KeyCode::Enter => {
+                    // Enter on "+ Add new..." opens input mode, otherwise toggles selection
+                    if self.is_add_new_label() {
                         self.label_input_mode = true;
                     } else {
                         self.labels_list.toggle_current();
@@ -399,27 +405,34 @@ impl TuiApp for NewItemWizard<'_> {
     type Output = WizardOutput;
 
     fn handle_event(&mut self, event: &TuiEvent) -> Option<AppResult<Self::Output>> {
-        let TuiEvent::Key(key) = event else {
-            return None;
-        };
-
-        match self.step {
-            WizardStep::Title => self.handle_title_key(*key),
-            WizardStep::Content => self.handle_content_key(*key),
-            WizardStep::Attachments => self.handle_attachments_key(*key),
-            WizardStep::Category => self.handle_category_key(*key),
-            WizardStep::Labels => self.handle_labels_key(*key),
+        match event {
+            TuiEvent::Paste(content) => {
+                // Handle paste - directly add to attachments list if on that step
+                if matches!(self.step, WizardStep::Attachments) {
+                    let paths = parse_shell_escaped_paths(content);
+                    self.attachments.extend(paths);
+                }
+                None
+            }
+            TuiEvent::Key(key) => match self.step {
+                WizardStep::Title => self.handle_title_key(*key),
+                WizardStep::Content => self.handle_content_key(*key),
+                WizardStep::Attachments => self.handle_attachments_key(*key),
+                WizardStep::Category => self.handle_category_key(*key),
+                WizardStep::Labels => self.handle_labels_key(*key),
+            },
+            _ => None,
         }
     }
 
-    fn render(&self, frame: &mut Frame) {
+    fn render(&mut self, frame: &mut Frame) {
         let area = frame.area();
 
-        // Main layout
+        // Main layout (help bar is 4 lines to accommodate stacking on narrow terminals)
         let chunks = Layout::vertical([
             Constraint::Length(3), // Header
             Constraint::Min(10),   // Content
-            Constraint::Length(3), // Help
+            Constraint::Length(4), // Help
         ])
         .split(area);
 
@@ -470,7 +483,7 @@ impl NewItemWizard<'_> {
         frame.render_widget(header, area);
     }
 
-    fn render_step(&self, frame: &mut Frame, area: Rect) {
+    fn render_step(&mut self, frame: &mut Frame, area: Rect) {
         match self.step {
             WizardStep::Title => self.render_title_step(frame, area),
             WizardStep::Content => self.render_content_step(frame, area),
@@ -492,9 +505,8 @@ impl NewItemWizard<'_> {
         }
     }
 
-    fn render_content_step(&self, frame: &mut Frame, area: Rect) {
-        let mut content = self.content_area.clone();
-        content.render(area, frame, true);
+    fn render_content_step(&mut self, frame: &mut Frame, area: Rect) {
+        self.content_area.render(area, frame, true);
     }
 
     fn render_attachments_step(&self, frame: &mut Frame, area: Rect) {
@@ -563,14 +575,8 @@ impl NewItemWizard<'_> {
 
             self.label_input.render(chunks[1], frame.buffer_mut(), true);
         } else {
-            // Show selected labels
+            // Show selected labels (action item is auto-excluded by MultiSelect)
             let selected: Vec<&str> = self.labels_list.selected_items();
-            let custom: Vec<&str> = self.labels.iter().map(String::as_str).collect();
-            let all_labels: Vec<&str> = selected
-                .into_iter()
-                .chain(custom)
-                .filter(|l| *l != "+ Add new...")
-                .collect();
 
             let chunks = Layout::vertical([
                 Constraint::Length(3), // Current
@@ -578,10 +584,10 @@ impl NewItemWizard<'_> {
             ])
             .split(area);
 
-            let current = if all_labels.is_empty() {
+            let current = if selected.is_empty() {
                 "(none)".to_string()
             } else {
-                all_labels.join(", ")
+                selected.join(", ")
             };
 
             let current_display = Paragraph::new(format!("Selected: {current}"))
@@ -594,41 +600,92 @@ impl NewItemWizard<'_> {
     }
 
     fn render_help(&self, frame: &mut Frame, area: Rect) {
-        let help_text = match self.step {
-            WizardStep::Title => "Tab: Next  Esc: Cancel",
-            WizardStep::Content => "Tab: Next  Shift+Tab: Back  Esc: Cancel",
-            WizardStep::Attachments => "Enter: Add (multiple paths separated by space)  Backspace: Remove last  Tab: Next  Esc: Cancel",
+        let is_input_mode = self.category_input_mode || self.label_input_mode;
+
+        // Navigation: Ctrl+P (Back), Ctrl+N (Next/Finish), Esc (Cancel)
+        let can_go_back = self.step.index() > 0 && !is_input_mode;
+        let can_go_next = !is_input_mode;
+        let next_label = if self.step.is_last() {
+            "Finish"
+        } else {
+            "Next"
+        };
+
+        let enabled = Style::default().fg(Color::White);
+        let disabled = Style::default().fg(Color::DarkGray);
+
+        let nav_spans = vec![
+            Span::styled("Ctrl+P", if can_go_back { enabled } else { disabled }),
+            Span::styled(": Back  ", if can_go_back { enabled } else { disabled }),
+            Span::styled("Ctrl+N", if can_go_next { enabled } else { disabled }),
+            Span::styled(
+                format!(": {next_label}  "),
+                if can_go_next { enabled } else { disabled },
+            ),
+            Span::styled("Esc", enabled),
+            Span::styled(": Cancel", enabled),
+        ];
+
+        // Panel-specific shortcuts
+        let panel_text = match self.step {
+            WizardStep::Title => "Enter: Confirm",
+            WizardStep::Content => "",
+            WizardStep::Attachments => "Enter: Add/Next  Backspace: Remove  Drop: Add",
             WizardStep::Category => {
                 if self.category_input_mode {
-                    "Enter: Confirm  Esc: Cancel input"
+                    "Enter: Confirm  Esc: Cancel"
                 } else {
-                    "Enter: Select  Tab: Next  Esc: Cancel"
+                    "Enter: Select/Next"
                 }
             }
             WizardStep::Labels => {
                 if self.label_input_mode {
-                    "Enter: Add label  Esc: Cancel input"
+                    "Enter: Add  Esc: Cancel"
                 } else {
-                    "Space: Toggle  Enter: Complete  Shift+Tab: Back  Esc: Cancel"
+                    "Enter: Toggle"
                 }
             }
         };
 
-        let help = Paragraph::new(help_text).block(
-            Block::default()
-                .borders(Borders::ALL)
-                .border_style(Style::default().fg(Color::DarkGray)),
-        );
+        // Calculate widths
+        let nav_width: usize = nav_spans.iter().map(|s| s.content.len()).sum();
+        let panel_width = panel_text.len();
+        let inner_width = area.width.saturating_sub(2) as usize; // Account for borders
 
-        frame.render_widget(help, area);
+        // Check if we need to stack vertically
+        let needs_stacking = nav_width + panel_width + 2 > inner_width;
+
+        let block = Block::default()
+            .borders(Borders::ALL)
+            .border_style(Style::default().fg(Color::DarkGray));
+
+        if needs_stacking && !panel_text.is_empty() {
+            // Vertical layout: nav on top, panel below
+            let lines = vec![
+                Line::from(nav_spans),
+                Line::from(Span::styled(panel_text, enabled)),
+            ];
+            let help = Paragraph::new(lines).block(block);
+            frame.render_widget(help, area);
+        } else {
+            // Horizontal layout: nav left, panel right
+            let mut spans = nav_spans;
+            if !panel_text.is_empty() {
+                let padding = inner_width.saturating_sub(nav_width + panel_width);
+                spans.push(Span::raw(" ".repeat(padding)));
+                spans.push(Span::styled(panel_text, enabled));
+            }
+            let help = Paragraph::new(Line::from(spans)).block(block);
+            frame.render_widget(help, area);
+        }
     }
 }
 
-/// Parse a string containing shell-escaped paths separated by unescaped spaces.
+/// Parse a string containing shell-escaped paths separated by unescaped spaces or newlines.
 ///
 /// Paths can contain escaped spaces (e.g., `/path/to\ file.png`) and multiple
-/// paths are separated by unescaped spaces. Returns individual paths with
-/// escape sequences removed.
+/// paths are separated by unescaped spaces or newlines (\n, \r, \r\n).
+/// Returns individual paths with escape sequences removed.
 fn parse_shell_escaped_paths(input: &str) -> Vec<String> {
     let mut paths = Vec::new();
     let mut current = String::new();
@@ -647,8 +704,8 @@ fn parse_shell_escaped_paths(input: &str) -> Vec<String> {
                     current.push(ch);
                 }
             }
-            ' ' => {
-                // Unescaped space - this is a separator
+            ' ' | '\n' | '\r' => {
+                // Unescaped space or newline - this is a separator
                 let trimmed = current.trim().to_string();
                 if !trimmed.is_empty() {
                     paths.push(trimmed);
@@ -720,5 +777,29 @@ mod tests {
         let input = "   ";
         let result = parse_shell_escaped_paths(input);
         assert!(result.is_empty());
+    }
+
+    #[test]
+    fn test_parse_shell_escaped_paths_newline_separated() {
+        let input = "/path/one.png\n/path/two.png";
+        let result = parse_shell_escaped_paths(input);
+        assert_eq!(result, vec!["/path/one.png", "/path/two.png"]);
+    }
+
+    #[test]
+    fn test_parse_shell_escaped_paths_crlf_separated() {
+        let input = "/path/one.png\r\n/path/two.png";
+        let result = parse_shell_escaped_paths(input);
+        assert_eq!(result, vec!["/path/one.png", "/path/two.png"]);
+    }
+
+    #[test]
+    fn test_parse_shell_escaped_paths_mixed_separators() {
+        let input = "/path/one.png /path/two.png\n/path/three.png";
+        let result = parse_shell_escaped_paths(input);
+        assert_eq!(
+            result,
+            vec!["/path/one.png", "/path/two.png", "/path/three.png"]
+        );
     }
 }

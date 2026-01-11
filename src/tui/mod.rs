@@ -36,7 +36,7 @@ pub trait TuiApp {
     fn handle_event(&mut self, event: &TuiEvent) -> Option<AppResult<Self::Output>>;
 
     /// Render the application to the frame.
-    fn render(&self, frame: &mut Frame);
+    fn render(&mut self, frame: &mut Frame);
 }
 
 /// Run a TUI application to completion.

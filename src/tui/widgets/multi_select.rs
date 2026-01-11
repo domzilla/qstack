@@ -25,6 +25,8 @@ pub struct MultiSelect {
     items: Vec<(String, bool)>,
     state: ListState,
     title: String,
+    /// Index of an "action" item (like "+ Add new...") that has no checkbox.
+    action_item_index: Option<usize>,
 }
 
 impl MultiSelect {
@@ -40,7 +42,22 @@ impl MultiSelect {
             items,
             state,
             title: String::new(),
+            action_item_index: None,
         }
+    }
+
+    /// Mark the last item as an action item (no checkbox).
+    #[must_use]
+    pub fn with_action_item_last(mut self) -> Self {
+        if !self.items.is_empty() {
+            self.action_item_index = Some(self.items.len() - 1);
+        }
+        self
+    }
+
+    /// Check if an index is the action item.
+    fn is_action_item(&self, index: usize) -> bool {
+        self.action_item_index == Some(index)
     }
 
     /// Set the title.
@@ -59,12 +76,13 @@ impl MultiSelect {
         self
     }
 
-    /// Get the selected item labels.
+    /// Get the selected item labels (excludes action items).
     pub fn selected_items(&self) -> Vec<&str> {
         self.items
             .iter()
-            .filter(|(_, selected)| *selected)
-            .map(|(item, _)| item.as_str())
+            .enumerate()
+            .filter(|(i, (_, selected))| *selected && !self.is_action_item(*i))
+            .map(|(_, (item, _))| item.as_str())
             .collect()
     }
 
@@ -83,9 +101,13 @@ impl MultiSelect {
         self.state.selected()
     }
 
-    /// Toggle the currently selected item.
+    /// Toggle the currently selected item (unless it's an action item).
     pub fn toggle_current(&mut self) {
         if let Some(i) = self.state.selected() {
+            // Don't toggle action items
+            if self.is_action_item(i) {
+                return;
+            }
             if let Some((_, selected)) = self.items.get_mut(i) {
                 *selected = !*selected;
             }
@@ -128,14 +150,22 @@ impl MultiSelect {
         self.state.select(Some(i));
     }
 
-    /// Add a new item to the list.
+    /// Add a new item to the list (inserted before the action item if present).
     pub fn add_item(&mut self, item: impl Into<String>) {
         let item = item.into();
         // Don't add duplicates
         if !self.items.iter().any(|(i, _)| i == &item) {
-            self.items.push((item, true)); // New items are selected by default
-                                           // Select the new item
-            self.state.select(Some(self.items.len() - 1));
+            // Insert before action item, or append if no action item
+            let insert_pos = self.action_item_index.unwrap_or(self.items.len());
+            self.items.insert(insert_pos, (item, true)); // New items are selected by default
+
+            // Update action item index since we inserted before it
+            if let Some(ref mut idx) = self.action_item_index {
+                *idx += 1;
+            }
+
+            // Select the new item
+            self.state.select(Some(insert_pos));
         }
     }
 
@@ -177,12 +207,14 @@ impl MultiSelect {
                 format!(" {} ", self.title)
             });
 
+        let action_idx = self.action_item_index;
         let items: Vec<ListItem> = self
             .items
             .iter()
             .enumerate()
             .map(|(i, (item, selected))| {
                 let is_cursor = Some(i) == self.state.selected();
+                let is_action = action_idx == Some(i);
                 let style = if is_cursor {
                     Style::default()
                         .fg(Color::Cyan)
@@ -191,7 +223,14 @@ impl MultiSelect {
                     Style::default()
                 };
 
-                let checkbox = if *selected { "[x] " } else { "[ ] " };
+                // Action items don't show a checkbox
+                let checkbox = if is_action {
+                    "    "
+                } else if *selected {
+                    "[x] "
+                } else {
+                    "[ ] "
+                };
                 let cursor = if is_cursor { "> " } else { "  " };
 
                 ListItem::new(Line::from(vec![
@@ -218,6 +257,7 @@ impl Clone for MultiSelect {
             items: self.items.clone(),
             state: ListState::default(),
             title: self.title.clone(),
+            action_item_index: self.action_item_index,
         };
         if let Some(idx) = self.state.selected() {
             new_ms.state.select(Some(idx));

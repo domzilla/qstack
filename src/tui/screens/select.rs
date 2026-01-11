@@ -56,7 +56,7 @@ impl TuiApp for SelectScreen {
         }
     }
 
-    fn render(&self, frame: &mut Frame) {
+    fn render(&mut self, frame: &mut Frame) {
         let area = frame.area();
 
         // Layout: prompt at top, list below, help at bottom

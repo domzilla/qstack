@@ -12,6 +12,8 @@ use crossterm::event::{self, Event, KeyEvent, KeyEventKind};
 pub enum TuiEvent {
     /// A key was pressed
     Key(KeyEvent),
+    /// Content was pasted (via bracketed paste)
+    Paste(String),
     /// Terminal was resized
     Resize(u16, u16),
     /// Tick event for animations (if needed)
@@ -43,6 +45,7 @@ impl EventHandler {
                         Ok(TuiEvent::Tick)
                     }
                 }
+                Event::Paste(content) => Ok(TuiEvent::Paste(content)),
                 Event::Resize(w, h) => Ok(TuiEvent::Resize(w, h)),
                 _ => Ok(TuiEvent::Tick),
             }

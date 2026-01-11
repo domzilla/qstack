@@ -50,14 +50,14 @@ impl TextAreaWidget<'_> {
     /// Handle a key event.
     ///
     /// Returns `true` if the event was consumed by the text area.
-    /// Tab is NOT consumed (used for navigation).
+    /// Navigation keys (Ctrl+N, Ctrl+P) are NOT consumed.
     pub fn handle_key(&mut self, key: KeyEvent) -> bool {
-        // Don't consume Tab - let it bubble up for navigation
-        if key.code == KeyCode::Tab {
+        // Don't consume Ctrl+N - used for navigation
+        if key.code == KeyCode::Char('n') && key.modifiers.contains(KeyModifiers::CONTROL) {
             return false;
         }
-        // Don't consume Shift+Tab
-        if key.code == KeyCode::BackTab {
+        // Don't consume Ctrl+P - used for navigation
+        if key.code == KeyCode::Char('p') && key.modifiers.contains(KeyModifiers::CONTROL) {
             return false;
         }
         // Don't consume Esc
