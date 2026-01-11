@@ -23,22 +23,26 @@ const STYLES: Styles = Styles::styled()
     .literal(AnsiColor::Green.on_default())
     .placeholder(AnsiColor::Cyan.on_default());
 
-// Help text colorization macros
+// Help text colorization macros for compile-time string concatenation.
+// We use raw ANSI codes instead of owo_colors because:
+// 1. clap's help text requires &'static str (compile-time constants)
+// 2. owo_colors operates at runtime and returns owned types
+// 3. These macros enable concat!() in the global_help!() macro below
 macro_rules! h {
     ($s:expr) => {
-        concat!("\x1b[1;33m", $s, "\x1b[0m")
+        concat!("\x1b[1;33m", $s, "\x1b[0m") // bold yellow (header)
     };
 }
 
 macro_rules! c {
     ($s:expr) => {
-        concat!("\x1b[32m", $s, "\x1b[0m")
+        concat!("\x1b[32m", $s, "\x1b[0m") // green (command)
     };
 }
 
 macro_rules! a {
     ($s:expr) => {
-        concat!("\x1b[36m", $s, "\x1b[0m")
+        concat!("\x1b[36m", $s, "\x1b[0m") // cyan (argument)
     };
 }
 

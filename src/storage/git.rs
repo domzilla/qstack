@@ -12,6 +12,17 @@ use std::{
 
 use anyhow::{Context, Result};
 
+/// Gets the user name from git config (`git config user.name`).
+pub fn user_name() -> Option<String> {
+    Command::new("git")
+        .args(["config", "user.name"])
+        .output()
+        .ok()
+        .filter(|output| output.status.success())
+        .map(|output| String::from_utf8_lossy(&output.stdout).trim().to_string())
+        .filter(|name| !name.is_empty())
+}
+
 /// Checks if the current directory is inside a git repository.
 pub fn is_git_repo() -> bool {
     Command::new("git")

@@ -10,14 +10,17 @@ use std::{
     fs,
     io::{self, IsTerminal, Write},
     path::PathBuf,
-    process::Command,
 };
 
 use anyhow::{Context, Result};
 use owo_colors::OwoColorize;
 use serde::{Deserialize, Serialize};
 
-use crate::id::DEFAULT_PATTERN;
+use crate::{
+    constants::{DEFAULT_ARCHIVE_DIR, DEFAULT_STACK_DIR, GLOBAL_CONFIG_FILE},
+    id::DEFAULT_PATTERN,
+    storage::git,
+};
 
 thread_local! {
     /// Thread-local override for the home directory path.
@@ -38,15 +41,6 @@ pub fn set_home_override(path: Option<PathBuf>) {
 fn get_home_override() -> Option<PathBuf> {
     HOME_OVERRIDE.with(|cell| cell.borrow().clone())
 }
-
-/// Global configuration file name
-const GLOBAL_CONFIG_FILE: &str = ".qstack";
-
-/// Default stack directory name
-const DEFAULT_STACK_DIR: &str = "qstack";
-
-/// Default archive directory name
-const DEFAULT_ARCHIVE_DIR: &str = "archive";
 
 /// Global configuration stored at ~/.qstack
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -250,7 +244,7 @@ interactive = {interactive}
 
         // Then try git config if enabled
         if self.use_git_user {
-            return git_user_name();
+            return git::user_name();
         }
 
         None
@@ -287,17 +281,6 @@ interactive = {interactive}
 
         Ok(Some(name))
     }
-}
-
-/// Gets the user name from git config
-fn git_user_name() -> Option<String> {
-    Command::new("git")
-        .args(["config", "user.name"])
-        .output()
-        .ok()
-        .filter(|output| output.status.success())
-        .map(|output| String::from_utf8_lossy(&output.stdout).trim().to_string())
-        .filter(|name| !name.is_empty())
 }
 
 #[cfg(test)]

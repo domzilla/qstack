@@ -18,7 +18,15 @@ use owo_colors::OwoColorize;
 
 use clap::Command;
 
-use crate::config::GlobalConfig;
+use crate::{
+    config::GlobalConfig,
+    constants::{
+        BASHRC_FILE, BASH_COMPLETIONS_DIR, BASH_COMPLETION_FILE, BASH_PROFILE_FILE,
+        ELVISH_COMPLETIONS_DIR, ELVISH_COMPLETION_FILE, FISH_COMPLETIONS_DIR, FISH_COMPLETION_FILE,
+        POWERSHELL_CONFIG_DIR_UNIX, POWERSHELL_CONFIG_DIR_WINDOWS, POWERSHELL_PROFILE_FILE,
+        ZSHRC_FILE, ZSH_COMPLETIONS_DIR, ZSH_COMPLETION_FILE,
+    },
+};
 
 use super::completions::generate_to_string;
 
@@ -78,43 +86,14 @@ fn get_completion_path(shell: Shell) -> Option<PathBuf> {
     let home = dirs::home_dir()?;
 
     match shell {
-        Shell::Zsh => {
-            // Use ~/.zfunc for custom completions
-            Some(home.join(".zfunc").join("_qstack"))
-        }
-        Shell::Bash => {
-            // Use ~/.local/share/bash-completion/completions/
-            Some(
-                home.join(".local")
-                    .join("share")
-                    .join("bash-completion")
-                    .join("completions")
-                    .join("qstack"),
-            )
-        }
-        Shell::Fish => {
-            // Fish auto-loads from this directory
-            Some(
-                home.join(".config")
-                    .join("fish")
-                    .join("completions")
-                    .join("qstack.fish"),
-            )
-        }
-        Shell::Elvish => {
-            // Elvish completions directory
-            Some(
-                home.join(".config")
-                    .join("elvish")
-                    .join("lib")
-                    .join("qstack.elv"),
-            )
-        }
-        Shell::PowerShell => {
-            // PowerShell doesn't have a standard auto-load directory
-            // User needs to add to profile manually
-            None
-        }
+        Shell::Zsh => Some(home.join(ZSH_COMPLETIONS_DIR).join(ZSH_COMPLETION_FILE)),
+        Shell::Bash => Some(home.join(BASH_COMPLETIONS_DIR).join(BASH_COMPLETION_FILE)),
+        Shell::Fish => Some(home.join(FISH_COMPLETIONS_DIR).join(FISH_COMPLETION_FILE)),
+        Shell::Elvish => Some(
+            home.join(ELVISH_COMPLETIONS_DIR)
+                .join(ELVISH_COMPLETION_FILE),
+        ),
+        // PowerShell doesn't have a standard auto-load directory
         _ => None,
     }
 }
@@ -124,29 +103,26 @@ fn get_rc_file_path(shell: Shell) -> Option<PathBuf> {
     let home = dirs::home_dir()?;
 
     match shell {
-        Shell::Zsh => Some(home.join(".zshrc")),
+        Shell::Zsh => Some(home.join(ZSHRC_FILE)),
         Shell::Bash => {
             // Prefer .bashrc, fall back to .bash_profile
-            let bashrc = home.join(".bashrc");
+            let bashrc = home.join(BASHRC_FILE);
             if bashrc.exists() {
                 Some(bashrc)
             } else {
-                Some(home.join(".bash_profile"))
+                Some(home.join(BASH_PROFILE_FILE))
             }
         }
         Shell::PowerShell => {
-            // PowerShell profile location
             if cfg!(windows) {
                 Some(
-                    home.join("Documents")
-                        .join("PowerShell")
-                        .join("Microsoft.PowerShell_profile.ps1"),
+                    home.join(POWERSHELL_CONFIG_DIR_WINDOWS)
+                        .join(POWERSHELL_PROFILE_FILE),
                 )
             } else {
                 Some(
-                    home.join(".config")
-                        .join("powershell")
-                        .join("Microsoft.PowerShell_profile.ps1"),
+                    home.join(POWERSHELL_CONFIG_DIR_UNIX)
+                        .join(POWERSHELL_PROFILE_FILE),
                 )
             }
         }

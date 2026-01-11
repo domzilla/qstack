@@ -9,10 +9,7 @@
 pub mod global;
 pub mod project;
 
-use std::{
-    path::{Path, PathBuf},
-    process::Command,
-};
+use std::path::{Path, PathBuf};
 
 use anyhow::Result;
 
@@ -20,7 +17,7 @@ pub use self::{
     global::{set_home_override, GlobalConfig},
     project::ProjectConfig,
 };
-use crate::id::DEFAULT_PATTERN;
+use crate::{id::DEFAULT_PATTERN, storage::git};
 
 /// Merged configuration with project settings overriding global
 #[derive(Debug, Clone)]
@@ -120,7 +117,7 @@ impl Config {
 
         // Then try git config if enabled
         if self.use_git_user() {
-            return git_user_name();
+            return git::user_name();
         }
 
         None
@@ -178,17 +175,6 @@ impl Config {
         path.strip_prefix(&self.project_root)
             .map_or_else(|_| path.to_path_buf(), Path::to_path_buf)
     }
-}
-
-/// Gets the user name from git config
-fn git_user_name() -> Option<String> {
-    Command::new("git")
-        .args(["config", "user.name"])
-        .output()
-        .ok()
-        .filter(|output| output.status.success())
-        .map(|output| String::from_utf8_lossy(&output.stdout).trim().to_string())
-        .filter(|name| !name.is_empty())
 }
 
 /// Default ID pattern constant re-export for convenience

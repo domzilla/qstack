@@ -14,6 +14,7 @@ use walkdir::WalkDir;
 
 use crate::{
     config::Config,
+    constants::ITEM_FILE_EXTENSION,
     item::{slugify, Item},
 };
 
@@ -28,7 +29,11 @@ pub fn walk_items(config: &Config) -> impl Iterator<Item = PathBuf> {
         .into_iter()
         .filter_map(Result::ok)
         .filter(|e| e.file_type().is_file())
-        .filter(|e| e.path().extension().is_some_and(|ext| ext == "md"))
+        .filter(|e| {
+            e.path()
+                .extension()
+                .is_some_and(|ext| ext == ITEM_FILE_EXTENSION)
+        })
         .filter(move |e| !e.path().starts_with(&archive_path))
         .map(walkdir::DirEntry::into_path)
 }
@@ -43,7 +48,11 @@ pub fn walk_archived(config: &Config) -> impl Iterator<Item = PathBuf> {
         .into_iter()
         .filter_map(Result::ok)
         .filter(|e| e.file_type().is_file())
-        .filter(|e| e.path().extension().is_some_and(|ext| ext == "md"))
+        .filter(|e| {
+            e.path()
+                .extension()
+                .is_some_and(|ext| ext == ITEM_FILE_EXTENSION)
+        })
         .map(walkdir::DirEntry::into_path)
 }
 
@@ -323,10 +332,5 @@ fn move_attachments(src_dir: &Path, dest_dir: &Path, item_path: &Path) {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    #[test]
-    fn test_target_directory_no_category() {
-        // This would need a mock config, skipping for now
-    }
-}
+// Tests for storage are in tests/integration.rs as they require
+// a full test harness with project setup.

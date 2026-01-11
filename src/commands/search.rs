@@ -8,10 +8,9 @@
 use std::io::IsTerminal;
 
 use anyhow::{Context, Result};
-use dialoguer::{theme::ColorfulTheme, Select};
 
 use super::list::{collect_items, sort_items, ItemFilter, SortBy};
-use crate::{config::Config, editor, item::Item};
+use crate::{config::Config, editor, item::Item, ui};
 
 /// Arguments for the search command
 #[allow(clippy::struct_excessive_bools)]
@@ -46,14 +45,9 @@ pub fn execute(args: &SearchArgs) -> Result<()> {
         anyhow::bail!("No items found matching \"{}\"", args.query);
     }
 
-    // Resolve interactive mode: flags override config
-    let interactive = if args.interactive {
-        true
-    } else if args.no_interactive {
-        false
-    } else {
-        config.interactive()
-    };
+    // Resolve interactive mode
+    let interactive =
+        ui::resolve_interactive(args.interactive, args.no_interactive, config.interactive());
 
     // Non-interactive mode: just print the list
     if !interactive {
@@ -82,7 +76,7 @@ pub fn execute(args: &SearchArgs) -> Result<()> {
         );
     }
 
-    let selection = interactive_select(&items)?;
+    let selection = ui::select_item("Select an item", &items)?;
     let item = &items[selection];
     let path = item.path.as_ref().context("Item has no path")?;
 
@@ -110,21 +104,4 @@ fn matches_query(item: &Item, query: &str, full_text: bool) -> bool {
     }
 
     false
-}
-
-/// Show interactive selection dialog.
-fn interactive_select(items: &[Item]) -> Result<usize> {
-    let options: Vec<String> = items
-        .iter()
-        .map(|item| format!("{} - {}", item.id(), item.title()))
-        .collect();
-
-    let selection = Select::with_theme(&ColorfulTheme::default())
-        .with_prompt("Select an item")
-        .items(&options)
-        .default(0)
-        .interact()
-        .context("Selection cancelled")?;
-
-    Ok(selection)
 }

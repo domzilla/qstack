@@ -15,7 +15,7 @@ use crate::{
     config::Config,
     editor, id,
     item::{is_url, Frontmatter, Item, Status},
-    storage,
+    storage, ui,
 };
 
 /// Arguments for the new command
@@ -95,14 +95,9 @@ pub fn execute(args: NewArgs) -> Result<()> {
         item.save(&path)?;
     }
 
-    // Resolve interactive mode: flags override config
-    let interactive = if args.interactive {
-        true
-    } else if args.no_interactive {
-        false
-    } else {
-        config.interactive()
-    };
+    // Resolve interactive mode
+    let interactive =
+        ui::resolve_interactive(args.interactive, args.no_interactive, config.interactive());
 
     // Open editor if interactive
     if interactive {

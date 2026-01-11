@@ -5,19 +5,12 @@
 //! Copyright (c) 2025 Dominic Rodemer. All rights reserved.
 //! Licensed under the MIT License.
 
-use std::{collections::HashMap, io::IsTerminal};
+use std::collections::HashMap;
 
 use anyhow::{Context, Result};
-use comfy_table::{presets::UTF8_FULL_CONDENSED, Cell, Color, ContentArrangement, Table};
-use dialoguer::{theme::ColorfulTheme, Select};
 use owo_colors::OwoColorize;
 
-use crate::{
-    config::Config,
-    editor,
-    item::{Item, Status},
-    storage,
-};
+use crate::{config::Config, editor, item::Item, storage, ui};
 
 /// Arguments for the categories command
 pub struct CategoriesArgs {
@@ -61,21 +54,21 @@ pub fn execute(args: &CategoriesArgs) -> Result<()> {
     // Display table
     print_table(&categories);
 
-    // Resolve interactive mode
-    let interactive = if args.interactive {
-        true
-    } else if args.no_interactive {
-        false
-    } else {
-        config.interactive()
-    };
-
-    if !interactive || !std::io::stdout().is_terminal() {
+    // Check interactive mode
+    if !ui::should_run_interactive(args.interactive, args.no_interactive, &config) {
         return Ok(());
     }
 
     // Interactive selection
-    let selection = interactive_select(&categories)?;
+    let options: Vec<String> = categories
+        .iter()
+        .map(|(cat, count)| {
+            let name = cat.as_deref().unwrap_or("(uncategorized)");
+            format!("{name} ({count})")
+        })
+        .collect();
+
+    let selection = ui::select_from_list("Select a category to filter by", &options)?;
     let selected_category = &categories[selection].0;
 
     let category_name = selected_category.as_deref().unwrap_or("(uncategorized)");
@@ -92,14 +85,14 @@ pub fn execute(args: &CategoriesArgs) -> Result<()> {
         return Ok(());
     }
 
-    print_items_table(&filtered);
+    ui::print_items_table_compact(&filtered);
 
-    // Second interactive selection for items
-    if !interactive || !std::io::stdout().is_terminal() {
+    // Second interactive selection for items (check again since we printed a new table)
+    if !ui::should_run_interactive(args.interactive, args.no_interactive, &config) {
         return Ok(());
     }
 
-    let item_selection = interactive_item_select(&filtered)?;
+    let item_selection = ui::select_item_ref("Select an item to open", &filtered)?;
     let item = filtered[item_selection];
     let path = item.path.as_ref().context("Item has no path")?;
 
@@ -110,11 +103,8 @@ pub fn execute(args: &CategoriesArgs) -> Result<()> {
 }
 
 fn print_table(categories: &[(Option<String>, usize)]) {
-    let mut table = Table::new();
-    table
-        .load_preset(UTF8_FULL_CONDENSED)
-        .set_content_arrangement(ContentArrangement::Dynamic)
-        .set_header(vec!["Category", "Count"]);
+    let mut table = ui::create_table();
+    table.set_header(vec!["Category", "Count"]);
 
     for (category, count) in categories {
         let name = category.as_deref().unwrap_or("(uncategorized)");
@@ -122,74 +112,4 @@ fn print_table(categories: &[(Option<String>, usize)]) {
     }
 
     println!("{table}");
-}
-
-fn print_items_table(items: &[&Item]) {
-    let mut table = Table::new();
-    table
-        .load_preset(UTF8_FULL_CONDENSED)
-        .set_content_arrangement(ContentArrangement::Dynamic)
-        .set_header(vec!["ID", "Status", "Title", "Labels"]);
-
-    for item in items {
-        let status_cell = match item.status() {
-            Status::Open => Cell::new("open").fg(Color::Green),
-            Status::Closed => Cell::new("closed").fg(Color::Red),
-        };
-
-        let labels = item.labels().join(", ");
-        let short_id = item.id().split('-').next().unwrap_or_else(|| item.id());
-
-        table.add_row(vec![
-            Cell::new(short_id),
-            status_cell,
-            Cell::new(truncate(item.title(), 40)),
-            Cell::new(truncate(&labels, 20)),
-        ]);
-    }
-
-    println!("{table}");
-}
-
-fn interactive_select(categories: &[(Option<String>, usize)]) -> Result<usize> {
-    let options: Vec<String> = categories
-        .iter()
-        .map(|(cat, count)| {
-            let name = cat.as_deref().unwrap_or("(uncategorized)");
-            format!("{name} ({count})")
-        })
-        .collect();
-
-    let selection = Select::with_theme(&ColorfulTheme::default())
-        .with_prompt("Select a category to filter by")
-        .items(&options)
-        .default(0)
-        .interact()
-        .context("Selection cancelled")?;
-
-    Ok(selection)
-}
-
-fn interactive_item_select(items: &[&Item]) -> Result<usize> {
-    let options: Vec<String> = items
-        .iter()
-        .map(|item| format!("{} - {}", item.id(), item.title()))
-        .collect();
-
-    let selection = Select::with_theme(&ColorfulTheme::default())
-        .with_prompt("Select an item to open")
-        .items(&options)
-        .default(0)
-        .interact()
-        .context("Selection cancelled")?;
-
-    Ok(selection)
-}
-
-fn truncate(s: &str, max: usize) -> String {
-    if s.len() <= max {
-        s.to_string()
-    } else {
-        format!("{}…", &s[..max - 1])
-    }
 }

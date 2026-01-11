@@ -5,14 +5,12 @@
 //! Copyright (c) 2025 Dominic Rodemer. All rights reserved.
 //! Licensed under the MIT License.
 
-use std::{collections::HashMap, io::IsTerminal};
+use std::collections::HashMap;
 
-use anyhow::{Context, Result};
-use comfy_table::{presets::UTF8_FULL_CONDENSED, ContentArrangement, Table};
-use dialoguer::{theme::ColorfulTheme, Select};
+use anyhow::Result;
 use owo_colors::OwoColorize;
 
-use crate::{config::Config, storage};
+use crate::{config::Config, storage, ui};
 
 use super::{list, ListFilter, SortBy};
 
@@ -53,21 +51,18 @@ pub fn execute(args: &LabelsArgs) -> Result<()> {
     // Display table
     print_table(&labels);
 
-    // Resolve interactive mode
-    let interactive = if args.interactive {
-        true
-    } else if args.no_interactive {
-        false
-    } else {
-        config.interactive()
-    };
-
-    if !interactive || !std::io::stdout().is_terminal() {
+    // Check interactive mode
+    if !ui::should_run_interactive(args.interactive, args.no_interactive, &config) {
         return Ok(());
     }
 
     // Interactive selection
-    let selection = interactive_select(&labels)?;
+    let options: Vec<String> = labels
+        .iter()
+        .map(|(label, count)| format!("{label} ({count})"))
+        .collect();
+
+    let selection = ui::select_from_list("Select a label to filter by", &options)?;
     let selected_label = &labels[selection].0;
 
     println!("\n{} {}\n", "Items with label:".bold(), selected_label);
@@ -87,31 +82,12 @@ pub fn execute(args: &LabelsArgs) -> Result<()> {
 }
 
 fn print_table(labels: &[(String, usize)]) {
-    let mut table = Table::new();
-    table
-        .load_preset(UTF8_FULL_CONDENSED)
-        .set_content_arrangement(ContentArrangement::Dynamic)
-        .set_header(vec!["Label", "Count"]);
+    let mut table = ui::create_table();
+    table.set_header(vec!["Label", "Count"]);
 
     for (label, count) in labels {
         table.add_row(vec![label.as_str(), &count.to_string()]);
     }
 
     println!("{table}");
-}
-
-fn interactive_select(labels: &[(String, usize)]) -> Result<usize> {
-    let options: Vec<String> = labels
-        .iter()
-        .map(|(label, count)| format!("{label} ({count})"))
-        .collect();
-
-    let selection = Select::with_theme(&ColorfulTheme::default())
-        .with_prompt("Select a label to filter by")
-        .items(&options)
-        .default(0)
-        .interact()
-        .context("Selection cancelled")?;
-
-    Ok(selection)
 }

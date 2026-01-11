@@ -5,19 +5,12 @@
 //! Copyright (c) 2025 Dominic Rodemer. All rights reserved.
 //! Licensed under the MIT License.
 
-use std::{cmp::Reverse, io::IsTerminal};
+use std::cmp::Reverse;
 
 use anyhow::{Context, Result};
-use comfy_table::{presets::UTF8_FULL_CONDENSED, Cell, Color, ContentArrangement, Table};
-use dialoguer::{theme::ColorfulTheme, Select};
 use owo_colors::OwoColorize;
 
-use crate::{
-    config::Config,
-    editor,
-    item::{Item, Status},
-    storage,
-};
+use crate::{config::Config, editor, item::Item, storage, ui};
 
 /// Sort order for listing
 #[derive(Debug, Clone, Copy, Default, clap::ValueEnum)]
@@ -131,28 +124,14 @@ pub fn execute(filter: &ListFilter) -> Result<()> {
         return Ok(());
     }
 
-    print_table(&items);
+    ui::print_items_table(&items);
 
-    // Resolve interactive mode: flags override config
-    let interactive = if filter.interactive {
-        true
-    } else if filter.no_interactive {
-        false
-    } else {
-        config.interactive()
-    };
-
-    // Non-interactive mode: just show table
-    if !interactive {
+    // Check interactive mode
+    if !ui::should_run_interactive(filter.interactive, filter.no_interactive, &config) {
         return Ok(());
     }
 
-    // Interactive selection (only in terminal)
-    if !std::io::stdout().is_terminal() {
-        return Ok(());
-    }
-
-    let selection = interactive_select(&items)?;
+    let selection = ui::select_item("Select an item to open", &items)?;
     let item = &items[selection];
     let path = item.path.as_ref().context("Item has no path")?;
 
@@ -160,60 +139,4 @@ pub fn execute(filter: &ListFilter) -> Result<()> {
     editor::open(path, &config).context("Failed to open editor")?;
 
     Ok(())
-}
-
-/// Show interactive selection dialog.
-fn interactive_select(items: &[Item]) -> Result<usize> {
-    let options: Vec<String> = items
-        .iter()
-        .map(|item| format!("{} - {}", item.id(), item.title()))
-        .collect();
-
-    let selection = Select::with_theme(&ColorfulTheme::default())
-        .with_prompt("Select an item to open")
-        .items(&options)
-        .default(0)
-        .interact()
-        .context("Selection cancelled")?;
-
-    Ok(selection)
-}
-
-fn print_table(items: &[Item]) {
-    let mut table = Table::new();
-    table
-        .load_preset(UTF8_FULL_CONDENSED)
-        .set_content_arrangement(ContentArrangement::Dynamic)
-        .set_header(vec!["ID", "Status", "Title", "Labels", "Category"]);
-
-    for item in items {
-        let status_cell = match item.status() {
-            Status::Open => Cell::new("open").fg(Color::Green),
-            Status::Closed => Cell::new("closed").fg(Color::Red),
-        };
-
-        let labels = item.labels().join(", ");
-        let category = item.category().unwrap_or("-");
-
-        // Truncate ID to first part for display
-        let short_id = item.id().split('-').next().unwrap_or_else(|| item.id());
-
-        table.add_row(vec![
-            Cell::new(short_id),
-            status_cell,
-            Cell::new(truncate(item.title(), 40)),
-            Cell::new(truncate(&labels, 20)),
-            Cell::new(category),
-        ]);
-    }
-
-    println!("{table}");
-}
-
-fn truncate(s: &str, max: usize) -> String {
-    if s.len() <= max {
-        s.to_string()
-    } else {
-        format!("{}…", &s[..max - 1])
-    }
 }
