@@ -8,11 +8,7 @@
 use anyhow::{bail, Result};
 use owo_colors::OwoColorize;
 
-use crate::{
-    config::Config,
-    item::{is_url, Item},
-    storage::{self, AttachmentResult},
-};
+use crate::{config::Config, item::is_url, storage, ui};
 
 /// Arguments for the attach add subcommand
 pub struct AttachAddArgs {
@@ -34,42 +30,16 @@ pub fn execute_add(args: &AttachAddArgs) -> Result<()> {
 
     let config = Config::load()?;
 
-    // Find the item by ID
-    let path = storage::find_by_id(&config, &args.id)?;
-    let mut item = Item::load(&path)?;
+    // Find and load the item
+    let storage::LoadedItem { path, mut item } = storage::find_and_load(&config, &args.id)?;
 
     // Check item is not closed
     if item.status() == crate::item::Status::Closed {
         bail!("Cannot attach to a closed item. Use 'qstack reopen' first.");
     }
 
-    // Get item directory
-    let item_dir = path
-        .parent()
-        .ok_or_else(|| anyhow::anyhow!("Invalid item path"))?;
-
-    // Clone ID to avoid borrow conflicts when mutating item
-    let item_id = item.id().to_string();
-    let mut added_count = 0;
-
-    for source in &args.sources {
-        match storage::process_attachment(source, &mut item, item_dir, &item_id)? {
-            AttachmentResult::UrlAdded(url) => {
-                println!("  {} {}", "+".green(), url);
-                added_count += 1;
-            }
-            AttachmentResult::FileCopied { original, new_name } => {
-                println!("  {} {} -> {}", "+".green(), original, new_name);
-                added_count += 1;
-            }
-            AttachmentResult::FileNotFound(path) => {
-                eprintln!("  {} File not found: {}", "!".yellow(), path);
-            }
-        }
-    }
-
-    // Save updated item
-    item.save(&path)?;
+    // Process attachments
+    let added_count = ui::process_and_save_attachments(&mut item, &path, &args.sources)?;
 
     println!(
         "\n{} Added {} attachment(s) to {}",
@@ -89,9 +59,8 @@ pub fn execute_remove(args: &AttachRemoveArgs) -> Result<()> {
 
     let config = Config::load()?;
 
-    // Find the item by ID
-    let path = storage::find_by_id(&config, &args.id)?;
-    let mut item = Item::load(&path)?;
+    // Find and load the item
+    let storage::LoadedItem { path, mut item } = storage::find_and_load(&config, &args.id)?;
 
     let attachment_count = item.attachments().len();
     if attachment_count == 0 {
@@ -99,9 +68,10 @@ pub fn execute_remove(args: &AttachRemoveArgs) -> Result<()> {
     }
 
     // Get item directory
-    let item_dir = path
-        .parent()
-        .ok_or_else(|| anyhow::anyhow!("Invalid item path"))?;
+    let item_dir = item
+        .attachment_dir()
+        .ok_or_else(|| anyhow::anyhow!("Invalid item path"))?
+        .to_path_buf();
 
     // Validate all indices first (1-based from user)
     for &idx in &args.indices {
@@ -130,7 +100,7 @@ pub fn execute_remove(args: &AttachRemoveArgs) -> Result<()> {
         if let Some(removed) = item.remove_attachment(idx_0) {
             // If it's a file (not URL), delete from disk
             if !is_url(&removed) {
-                if let Err(e) = storage::delete_attachment(item_dir, &removed) {
+                if let Err(e) = storage::delete_attachment(&item_dir, &removed) {
                     eprintln!(
                         "  {} Failed to delete file {}: {}",
                         "!".yellow(),

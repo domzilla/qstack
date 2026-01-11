@@ -239,6 +239,12 @@ pub fn is_url(s: &str) -> bool {
     s.starts_with("http://") || s.starts_with("https://")
 }
 
+impl AsRef<Self> for Item {
+    fn as_ref(&self) -> &Self {
+        self
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

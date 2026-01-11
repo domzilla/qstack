@@ -16,9 +16,9 @@ use crate::{
     config::Config,
     editor, id,
     item::{Frontmatter, Item, Status},
-    storage::{self, AttachmentResult},
+    storage,
     tui::{self, screens::NewItemWizard},
-    ui::InteractiveArgs,
+    ui::{self, InteractiveArgs},
 };
 
 /// Arguments for the new command
@@ -70,30 +70,7 @@ pub fn execute(args: NewArgs) -> Result<()> {
 
     // Process attachments if any
     if !args.attachments.is_empty() {
-        // Set path so attachment_dir() works
-        item.path = Some(path.clone());
-        let item_dir = item
-            .attachment_dir()
-            .ok_or_else(|| anyhow::anyhow!("Invalid item path"))?
-            .to_path_buf();
-        let item_id = item.id().to_string();
-
-        for source in &args.attachments {
-            match storage::process_attachment(source, &mut item, &item_dir, &item_id)? {
-                AttachmentResult::UrlAdded(url) => {
-                    println!("  {} {}", "+".green(), url);
-                }
-                AttachmentResult::FileCopied { original, new_name } => {
-                    println!("  {} {} -> {}", "+".green(), original, new_name);
-                }
-                AttachmentResult::FileNotFound(path) => {
-                    eprintln!("  {} File not found: {}", "!".yellow(), path);
-                }
-            }
-        }
-
-        // Save updated item with attachments
-        item.save(&path)?;
+        ui::process_and_save_attachments(&mut item, &path, &args.attachments)?;
     }
 
     // Resolve interactive mode
@@ -176,29 +153,7 @@ fn execute_wizard(config: &Config) -> Result<()> {
 
     // Process attachments
     if !output.attachments.is_empty() {
-        item.path = Some(path.clone());
-        let item_dir = item
-            .attachment_dir()
-            .ok_or_else(|| anyhow::anyhow!("Invalid item path"))?
-            .to_path_buf();
-        let item_id = item.id().to_string();
-
-        for source in &output.attachments {
-            match storage::process_attachment(source, &mut item, &item_dir, &item_id)? {
-                AttachmentResult::UrlAdded(url) => {
-                    println!("  {} {}", "+".green(), url);
-                }
-                AttachmentResult::FileCopied { original, new_name } => {
-                    println!("  {} {} -> {}", "+".green(), original, new_name);
-                }
-                AttachmentResult::FileNotFound(p) => {
-                    eprintln!("  {} File not found: {}", "!".yellow(), p);
-                }
-            }
-        }
-
-        // Save updated item with attachments
-        item.save(&path)?;
+        ui::process_and_save_attachments(&mut item, &path, &output.attachments)?;
     }
 
     // Output the path

@@ -65,6 +65,23 @@ pub fn load_all_items(config: &Config) -> Vec<Item> {
         .collect()
 }
 
+/// An item loaded from disk along with its path.
+pub struct LoadedItem {
+    /// The path to the item file
+    pub path: PathBuf,
+    /// The loaded item
+    pub item: Item,
+}
+
+/// Finds and loads an item by partial ID match.
+///
+/// Convenience wrapper that combines `find_by_id` and `Item::load`.
+pub fn find_and_load(config: &Config, partial_id: &str) -> Result<LoadedItem> {
+    let path = find_by_id(config, partial_id)?;
+    let item = Item::load(&path)?;
+    Ok(LoadedItem { path, item })
+}
+
 /// Finds an item by partial ID match.
 ///
 /// Returns the full path to the item file.

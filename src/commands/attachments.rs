@@ -9,11 +9,7 @@ use anyhow::Result;
 use comfy_table::{presets::UTF8_FULL_CONDENSED, ContentArrangement, Table};
 use owo_colors::OwoColorize;
 
-use crate::{
-    config::Config,
-    item::{is_url, Item},
-    storage,
-};
+use crate::{config::Config, item::is_url, storage};
 
 /// Arguments for the attachments command
 pub struct AttachmentsArgs {
@@ -24,9 +20,8 @@ pub struct AttachmentsArgs {
 pub fn execute(args: &AttachmentsArgs) -> Result<()> {
     let config = Config::load()?;
 
-    // Find the item by ID
-    let path = storage::find_by_id(&config, &args.id)?;
-    let item = Item::load(&path)?;
+    // Find and load the item
+    let storage::LoadedItem { item, .. } = storage::find_and_load(&config, &args.id)?;
 
     let attachments = item.attachments();
 

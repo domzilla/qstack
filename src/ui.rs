@@ -11,11 +11,16 @@ use std::io::IsTerminal;
 use anyhow::{Context, Result};
 use comfy_table::{presets::UTF8_FULL_CONDENSED, Cell, Color, ContentArrangement, Table};
 
+use std::path::Path;
+
+use owo_colors::OwoColorize;
+
 use crate::{
     config::Config,
     constants::{UI_LABELS_TRUNCATE_LEN, UI_TITLE_TRUNCATE_LEN},
     editor, id,
     item::{Item, Status},
+    storage::AttachmentResult,
     tui::screens::select_from_list as tui_select,
 };
 
@@ -108,20 +113,14 @@ pub fn select_from_list<T: ToString>(prompt: &str, options: &[T]) -> Result<usiz
 /// Interactive selection for items - returns index.
 ///
 /// Formats items as "{id} - {title}" for display.
-pub fn select_item(prompt: &str, items: &[Item]) -> Result<usize> {
+/// Works with both `&[Item]` and `&[&Item]` via `AsRef<Item>`.
+pub fn select_item<T: AsRef<Item>>(prompt: &str, items: &[T]) -> Result<usize> {
     let options: Vec<String> = items
         .iter()
-        .map(|item| format!("{} - {}", item.id(), item.title()))
-        .collect();
-
-    select_from_list(prompt, &options)
-}
-
-/// Interactive selection for item references - returns index.
-pub fn select_item_ref(prompt: &str, items: &[&Item]) -> Result<usize> {
-    let options: Vec<String> = items
-        .iter()
-        .map(|item| format!("{} - {}", item.id(), item.title()))
+        .map(|item| {
+            let item = item.as_ref();
+            format!("{} - {}", item.id(), item.title())
+        })
         .collect();
 
     select_from_list(prompt, &options)
@@ -132,6 +131,82 @@ pub fn open_item_in_editor(item: &Item, config: &Config) -> Result<()> {
     let path = item.path.as_ref().context("Item has no path")?;
     println!("{}", config.relative_path(path).display());
     editor::open(path, config).context("Failed to open editor")
+}
+
+// =============================================================================
+// Success Messages
+// =============================================================================
+
+/// Prints a success message with an item path.
+///
+/// Format: `✓ {verb} item: {relative_path}`
+pub fn print_success(verb: &str, config: &Config, path: &Path) {
+    println!(
+        "{} {} item: {}",
+        "✓".green(),
+        verb,
+        config.relative_path(path).display()
+    );
+}
+
+/// Prints warnings with yellow prefix.
+pub fn print_warnings(warnings: &[String]) {
+    for warning in warnings {
+        eprintln!("{} {}", "warning:".yellow(), warning);
+    }
+}
+
+// =============================================================================
+// Attachment Processing
+// =============================================================================
+
+/// Processes attachments and prints results.
+///
+/// This is a shared utility for `new` and `attach` commands that handles:
+/// - Setting up the item's attachment directory
+/// - Processing each attachment source
+/// - Printing colored output for each result
+/// - Saving the updated item
+///
+/// Returns the number of successfully added attachments.
+pub fn process_and_save_attachments(
+    item: &mut Item,
+    path: &Path,
+    sources: &[String],
+) -> Result<usize> {
+    use crate::storage;
+
+    // Set path so attachment_dir() works
+    item.path = Some(path.to_path_buf());
+
+    let item_dir = item
+        .attachment_dir()
+        .ok_or_else(|| anyhow::anyhow!("Invalid item path"))?
+        .to_path_buf();
+    let item_id = item.id().to_string();
+
+    let mut added_count = 0;
+
+    for source in sources {
+        match storage::process_attachment(source, item, &item_dir, &item_id)? {
+            AttachmentResult::UrlAdded(url) => {
+                println!("  {} {}", "+".green(), url);
+                added_count += 1;
+            }
+            AttachmentResult::FileCopied { original, new_name } => {
+                println!("  {} {} -> {}", "+".green(), original, new_name);
+                added_count += 1;
+            }
+            AttachmentResult::FileNotFound(p) => {
+                eprintln!("  {} File not found: {}", "!".yellow(), p);
+            }
+        }
+    }
+
+    // Save updated item with attachments
+    item.save(path)?;
+
+    Ok(added_count)
 }
 
 // =============================================================================

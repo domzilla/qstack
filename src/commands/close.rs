@@ -6,78 +6,59 @@
 //! Licensed under the MIT License.
 
 use anyhow::Result;
-use owo_colors::OwoColorize;
 
-use crate::{
-    config::Config,
-    item::{Item, Status},
-    storage,
-};
+use crate::{config::Config, item::Status, storage, ui};
 
 /// Executes the close command.
 pub fn execute_close(id: &str) -> Result<()> {
-    let config = Config::load()?;
-
-    // Find the item
-    let path = storage::find_by_id(&config, id)?;
-    let mut item = Item::load(&path)?;
-
-    // Check if already closed
-    if item.status() == Status::Closed {
-        anyhow::bail!("Item '{}' is already closed", item.id());
-    }
-
-    // Update status
-    item.set_status(Status::Closed);
-    item.save(&path)?;
-
-    // Move to archive
-    let (new_path, warnings) = storage::archive_item(&config, &path)?;
-
-    // Print any attachment move warnings
-    for warning in warnings {
-        eprintln!("{} {}", "warning:".yellow(), warning);
-    }
-
-    println!(
-        "{} Closed item: {}",
-        "✓".green(),
-        config.relative_path(&new_path).display()
-    );
-
-    Ok(())
+    execute_status_change(id, StatusChange::Close)
 }
 
 /// Executes the reopen command.
 pub fn execute_reopen(id: &str) -> Result<()> {
+    execute_status_change(id, StatusChange::Reopen)
+}
+
+/// Specifies the type of status change operation.
+#[derive(Clone, Copy)]
+enum StatusChange {
+    Close,
+    Reopen,
+}
+
+/// Unified implementation for close/reopen operations.
+fn execute_status_change(id: &str, operation: StatusChange) -> Result<()> {
     let config = Config::load()?;
 
-    // Find the item (likely in archive)
-    let path = storage::find_by_id(&config, id)?;
-    let mut item = Item::load(&path)?;
+    // Find and load the item
+    let storage::LoadedItem { path, mut item } = storage::find_and_load(&config, id)?;
 
-    // Check if already open
-    if item.status() == Status::Open {
-        anyhow::bail!("Item '{}' is already open", item.id());
+    // Determine operation parameters
+    let (target_status, verb, state_name) = match operation {
+        StatusChange::Close => (Status::Closed, "Closed", "closed"),
+        StatusChange::Reopen => (Status::Open, "Reopened", "open"),
+    };
+
+    // Check if already in target state
+    if item.status() == target_status {
+        anyhow::bail!("Item '{}' is already {}", item.id(), state_name);
     }
 
-    // Update status
-    item.set_status(Status::Open);
+    // Update status and save
+    item.set_status(target_status);
     item.save(&path)?;
 
-    // Move back from archive to original category (or root)
-    let (new_path, warnings) = storage::unarchive_item(&config, &path, item.category())?;
+    // Move to/from archive
+    let (new_path, warnings) = match operation {
+        StatusChange::Close => storage::archive_item(&config, &path)?,
+        StatusChange::Reopen => storage::unarchive_item(&config, &path, item.category())?,
+    };
 
     // Print any attachment move warnings
-    for warning in warnings {
-        eprintln!("{} {}", "warning:".yellow(), warning);
-    }
+    ui::print_warnings(&warnings);
 
-    println!(
-        "{} Reopened item: {}",
-        "✓".green(),
-        config.relative_path(&new_path).display()
-    );
+    // Print success message
+    ui::print_success(verb, &config, &new_path);
 
     Ok(())
 }

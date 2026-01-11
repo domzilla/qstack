@@ -8,7 +8,7 @@
 use anyhow::Result;
 use owo_colors::OwoColorize;
 
-use crate::{config::Config, item::Item, storage};
+use crate::{config::Config, storage, ui};
 
 /// Arguments for the update command
 pub struct UpdateArgs {
@@ -23,9 +23,8 @@ pub struct UpdateArgs {
 pub fn execute(args: UpdateArgs) -> Result<()> {
     let config = Config::load()?;
 
-    // Find the item
-    let mut path = storage::find_by_id(&config, &args.id)?;
-    let mut item = Item::load(&path)?;
+    // Find and load the item
+    let storage::LoadedItem { mut path, mut item } = storage::find_and_load(&config, &args.id)?;
 
     let mut changed = false;
     let old_filename = item.filename();
@@ -82,16 +81,10 @@ pub fn execute(args: UpdateArgs) -> Result<()> {
         path = new_path;
 
         // Print any attachment move warnings
-        for warning in warnings {
-            eprintln!("{} {}", "warning:".yellow(), warning);
-        }
+        ui::print_warnings(&warnings);
     }
 
-    println!(
-        "{} Updated item: {}",
-        "✓".green(),
-        config.relative_path(&path).display()
-    );
+    ui::print_success("Updated", &config, &path);
 
     Ok(())
 }

@@ -80,7 +80,7 @@ pub fn execute(args: &CategoriesArgs) -> Result<()> {
         return Ok(());
     }
 
-    let item_selection = ui::select_item_ref("Select an item to open", &filtered)?;
+    let item_selection = ui::select_item("Select an item to open", &filtered)?;
     let item = filtered[item_selection];
     ui::open_item_in_editor(item, &config)?;
 
