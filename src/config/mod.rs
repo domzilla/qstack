@@ -101,9 +101,9 @@ impl Config {
             .unwrap_or(self.global.use_git_user)
     }
 
-    /// Whether to auto-open editor (project overrides global)
-    pub fn auto_open(&self) -> bool {
-        self.project.auto_open.unwrap_or(self.global.auto_open)
+    /// Whether interactive mode is enabled (project overrides global)
+    pub fn interactive(&self) -> bool {
+        self.project.interactive.unwrap_or(self.global.interactive)
     }
 
     /// Returns the effective user name (project overrides global)

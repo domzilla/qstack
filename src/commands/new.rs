@@ -20,7 +20,8 @@ pub struct NewArgs {
     pub title: String,
     pub labels: Vec<String>,
     pub category: Option<String>,
-    pub no_open: bool,
+    pub interactive: bool,
+    pub no_interactive: bool,
 }
 
 /// Executes the new command.
@@ -50,8 +51,17 @@ pub fn execute(args: NewArgs) -> Result<()> {
     // Save to disk
     let path = storage::create_item(&config, &item)?;
 
-    // Open editor if configured and not suppressed
-    if config.auto_open() && !args.no_open {
+    // Resolve interactive mode: flags override config
+    let interactive = if args.interactive {
+        true
+    } else if args.no_interactive {
+        false
+    } else {
+        config.interactive()
+    };
+
+    // Open editor if interactive
+    if interactive {
         editor::open(&path, &config).context("Failed to open editor")?;
     }
 

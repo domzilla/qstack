@@ -14,10 +14,12 @@ use super::list::{collect_items, sort_items, ItemFilter, SortBy};
 use crate::{config::Config, editor, item::Item};
 
 /// Arguments for the search command
+#[allow(clippy::struct_excessive_bools)]
 pub struct SearchArgs {
     pub query: String,
     pub full_text: bool,
-    pub no_open: bool,
+    pub interactive: bool,
+    pub no_interactive: bool,
     pub closed: bool,
 }
 
@@ -44,8 +46,17 @@ pub fn execute(args: &SearchArgs) -> Result<()> {
         anyhow::bail!("No items found matching \"{}\"", args.query);
     }
 
+    // Resolve interactive mode: flags override config
+    let interactive = if args.interactive {
+        true
+    } else if args.no_interactive {
+        false
+    } else {
+        config.interactive()
+    };
+
     // Non-interactive mode: just print the list
-    if args.no_open {
+    if !interactive {
         for item in &items {
             if let Some(ref path) = item.path {
                 println!("{}", config.relative_path(path).display());
@@ -59,16 +70,14 @@ pub fn execute(args: &SearchArgs) -> Result<()> {
         let item = &items[0];
         let path = item.path.as_ref().context("Item has no path")?;
         println!("{}", config.relative_path(path).display());
-        if config.auto_open() {
-            editor::open(path, &config).context("Failed to open editor")?;
-        }
+        editor::open(path, &config).context("Failed to open editor")?;
         return Ok(());
     }
 
     // Multiple matches: interactive selection
     if !std::io::stdout().is_terminal() {
         anyhow::bail!(
-            "Multiple items found ({}) but not running in a terminal. Use --no-open to list them.",
+            "Multiple items found ({}) but not running in a terminal. Use --no-interactive to list them.",
             items.len()
         );
     }
@@ -78,9 +87,7 @@ pub fn execute(args: &SearchArgs) -> Result<()> {
     let path = item.path.as_ref().context("Item has no path")?;
 
     println!("{}", config.relative_path(path).display());
-    if config.auto_open() {
-        editor::open(path, &config).context("Failed to open editor")?;
-    }
+    editor::open(path, &config).context("Failed to open editor")?;
 
     Ok(())
 }

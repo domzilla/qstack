@@ -33,9 +33,9 @@ pub struct ProjectConfig {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub editor: Option<String>,
 
-    /// Whether to auto-open editor (overrides global)
+    /// Whether to enable interactive mode (overrides global)
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub auto_open: Option<bool>,
+    pub interactive: Option<bool>,
 
     /// ID pattern override (overrides global)
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -124,9 +124,9 @@ impl ProjectConfig {
 # If not set, falls back to global config.
 # editor = "nvim"
 
-# Whether to automatically open the editor when creating a new item.
+# Whether to enable interactive mode (opens editor, shows selection dialogs).
 # If not set, falls back to global config.
-# auto_open = true
+# interactive = true
 
 # Pattern for generating unique item IDs.
 # If not set, falls back to global config.
@@ -165,7 +165,7 @@ mod tests {
         assert!(config.user_name.is_none());
         assert!(config.use_git_user.is_none());
         assert!(config.editor.is_none());
-        assert!(config.auto_open.is_none());
+        assert!(config.interactive.is_none());
         assert!(config.id_pattern.is_none());
         assert!(config.stack_dir.is_none());
         assert!(config.archive_dir.is_none());
@@ -178,14 +178,14 @@ stack_dir = "issues"
 archive_dir = "done"
 id_pattern = "%y%j-%RRR"
 user_name = "Test User"
-auto_open = false
+interactive = false
 "#;
         let config: ProjectConfig = toml::from_str(toml).unwrap();
         assert_eq!(config.stack_dir, Some("issues".to_string()));
         assert_eq!(config.archive_dir, Some("done".to_string()));
         assert_eq!(config.id_pattern, Some("%y%j-%RRR".to_string()));
         assert_eq!(config.user_name, Some("Test User".to_string()));
-        assert_eq!(config.auto_open, Some(false));
+        assert_eq!(config.interactive, Some(false));
     }
 
     #[test]

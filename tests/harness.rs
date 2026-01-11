@@ -186,7 +186,7 @@ pub struct GlobalConfigBuilder {
     user_name: Option<String>,
     use_git_user: bool,
     editor: Option<String>,
-    auto_open: bool,
+    interactive: bool,
     id_pattern: String,
     stack_dir: Option<String>,
     archive_dir: Option<String>,
@@ -198,7 +198,7 @@ impl Default for GlobalConfigBuilder {
             user_name: Some("Test User".to_string()),
             use_git_user: false,
             editor: Some("true".to_string()), // no-op editor
-            auto_open: true,
+            interactive: true,
             id_pattern: "%y%m%d-%T%RRR".to_string(),
             stack_dir: None,
             archive_dir: None,
@@ -226,8 +226,8 @@ impl GlobalConfigBuilder {
         self
     }
 
-    pub fn auto_open(mut self, auto_open: bool) -> Self {
-        self.auto_open = auto_open;
+    pub fn interactive(mut self, interactive: bool) -> Self {
+        self.interactive = interactive;
         self
     }
 
@@ -259,7 +259,7 @@ impl GlobalConfigBuilder {
             lines.push(format!("editor = \"{}\"", editor));
         }
 
-        lines.push(format!("auto_open = {}", self.auto_open));
+        lines.push(format!("interactive = {}", self.interactive));
         lines.push(format!("id_pattern = \"{}\"", self.id_pattern));
 
         if let Some(ref dir) = self.stack_dir {
@@ -281,7 +281,7 @@ pub struct ProjectConfigBuilder {
     user_name: Option<String>,
     use_git_user: Option<bool>,
     editor: Option<String>,
-    auto_open: Option<bool>,
+    interactive: Option<bool>,
     id_pattern: Option<String>,
     stack_dir: Option<String>,
     archive_dir: Option<String>,
@@ -293,7 +293,7 @@ impl Default for ProjectConfigBuilder {
             user_name: None,
             use_git_user: None,
             editor: None,
-            auto_open: None,
+            interactive: None,
             id_pattern: None,
             stack_dir: Some("qstack".to_string()),
             archive_dir: Some("archive".to_string()),
@@ -321,8 +321,8 @@ impl ProjectConfigBuilder {
         self
     }
 
-    pub fn auto_open(mut self, auto_open: bool) -> Self {
-        self.auto_open = Some(auto_open);
+    pub fn interactive(mut self, interactive: bool) -> Self {
+        self.interactive = Some(interactive);
         self
     }
 
@@ -356,8 +356,8 @@ impl ProjectConfigBuilder {
             lines.push(format!("editor = \"{}\"", editor));
         }
 
-        if let Some(auto_open) = self.auto_open {
-            lines.push(format!("auto_open = {}", auto_open));
+        if let Some(interactive) = self.interactive {
+            lines.push(format!("interactive = {}", interactive));
         }
 
         if let Some(ref pattern) = self.id_pattern {

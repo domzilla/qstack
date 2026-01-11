@@ -63,9 +63,9 @@ pub struct GlobalConfig {
     #[serde(default)]
     pub editor: Option<String>,
 
-    /// Whether to auto-open editor on `new` command
+    /// Whether to enable interactive mode (open editor, show selectors)
     #[serde(default = "default_true")]
-    pub auto_open: bool,
+    pub interactive: bool,
 
     /// ID pattern for generating unique identifiers
     #[serde(default = "default_id_pattern", alias = "default_id_pattern")]
@@ -86,7 +86,7 @@ impl Default for GlobalConfig {
             user_name: None,
             use_git_user: true,
             editor: None,
-            auto_open: true,
+            interactive: true,
             id_pattern: DEFAULT_PATTERN.to_string(),
             stack_dir: None,
             archive_dir: None,
@@ -170,10 +170,10 @@ use_git_user = {use_git_user}
 # If not set, falls back to $VISUAL, then $EDITOR, then "vi".
 # editor = "nvim"
 
-# Whether to automatically open the editor when creating a new item.
-# Set to false if you prefer to edit files manually or use qstack in scripts.
+# Whether to enable interactive mode (opens editor, shows selection dialogs).
+# Set to false for scripting or if you prefer to edit files manually.
 # Default: true
-auto_open = {auto_open}
+interactive = {interactive}
 
 # Pattern for generating unique item IDs.
 # Default: "%y%m%d-%T%RRR" (e.g., "260109-0A2BK4M")
@@ -207,7 +207,7 @@ auto_open = {auto_open}
 # archive_dir = "archive"
 "#,
             use_git_user = config.use_git_user,
-            auto_open = config.auto_open,
+            interactive = config.interactive,
             id_pattern = config.id_pattern,
         );
 
@@ -292,7 +292,7 @@ mod tests {
     fn test_default_config() {
         let config = GlobalConfig::default();
         assert!(config.use_git_user);
-        assert!(config.auto_open);
+        assert!(config.interactive);
         assert_eq!(config.id_pattern, DEFAULT_PATTERN);
         assert_eq!(config.stack_dir(), "qstack");
         assert_eq!(config.archive_dir(), "archive");

@@ -29,6 +29,7 @@ pub enum SortBy {
 }
 
 /// Filter options for listing
+#[allow(clippy::struct_excessive_bools)]
 pub struct ListFilter {
     pub open: bool,
     pub closed: bool,
@@ -36,7 +37,8 @@ pub struct ListFilter {
     pub label: Option<String>,
     pub author: Option<String>,
     pub sort: SortBy,
-    pub no_open: bool,
+    pub interactive: bool,
+    pub no_interactive: bool,
 }
 
 impl Default for ListFilter {
@@ -48,7 +50,8 @@ impl Default for ListFilter {
             label: None,
             author: None,
             sort: SortBy::Id,
-            no_open: false,
+            interactive: false,
+            no_interactive: false,
         }
     }
 }
@@ -140,8 +143,17 @@ pub fn execute(filter: &ListFilter) -> Result<()> {
 
     print_table(&items);
 
+    // Resolve interactive mode: flags override config
+    let interactive = if filter.interactive {
+        true
+    } else if filter.no_interactive {
+        false
+    } else {
+        config.interactive()
+    };
+
     // Non-interactive mode: just show table
-    if filter.no_open || !config.auto_open() {
+    if !interactive {
         return Ok(());
     }
 

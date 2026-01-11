@@ -84,7 +84,7 @@ qstack new \"Fix login bug\"\n  \
 qstack new \"Add dark mode\" --label feature --label ui\n  \
 qstack new \"Memory leak in parser\" --label bug --category bugs\n  \
 qstack new \"Update docs\" -l docs -c documentation\n  \
-qstack new \"Quick note\" --no-open              Skip editor\n\n\
+qstack new \"Quick note\" --no-interactive       Skip editor\n\n\
 Output: Prints the relative path to the created file."
     )]
     New {
@@ -99,9 +99,13 @@ Output: Prints the relative path to the created file."
         #[arg(short, long)]
         category: Option<String>,
 
-        /// Don't open the item in editor
-        #[arg(long, help = "Don't open item in editor (just print path)")]
-        no_open: bool,
+        /// Force interactive mode (open editor)
+        #[arg(short = 'i', long, conflicts_with = "no_interactive")]
+        interactive: bool,
+
+        /// Force non-interactive mode (don't open editor)
+        #[arg(long)]
+        no_interactive: bool,
     },
 
     /// List items
@@ -112,10 +116,10 @@ selector to choose an item to open. Use filters to narrow down results or --id t
 show full details of a specific item.\n\n\
 The --id option supports partial matching - you only need to provide enough \
 characters to uniquely identify an item (e.g., '260109' or even '2601').\n\n\
-Use --no-open to just display the table without interactive selection.",
+Use --no-interactive to just display the table without interactive selection.",
         after_help = "Examples:\n  \
 qstack list                        List items, select one to open\n  \
-qstack list --no-open              Just show the table\n  \
+qstack list --no-interactive       Just show the table\n  \
 qstack list --closed               List archived/closed items\n  \
 qstack list --label bug            Filter by label\n  \
 qstack list --author \"John\"        Filter by author\n  \
@@ -153,9 +157,13 @@ Interactive mode: Use arrow keys to navigate, Enter to select, Esc to cancel."
         )]
         sort: SortBy,
 
-        /// Don't show interactive selection
-        #[arg(long, help = "Just show table without interactive selection")]
-        no_open: bool,
+        /// Force interactive mode (show selector)
+        #[arg(short = 'i', long, conflicts_with = "no_interactive")]
+        interactive: bool,
+
+        /// Force non-interactive mode (just show table)
+        #[arg(long)]
+        no_interactive: bool,
     },
 
     /// Search for items and interactively select one to open
@@ -172,7 +180,7 @@ Use --full-text to also search within the markdown body content.",
 qstack search \"login bug\"             Search and select interactively\n  \
 qstack search \"260109\"                Search by ID\n  \
 qstack search \"auth\" --full-text      Include body content in search\n  \
-qstack search \"bug\" --no-open         Just list matching items\n  \
+qstack search \"bug\" --no-interactive  Just list matching items\n  \
 qstack search \"old task\" --closed     Search in archived items\n\n\
 Interactive mode: Use arrow keys to navigate, Enter to select, Esc to cancel."
     )]
@@ -184,9 +192,13 @@ Interactive mode: Use arrow keys to navigate, Enter to select, Esc to cancel."
         #[arg(long, help = "Include body content in search")]
         full_text: bool,
 
-        /// Don't open - just list matching items
-        #[arg(long, help = "List matching items without interactive selection")]
-        no_open: bool,
+        /// Force interactive mode (show selector)
+        #[arg(short = 'i', long, conflicts_with = "no_interactive")]
+        interactive: bool,
+
+        /// Force non-interactive mode (just list matching items)
+        #[arg(long)]
+        no_interactive: bool,
 
         /// Search in closed/archived items
         #[arg(long, help = "Search in closed/archived items instead of open")]
@@ -296,12 +308,14 @@ fn run() -> Result<()> {
             title,
             label,
             category,
-            no_open,
+            interactive,
+            no_interactive,
         } => commands::new(NewArgs {
             title,
             labels: label,
             category,
-            no_open,
+            interactive,
+            no_interactive,
         }),
 
         Commands::List {
@@ -311,7 +325,8 @@ fn run() -> Result<()> {
             label,
             author,
             sort,
-            no_open,
+            interactive,
+            no_interactive,
         } => commands::list(&ListFilter {
             open,
             closed,
@@ -319,18 +334,21 @@ fn run() -> Result<()> {
             label,
             author,
             sort,
-            no_open,
+            interactive,
+            no_interactive,
         }),
 
         Commands::Search {
             query,
             full_text,
-            no_open,
+            interactive,
+            no_interactive,
             closed,
         } => commands::search(&SearchArgs {
             query,
             full_text,
-            no_open,
+            interactive,
+            no_interactive,
             closed,
         }),
 

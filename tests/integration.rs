@@ -54,8 +54,8 @@ fn test_init_creates_global_config_if_missing() {
     );
     let content = env.read_global_config();
     assert!(
-        content.contains("auto_open"),
-        "Config should contain auto_open setting"
+        content.contains("interactive"),
+        "Config should contain interactive setting"
     );
 }
 
@@ -86,7 +86,8 @@ fn test_new_creates_item() {
         title: "Test Item".to_string(),
         labels: vec![],
         category: None,
-        no_open: true,
+        interactive: false,
+        no_interactive: true,
     };
 
     commands::new(args).expect("new should succeed");
@@ -113,7 +114,8 @@ fn test_new_with_labels() {
         title: "Bug Report".to_string(),
         labels: vec!["bug".to_string(), "urgent".to_string()],
         category: None,
-        no_open: true,
+        interactive: false,
+        no_interactive: true,
     };
 
     commands::new(args).expect("new should succeed");
@@ -134,7 +136,8 @@ fn test_new_with_category() {
         title: "Bug in Login".to_string(),
         labels: vec![],
         category: Some("bugs".to_string()),
-        no_open: true,
+        interactive: false,
+        no_interactive: true,
     };
 
     commands::new(args).expect("new should succeed");
@@ -153,7 +156,8 @@ fn test_new_uses_custom_id_pattern() {
         title: "Custom ID Item".to_string(),
         labels: vec![],
         category: None,
-        no_open: true,
+        interactive: false,
+        no_interactive: true,
     };
 
     commands::new(args).expect("new should succeed");
@@ -180,7 +184,8 @@ fn test_new_project_id_pattern_overrides_global() {
         title: "Project Pattern".to_string(),
         labels: vec![],
         category: None,
-        no_open: true,
+        interactive: false,
+        no_interactive: true,
     };
 
     commands::new(args).expect("new should succeed");
@@ -200,7 +205,7 @@ fn test_new_project_id_pattern_overrides_global() {
 #[test]
 fn test_list_empty_project() {
     let env = TestEnv::new();
-    env.write_global_config(&GlobalConfigBuilder::new().auto_open(false).build());
+    env.write_global_config(&GlobalConfigBuilder::new().interactive(false).build());
     commands::init().expect("init should succeed");
 
     let filter = ListFilter {
@@ -210,7 +215,8 @@ fn test_list_empty_project() {
         label: None,
         author: None,
         sort: SortBy::Id,
-        no_open: true,
+        interactive: false,
+        no_interactive: true,
     };
 
     // Should not error even if empty
@@ -221,7 +227,7 @@ fn test_list_empty_project() {
 #[test]
 fn test_list_shows_open_items() {
     let env = TestEnv::new();
-    env.write_global_config(&GlobalConfigBuilder::new().auto_open(false).build());
+    env.write_global_config(&GlobalConfigBuilder::new().interactive(false).build());
     commands::init().expect("init should succeed");
 
     // Create test items
@@ -244,7 +250,8 @@ fn test_list_shows_open_items() {
         label: None,
         author: None,
         sort: SortBy::Id,
-        no_open: true,
+        interactive: false,
+        no_interactive: true,
     };
 
     // Should succeed (output goes to stdout)
@@ -255,7 +262,7 @@ fn test_list_shows_open_items() {
 #[test]
 fn test_list_filter_by_label() {
     let env = TestEnv::new();
-    env.write_global_config(&GlobalConfigBuilder::new().auto_open(false).build());
+    env.write_global_config(&GlobalConfigBuilder::new().interactive(false).build());
     commands::init().expect("init should succeed");
 
     create_test_item(&env, "260101-AAA", "Bug Task", "open", &["bug"], None);
@@ -275,7 +282,8 @@ fn test_list_filter_by_label() {
         label: Some("bug".to_string()),
         author: None,
         sort: SortBy::Id,
-        no_open: true,
+        interactive: false,
+        no_interactive: true,
     };
 
     let result = commands::list(&filter);
@@ -285,7 +293,7 @@ fn test_list_filter_by_label() {
 #[test]
 fn test_list_show_item_by_id() {
     let env = TestEnv::new();
-    env.write_global_config(&GlobalConfigBuilder::new().auto_open(false).build());
+    env.write_global_config(&GlobalConfigBuilder::new().interactive(false).build());
     commands::init().expect("init should succeed");
 
     create_test_item(
@@ -304,7 +312,8 @@ fn test_list_show_item_by_id() {
         label: None,
         author: None,
         sort: SortBy::Id,
-        no_open: true,
+        interactive: false,
+        no_interactive: true,
     };
 
     let result = commands::list(&filter);
@@ -314,7 +323,7 @@ fn test_list_show_item_by_id() {
 #[test]
 fn test_list_sort_by_title() {
     let env = TestEnv::new();
-    env.write_global_config(&GlobalConfigBuilder::new().auto_open(false).build());
+    env.write_global_config(&GlobalConfigBuilder::new().interactive(false).build());
     commands::init().expect("init should succeed");
 
     create_test_item(&env, "260101-AAA", "Zebra Task", "open", &[], None);
@@ -327,7 +336,8 @@ fn test_list_sort_by_title() {
         label: None,
         author: None,
         sort: SortBy::Title,
-        no_open: true,
+        interactive: false,
+        no_interactive: true,
     };
 
     let result = commands::list(&filter);
@@ -341,7 +351,7 @@ fn test_list_sort_by_title() {
 #[test]
 fn test_search_by_title() {
     let env = TestEnv::new();
-    env.write_global_config(&GlobalConfigBuilder::new().auto_open(false).build());
+    env.write_global_config(&GlobalConfigBuilder::new().interactive(false).build());
     commands::init().expect("init should succeed");
 
     create_test_item(&env, "260101-AAA", "Login Bug", "open", &[], None);
@@ -350,7 +360,8 @@ fn test_search_by_title() {
     let args = SearchArgs {
         query: "login".to_string(),
         full_text: false,
-        no_open: true,
+        interactive: false,
+        no_interactive: true,
         closed: false,
     };
 
@@ -361,7 +372,7 @@ fn test_search_by_title() {
 #[test]
 fn test_search_by_id() {
     let env = TestEnv::new();
-    env.write_global_config(&GlobalConfigBuilder::new().auto_open(false).build());
+    env.write_global_config(&GlobalConfigBuilder::new().interactive(false).build());
     commands::init().expect("init should succeed");
 
     create_test_item(&env, "260101-AAA", "Some Task", "open", &[], None);
@@ -369,7 +380,8 @@ fn test_search_by_id() {
     let args = SearchArgs {
         query: "260101".to_string(),
         full_text: false,
-        no_open: true,
+        interactive: false,
+        no_interactive: true,
         closed: false,
     };
 
@@ -380,7 +392,7 @@ fn test_search_by_id() {
 #[test]
 fn test_search_case_insensitive() {
     let env = TestEnv::new();
-    env.write_global_config(&GlobalConfigBuilder::new().auto_open(false).build());
+    env.write_global_config(&GlobalConfigBuilder::new().interactive(false).build());
     commands::init().expect("init should succeed");
 
     create_test_item(&env, "260101-AAA", "Important Bug", "open", &[], None);
@@ -388,7 +400,8 @@ fn test_search_case_insensitive() {
     let args = SearchArgs {
         query: "IMPORTANT".to_string(),
         full_text: false,
-        no_open: true,
+        interactive: false,
+        no_interactive: true,
         closed: false,
     };
 
@@ -399,7 +412,7 @@ fn test_search_case_insensitive() {
 #[test]
 fn test_search_no_results() {
     let env = TestEnv::new();
-    env.write_global_config(&GlobalConfigBuilder::new().auto_open(false).build());
+    env.write_global_config(&GlobalConfigBuilder::new().interactive(false).build());
     commands::init().expect("init should succeed");
 
     create_test_item(&env, "260101-AAA", "Some Task", "open", &[], None);
@@ -407,7 +420,8 @@ fn test_search_no_results() {
     let args = SearchArgs {
         query: "nonexistent".to_string(),
         full_text: false,
-        no_open: true,
+        interactive: false,
+        no_interactive: true,
         closed: false,
     };
 
@@ -422,7 +436,7 @@ fn test_search_no_results() {
 #[test]
 fn test_update_title() {
     let env = TestEnv::new();
-    env.write_global_config(&GlobalConfigBuilder::new().auto_open(false).build());
+    env.write_global_config(&GlobalConfigBuilder::new().interactive(false).build());
     commands::init().expect("init should succeed");
 
     create_test_item(&env, "260101-AAA", "Old Title", "open", &[], None);
@@ -449,7 +463,7 @@ fn test_update_title() {
 #[test]
 fn test_update_add_labels() {
     let env = TestEnv::new();
-    env.write_global_config(&GlobalConfigBuilder::new().auto_open(false).build());
+    env.write_global_config(&GlobalConfigBuilder::new().interactive(false).build());
     commands::init().expect("init should succeed");
 
     create_test_item(&env, "260101-AAA", "Task", "open", &["existing"], None);
@@ -476,7 +490,7 @@ fn test_update_add_labels() {
 #[test]
 fn test_update_move_to_category() {
     let env = TestEnv::new();
-    env.write_global_config(&GlobalConfigBuilder::new().auto_open(false).build());
+    env.write_global_config(&GlobalConfigBuilder::new().interactive(false).build());
     commands::init().expect("init should succeed");
 
     create_test_item(&env, "260101-AAA", "Task", "open", &[], None);
@@ -498,7 +512,7 @@ fn test_update_move_to_category() {
 #[test]
 fn test_update_clear_category() {
     let env = TestEnv::new();
-    env.write_global_config(&GlobalConfigBuilder::new().auto_open(false).build());
+    env.write_global_config(&GlobalConfigBuilder::new().interactive(false).build());
     commands::init().expect("init should succeed");
 
     create_test_item(&env, "260101-AAA", "Task", "open", &[], Some("bugs"));
@@ -523,7 +537,7 @@ fn test_update_clear_category() {
 #[test]
 fn test_update_nonexistent_id() {
     let env = TestEnv::new();
-    env.write_global_config(&GlobalConfigBuilder::new().auto_open(false).build());
+    env.write_global_config(&GlobalConfigBuilder::new().interactive(false).build());
     commands::init().expect("init should succeed");
 
     let args = UpdateArgs {
@@ -545,7 +559,7 @@ fn test_update_nonexistent_id() {
 #[test]
 fn test_close_moves_to_archive() {
     let env = TestEnv::new();
-    env.write_global_config(&GlobalConfigBuilder::new().auto_open(false).build());
+    env.write_global_config(&GlobalConfigBuilder::new().interactive(false).build());
     commands::init().expect("init should succeed");
 
     create_test_item(&env, "260101-AAA", "Task to Close", "open", &[], None);
@@ -569,7 +583,7 @@ fn test_close_moves_to_archive() {
 #[test]
 fn test_close_item_with_category() {
     let env = TestEnv::new();
-    env.write_global_config(&GlobalConfigBuilder::new().auto_open(false).build());
+    env.write_global_config(&GlobalConfigBuilder::new().interactive(false).build());
     commands::init().expect("init should succeed");
 
     create_test_item(&env, "260101-AAA", "Bug Task", "open", &[], Some("bugs"));
@@ -586,7 +600,7 @@ fn test_close_item_with_category() {
 #[test]
 fn test_reopen_moves_from_archive() {
     let env = TestEnv::new();
-    env.write_global_config(&GlobalConfigBuilder::new().auto_open(false).build());
+    env.write_global_config(&GlobalConfigBuilder::new().interactive(false).build());
     commands::init().expect("init should succeed");
 
     // Create item and close it
@@ -610,7 +624,7 @@ fn test_reopen_moves_from_archive() {
 #[test]
 fn test_reopen_restores_category() {
     let env = TestEnv::new();
-    env.write_global_config(&GlobalConfigBuilder::new().auto_open(false).build());
+    env.write_global_config(&GlobalConfigBuilder::new().interactive(false).build());
     commands::init().expect("init should succeed");
 
     // Create item with category and close it
@@ -627,7 +641,7 @@ fn test_reopen_restores_category() {
 #[test]
 fn test_close_nonexistent_id() {
     let env = TestEnv::new();
-    env.write_global_config(&GlobalConfigBuilder::new().auto_open(false).build());
+    env.write_global_config(&GlobalConfigBuilder::new().interactive(false).build());
     commands::init().expect("init should succeed");
 
     let result = execute_close("999999");
@@ -635,23 +649,24 @@ fn test_close_nonexistent_id() {
 }
 
 // =============================================================================
-// Config Combination Tests (auto_open + no_open)
+// Config Combination Tests (interactive + no_interactive)
 // =============================================================================
 
-/// Tests that commands work correctly with auto_open=true and no_open=false.
+/// Tests that commands work correctly with interactive=true and no_interactive=false.
 /// Note: Editor won't actually open in tests because stdout is not a terminal.
 #[test]
-fn test_config_auto_open_true_no_open_false() {
+fn test_config_interactive_true_no_interactive_false() {
     let env = TestEnv::new();
-    env.write_global_config(&GlobalConfigBuilder::new().auto_open(true).build());
+    env.write_global_config(&GlobalConfigBuilder::new().interactive(true).build());
     commands::init().expect("init should succeed");
 
-    // With auto_open=true and no_open=false, editor would open (if terminal)
+    // With interactive=true and no_interactive=false, editor would open (if terminal)
     let args = NewArgs {
         title: "Test".to_string(),
         labels: vec![],
         category: None,
-        no_open: false, // Would open editor if in terminal
+        interactive: false,
+        no_interactive: false, // Would open editor if in terminal
     };
 
     let result = commands::new(args);
@@ -659,19 +674,20 @@ fn test_config_auto_open_true_no_open_false() {
     assert_eq!(env.count_all_items(), 1);
 }
 
-/// Tests that no_open flag overrides auto_open=true config.
+/// Tests that no_interactive flag overrides interactive=true config.
 #[test]
-fn test_config_auto_open_true_no_open_true() {
+fn test_config_interactive_true_no_interactive_true() {
     let env = TestEnv::new();
-    env.write_global_config(&GlobalConfigBuilder::new().auto_open(true).build());
+    env.write_global_config(&GlobalConfigBuilder::new().interactive(true).build());
     commands::init().expect("init should succeed");
 
-    // With no_open=true, editor should never open
+    // With no_interactive=true, editor should never open
     let args = NewArgs {
         title: "Test".to_string(),
         labels: vec![],
         category: None,
-        no_open: true, // Overrides auto_open
+        interactive: false,
+        no_interactive: true, // Overrides interactive
     };
 
     let result = commands::new(args);
@@ -679,19 +695,20 @@ fn test_config_auto_open_true_no_open_true() {
     assert_eq!(env.count_all_items(), 1);
 }
 
-/// Tests that with auto_open=false, editor never opens regardless of no_open.
+/// Tests that with interactive=false, editor never opens regardless of no_interactive.
 #[test]
-fn test_config_auto_open_false_no_open_false() {
+fn test_config_interactive_false_no_interactive_false() {
     let env = TestEnv::new();
-    env.write_global_config(&GlobalConfigBuilder::new().auto_open(false).build());
+    env.write_global_config(&GlobalConfigBuilder::new().interactive(false).build());
     commands::init().expect("init should succeed");
 
-    // With auto_open=false, editor should never open
+    // With interactive=false, editor should never open
     let args = NewArgs {
         title: "Test".to_string(),
         labels: vec![],
         category: None,
-        no_open: false, // Doesn't matter since auto_open is false
+        interactive: false,
+        no_interactive: false, // Doesn't matter since interactive is false
     };
 
     let result = commands::new(args);
@@ -699,18 +716,19 @@ fn test_config_auto_open_false_no_open_false() {
     assert_eq!(env.count_all_items(), 1);
 }
 
-/// Tests that both auto_open=false and no_open=true definitely prevents editor.
+/// Tests that both interactive=false and no_interactive=true definitely prevents editor.
 #[test]
-fn test_config_auto_open_false_no_open_true() {
+fn test_config_interactive_false_no_interactive_true() {
     let env = TestEnv::new();
-    env.write_global_config(&GlobalConfigBuilder::new().auto_open(false).build());
+    env.write_global_config(&GlobalConfigBuilder::new().interactive(false).build());
     commands::init().expect("init should succeed");
 
     let args = NewArgs {
         title: "Test".to_string(),
         labels: vec![],
         category: None,
-        no_open: true,
+        interactive: false,
+        no_interactive: true,
     };
 
     let result = commands::new(args);
@@ -718,13 +736,13 @@ fn test_config_auto_open_false_no_open_true() {
     assert_eq!(env.count_all_items(), 1);
 }
 
-/// Tests list command with auto_open configurations.
+/// Tests list command with interactive configurations.
 #[test]
-fn test_list_auto_open_combinations() {
-    // Test with auto_open=true, no_open=true (override)
+fn test_list_interactive_combinations() {
+    // Test with interactive=true, no_interactive=true (override)
     {
         let env = TestEnv::new();
-        env.write_global_config(&GlobalConfigBuilder::new().auto_open(true).build());
+        env.write_global_config(&GlobalConfigBuilder::new().interactive(true).build());
         commands::init().expect("init should succeed");
         create_test_item(&env, "260101-AAA", "Task", "open", &[], None);
 
@@ -735,16 +753,17 @@ fn test_list_auto_open_combinations() {
             label: None,
             author: None,
             sort: SortBy::Id,
-            no_open: true, // Override auto_open
+            interactive: false,
+            no_interactive: true, // Override interactive
         };
 
         commands::list(&filter).expect("list should succeed");
     }
 
-    // Test with auto_open=true, no_open=false (would show interactive selector if terminal)
+    // Test with interactive=true, no_interactive=false (would show interactive selector if terminal)
     {
         let env = TestEnv::new();
-        env.write_global_config(&GlobalConfigBuilder::new().auto_open(true).build());
+        env.write_global_config(&GlobalConfigBuilder::new().interactive(true).build());
         commands::init().expect("init should succeed");
         create_test_item(&env, "260101-AAA", "Task", "open", &[], None);
 
@@ -755,17 +774,18 @@ fn test_list_auto_open_combinations() {
             label: None,
             author: None,
             sort: SortBy::Id,
-            no_open: false, // Would show selector if in terminal
+            interactive: false,
+            no_interactive: false, // Would show selector if in terminal
         };
 
         // Works because we're not in a terminal, so interactive selection is skipped
         commands::list(&filter).expect("list should succeed");
     }
 
-    // Test with auto_open=false, no_open=false (never shows selector)
+    // Test with interactive=false, no_interactive=false (never shows selector)
     {
         let env = TestEnv::new();
-        env.write_global_config(&GlobalConfigBuilder::new().auto_open(false).build());
+        env.write_global_config(&GlobalConfigBuilder::new().interactive(false).build());
         commands::init().expect("init should succeed");
         create_test_item(&env, "260101-AAA", "Task", "open", &[], None);
 
@@ -776,16 +796,17 @@ fn test_list_auto_open_combinations() {
             label: None,
             author: None,
             sort: SortBy::Id,
-            no_open: false,
+            interactive: false,
+            no_interactive: false,
         };
 
         commands::list(&filter).expect("list should succeed");
     }
 
-    // Test with auto_open=false, no_open=true (definitely no selector)
+    // Test with interactive=false, no_interactive=true (definitely no selector)
     {
         let env = TestEnv::new();
-        env.write_global_config(&GlobalConfigBuilder::new().auto_open(false).build());
+        env.write_global_config(&GlobalConfigBuilder::new().interactive(false).build());
         commands::init().expect("init should succeed");
         create_test_item(&env, "260101-AAA", "Task", "open", &[], None);
 
@@ -796,44 +817,47 @@ fn test_list_auto_open_combinations() {
             label: None,
             author: None,
             sort: SortBy::Id,
-            no_open: true,
+            interactive: false,
+            no_interactive: true,
         };
 
         commands::list(&filter).expect("list should succeed");
     }
 }
 
-/// Tests search command with auto_open configurations.
+/// Tests search command with interactive configurations.
 #[test]
-fn test_search_auto_open_combinations() {
-    // Test with auto_open=true, no_open=true
+fn test_search_interactive_combinations() {
+    // Test with interactive=true, no_interactive=true
     {
         let env = TestEnv::new();
-        env.write_global_config(&GlobalConfigBuilder::new().auto_open(true).build());
+        env.write_global_config(&GlobalConfigBuilder::new().interactive(true).build());
         commands::init().expect("init should succeed");
         create_test_item(&env, "260101-AAA", "Login Bug", "open", &[], None);
 
         let args = SearchArgs {
             query: "login".to_string(),
             full_text: false,
-            no_open: true,
+            interactive: false,
+            no_interactive: true,
             closed: false,
         };
 
         commands::search(&args).expect("search should succeed");
     }
 
-    // Test with auto_open=false
+    // Test with interactive=false
     {
         let env = TestEnv::new();
-        env.write_global_config(&GlobalConfigBuilder::new().auto_open(false).build());
+        env.write_global_config(&GlobalConfigBuilder::new().interactive(false).build());
         commands::init().expect("init should succeed");
         create_test_item(&env, "260101-AAA", "Login Bug", "open", &[], None);
 
         let args = SearchArgs {
             query: "login".to_string(),
             full_text: false,
-            no_open: false,
+            interactive: false,
+            no_interactive: false,
             closed: false,
         };
 
@@ -862,7 +886,8 @@ fn test_use_git_user_disabled() {
         title: "Test".to_string(),
         labels: vec![],
         category: None,
-        no_open: true,
+        interactive: false,
+        no_interactive: true,
     };
 
     commands::new(args).expect("new should succeed");
@@ -894,7 +919,8 @@ fn test_use_git_user_enabled_with_explicit_name() {
         title: "Test".to_string(),
         labels: vec![],
         category: None,
-        no_open: true,
+        interactive: false,
+        no_interactive: true,
     };
 
     commands::new(args).expect("new should succeed");
@@ -920,7 +946,7 @@ fn test_custom_editor_config() {
     env.write_global_config(
         &GlobalConfigBuilder::new()
             .editor("nvim")
-            .auto_open(false) // Don't try to open
+            .interactive(false) // Don't try to open
             .build(),
     );
     commands::init().expect("init should succeed");
@@ -940,7 +966,7 @@ fn test_editor_with_arguments() {
     env.write_global_config(
         &GlobalConfigBuilder::new()
             .editor("code --wait")
-            .auto_open(false)
+            .interactive(false)
             .build(),
     );
     commands::init().expect("init should succeed");
@@ -961,7 +987,7 @@ fn test_config_editor_resolution() {
     env.write_global_config(
         &GlobalConfigBuilder::new()
             .editor("custom-editor")
-            .auto_open(false)
+            .interactive(false)
             .build(),
     );
     commands::init().expect("init should succeed");
@@ -991,7 +1017,8 @@ fn test_special_characters_in_title() {
         title: "Bug: 100% failure rate (critical!)".to_string(),
         labels: vec![],
         category: None,
-        no_open: true,
+        interactive: false,
+        no_interactive: true,
     };
 
     commands::new(args).expect("new should succeed with special characters");
@@ -1008,7 +1035,8 @@ fn test_unicode_in_title() {
         title: "Support für Umlaute (日本語テスト)".to_string(),
         labels: vec![],
         category: None,
-        no_open: true,
+        interactive: false,
+        no_interactive: true,
     };
 
     commands::new(args).expect("new should succeed with unicode");
@@ -1026,7 +1054,8 @@ fn test_empty_title() {
         title: "".to_string(),
         labels: vec![],
         category: None,
-        no_open: true,
+        interactive: false,
+        no_interactive: true,
     };
 
     commands::new(args).expect("new should succeed with empty title");
@@ -1044,7 +1073,8 @@ fn test_very_long_title() {
         title: long_title,
         labels: vec![],
         category: None,
-        no_open: true,
+        interactive: false,
+        no_interactive: true,
     };
 
     commands::new(args).expect("new should succeed with long title");
@@ -1059,7 +1089,7 @@ fn test_very_long_title() {
 #[test]
 fn test_partial_id_matching() {
     let env = TestEnv::new();
-    env.write_global_config(&GlobalConfigBuilder::new().auto_open(false).build());
+    env.write_global_config(&GlobalConfigBuilder::new().interactive(false).build());
     commands::init().expect("init should succeed");
 
     create_test_item(&env, "260101-ABCD", "Task One", "open", &[], None);
@@ -1080,7 +1110,7 @@ fn test_partial_id_matching() {
 #[test]
 fn test_ambiguous_partial_id() {
     let env = TestEnv::new();
-    env.write_global_config(&GlobalConfigBuilder::new().auto_open(false).build());
+    env.write_global_config(&GlobalConfigBuilder::new().interactive(false).build());
     commands::init().expect("init should succeed");
 
     create_test_item(&env, "260101-AAAA", "Task One", "open", &[], None);
@@ -1118,7 +1148,8 @@ fn test_custom_stack_directory() {
         title: "Task".to_string(),
         labels: vec![],
         category: None,
-        no_open: true,
+        interactive: false,
+        no_interactive: true,
     };
 
     commands::new(args).expect("new should succeed");
@@ -1136,7 +1167,7 @@ fn test_custom_stack_directory() {
 #[test]
 fn test_custom_archive_directory() {
     let env = TestEnv::new();
-    env.write_global_config(&GlobalConfigBuilder::new().auto_open(false).build());
+    env.write_global_config(&GlobalConfigBuilder::new().interactive(false).build());
     env.write_project_config(&ProjectConfigBuilder::new().archive_dir("done").build());
 
     std::fs::create_dir_all(env.stack_path()).expect("create stack dir");
@@ -1185,7 +1216,8 @@ fn test_different_users_in_parallel() {
             title: "Alice's Task".to_string(),
             labels: vec![],
             category: None,
-            no_open: true,
+            interactive: false,
+            no_interactive: true,
         };
 
         commands::new(args).expect("new should succeed");
@@ -1204,7 +1236,8 @@ fn test_different_users_in_parallel() {
             title: "Bob's Task".to_string(),
             labels: vec![],
             category: None,
-            no_open: true,
+            interactive: false,
+            no_interactive: true,
         };
 
         commands::new(args).expect("new should succeed");
@@ -1222,7 +1255,7 @@ fn test_different_users_in_parallel() {
 #[test]
 fn test_list_shows_closed_items() {
     let env = TestEnv::new();
-    env.write_global_config(&GlobalConfigBuilder::new().auto_open(false).build());
+    env.write_global_config(&GlobalConfigBuilder::new().interactive(false).build());
     commands::init().expect("init should succeed");
 
     create_test_item(&env, "260101-AAA", "Open Task", "open", &[], None);
@@ -1242,7 +1275,8 @@ fn test_list_shows_closed_items() {
         label: None,
         author: None,
         sort: SortBy::Id,
-        no_open: true,
+        interactive: false,
+        no_interactive: true,
     };
 
     let result = commands::list(&filter);
@@ -1252,7 +1286,7 @@ fn test_list_shows_closed_items() {
 #[test]
 fn test_list_filter_by_author() {
     let env = TestEnv::new();
-    env.write_global_config(&GlobalConfigBuilder::new().auto_open(false).build());
+    env.write_global_config(&GlobalConfigBuilder::new().interactive(false).build());
     commands::init().expect("init should succeed");
 
     create_test_item(&env, "260101-AAA", "Task by Test User", "open", &[], None);
@@ -1265,7 +1299,8 @@ fn test_list_filter_by_author() {
         label: None,
         author: Some("Test User".to_string()),
         sort: SortBy::Id,
-        no_open: true,
+        interactive: false,
+        no_interactive: true,
     };
 
     let result = commands::list(&filter);
@@ -1275,7 +1310,7 @@ fn test_list_filter_by_author() {
 #[test]
 fn test_list_sort_by_date() {
     let env = TestEnv::new();
-    env.write_global_config(&GlobalConfigBuilder::new().auto_open(false).build());
+    env.write_global_config(&GlobalConfigBuilder::new().interactive(false).build());
     commands::init().expect("init should succeed");
 
     create_test_item(&env, "260101-AAA", "First Task", "open", &[], None);
@@ -1288,7 +1323,8 @@ fn test_list_sort_by_date() {
         label: None,
         author: None,
         sort: SortBy::Date,
-        no_open: true,
+        interactive: false,
+        no_interactive: true,
     };
 
     let result = commands::list(&filter);
@@ -1298,7 +1334,7 @@ fn test_list_sort_by_date() {
 #[test]
 fn test_list_combined_filters() {
     let env = TestEnv::new();
-    env.write_global_config(&GlobalConfigBuilder::new().auto_open(false).build());
+    env.write_global_config(&GlobalConfigBuilder::new().interactive(false).build());
     commands::init().expect("init should succeed");
 
     create_test_item(&env, "260101-AAA", "Bug One", "open", &["bug"], None);
@@ -1320,7 +1356,8 @@ fn test_list_combined_filters() {
         label: Some("bug".to_string()),
         author: Some("Test User".to_string()),
         sort: SortBy::Title,
-        no_open: true,
+        interactive: false,
+        no_interactive: true,
     };
 
     let result = commands::list(&filter);
@@ -1330,7 +1367,7 @@ fn test_list_combined_filters() {
 #[test]
 fn test_list_id_with_closed() {
     let env = TestEnv::new();
-    env.write_global_config(&GlobalConfigBuilder::new().auto_open(false).build());
+    env.write_global_config(&GlobalConfigBuilder::new().interactive(false).build());
     commands::init().expect("init should succeed");
 
     create_test_item(&env, "260101-AAA", "Closed Task", "closed", &[], None);
@@ -1347,7 +1384,8 @@ fn test_list_id_with_closed() {
         label: None,
         author: None,
         sort: SortBy::Id,
-        no_open: true,
+        interactive: false,
+        no_interactive: true,
     };
 
     let result = commands::list(&filter);
@@ -1357,7 +1395,7 @@ fn test_list_id_with_closed() {
 #[test]
 fn test_list_open_and_closed_flags_together() {
     let env = TestEnv::new();
-    env.write_global_config(&GlobalConfigBuilder::new().auto_open(false).build());
+    env.write_global_config(&GlobalConfigBuilder::new().interactive(false).build());
     commands::init().expect("init should succeed");
 
     create_test_item(&env, "260101-AAA", "Open Task", "open", &[], None);
@@ -1376,7 +1414,8 @@ fn test_list_open_and_closed_flags_together() {
         label: None,
         author: None,
         sort: SortBy::Id,
-        no_open: true,
+        interactive: false,
+        no_interactive: true,
     };
 
     let result = commands::list(&filter);
@@ -1393,7 +1432,7 @@ fn test_list_open_and_closed_flags_together() {
 #[test]
 fn test_search_full_text() {
     let env = TestEnv::new();
-    env.write_global_config(&GlobalConfigBuilder::new().auto_open(false).build());
+    env.write_global_config(&GlobalConfigBuilder::new().interactive(false).build());
     commands::init().expect("init should succeed");
 
     // Create item with specific body content
@@ -1418,7 +1457,8 @@ This is the body with unique keyword: SEARCHTERM123
     let args = SearchArgs {
         query: "SEARCHTERM123".to_string(),
         full_text: true,
-        no_open: true,
+        interactive: false,
+        no_interactive: true,
         closed: false,
     };
 
@@ -1429,7 +1469,7 @@ This is the body with unique keyword: SEARCHTERM123
 #[test]
 fn test_search_full_text_no_match_without_flag() {
     let env = TestEnv::new();
-    env.write_global_config(&GlobalConfigBuilder::new().auto_open(false).build());
+    env.write_global_config(&GlobalConfigBuilder::new().interactive(false).build());
     commands::init().expect("init should succeed");
 
     // Create item with body content but not in title
@@ -1454,7 +1494,8 @@ Body with keyword: ONLYINBODY
     let args = SearchArgs {
         query: "ONLYINBODY".to_string(),
         full_text: false, // Not searching body
-        no_open: true,
+        interactive: false,
+        no_interactive: true,
         closed: false,
     };
 
@@ -1468,7 +1509,7 @@ Body with keyword: ONLYINBODY
 #[test]
 fn test_search_closed_items() {
     let env = TestEnv::new();
-    env.write_global_config(&GlobalConfigBuilder::new().auto_open(false).build());
+    env.write_global_config(&GlobalConfigBuilder::new().interactive(false).build());
     commands::init().expect("init should succeed");
 
     create_test_item(&env, "260101-AAA", "Archived Bug", "closed", &["bug"], None);
@@ -1481,7 +1522,8 @@ fn test_search_closed_items() {
     let args = SearchArgs {
         query: "archived".to_string(),
         full_text: false,
-        no_open: true,
+        interactive: false,
+        no_interactive: true,
         closed: true,
     };
 
@@ -1492,7 +1534,7 @@ fn test_search_closed_items() {
 #[test]
 fn test_search_full_text_and_closed_combined() {
     let env = TestEnv::new();
-    env.write_global_config(&GlobalConfigBuilder::new().auto_open(false).build());
+    env.write_global_config(&GlobalConfigBuilder::new().interactive(false).build());
     commands::init().expect("init should succeed");
 
     // Create a closed item with searchable body
@@ -1513,7 +1555,8 @@ Body contains: ARCHIVEDCONTENT
     let args = SearchArgs {
         query: "ARCHIVEDCONTENT".to_string(),
         full_text: true,
-        no_open: true,
+        interactive: false,
+        no_interactive: true,
         closed: true,
     };
 
@@ -1527,7 +1570,7 @@ Body contains: ARCHIVEDCONTENT
 #[test]
 fn test_search_multiple_matches() {
     let env = TestEnv::new();
-    env.write_global_config(&GlobalConfigBuilder::new().auto_open(false).build());
+    env.write_global_config(&GlobalConfigBuilder::new().interactive(false).build());
     commands::init().expect("init should succeed");
 
     create_test_item(&env, "260101-AAA", "Login Bug", "open", &[], None);
@@ -1537,7 +1580,8 @@ fn test_search_multiple_matches() {
     let args = SearchArgs {
         query: "login".to_string(),
         full_text: false,
-        no_open: true,
+        interactive: false,
+        no_interactive: true,
         closed: false,
     };
 
@@ -1562,7 +1606,8 @@ fn test_new_with_labels_and_category() {
         title: "Critical Bug".to_string(),
         labels: vec!["bug".to_string(), "urgent".to_string(), "p0".to_string()],
         category: Some("bugs".to_string()),
-        no_open: true,
+        interactive: false,
+        no_interactive: true,
     };
 
     commands::new(args).expect("new should succeed");
@@ -1590,7 +1635,8 @@ fn test_new_with_empty_labels() {
         title: "No Labels".to_string(),
         labels: vec![],
         category: None,
-        no_open: true,
+        interactive: false,
+        no_interactive: true,
     };
 
     commands::new(args).expect("new should succeed");
@@ -1623,7 +1669,8 @@ fn test_new_multiple_items_unique_ids() {
             title: format!("Task {}", i),
             labels: vec![],
             category: None,
-            no_open: true,
+            interactive: false,
+            no_interactive: true,
         };
         commands::new(args).expect("new should succeed");
     }
@@ -1660,7 +1707,8 @@ fn test_new_nested_category() {
         title: "Nested Task".to_string(),
         labels: vec![],
         category: Some("level1/level2".to_string()),
-        no_open: true,
+        interactive: false,
+        no_interactive: true,
     };
 
     commands::new(args).expect("new should succeed with nested category");
@@ -1676,7 +1724,7 @@ fn test_new_nested_category() {
 #[test]
 fn test_update_multiple_labels_at_once() {
     let env = TestEnv::new();
-    env.write_global_config(&GlobalConfigBuilder::new().auto_open(false).build());
+    env.write_global_config(&GlobalConfigBuilder::new().interactive(false).build());
     commands::init().expect("init should succeed");
 
     create_test_item(&env, "260101-AAA", "Task", "open", &[], None);
@@ -1705,7 +1753,7 @@ fn test_update_multiple_labels_at_once() {
 #[test]
 fn test_update_title_and_category_combined() {
     let env = TestEnv::new();
-    env.write_global_config(&GlobalConfigBuilder::new().auto_open(false).build());
+    env.write_global_config(&GlobalConfigBuilder::new().interactive(false).build());
     commands::init().expect("init should succeed");
 
     create_test_item(&env, "260101-AAA", "Old Title", "open", &[], None);
@@ -1733,7 +1781,7 @@ fn test_update_title_and_category_combined() {
 #[test]
 fn test_update_title_and_labels_combined() {
     let env = TestEnv::new();
-    env.write_global_config(&GlobalConfigBuilder::new().auto_open(false).build());
+    env.write_global_config(&GlobalConfigBuilder::new().interactive(false).build());
     commands::init().expect("init should succeed");
 
     create_test_item(
@@ -1771,7 +1819,7 @@ fn test_update_title_and_labels_combined() {
 #[test]
 fn test_update_all_fields_combined() {
     let env = TestEnv::new();
-    env.write_global_config(&GlobalConfigBuilder::new().auto_open(false).build());
+    env.write_global_config(&GlobalConfigBuilder::new().interactive(false).build());
     commands::init().expect("init should succeed");
 
     create_test_item(&env, "260101-AAA", "Original", "open", &[], None);
@@ -1798,7 +1846,7 @@ fn test_update_all_fields_combined() {
 #[test]
 fn test_update_category_then_clear() {
     let env = TestEnv::new();
-    env.write_global_config(&GlobalConfigBuilder::new().auto_open(false).build());
+    env.write_global_config(&GlobalConfigBuilder::new().interactive(false).build());
     commands::init().expect("init should succeed");
 
     create_test_item(&env, "260101-AAA", "Task", "open", &[], None);
@@ -1833,7 +1881,7 @@ fn test_update_category_then_clear() {
 #[test]
 fn test_update_with_full_id() {
     let env = TestEnv::new();
-    env.write_global_config(&GlobalConfigBuilder::new().auto_open(false).build());
+    env.write_global_config(&GlobalConfigBuilder::new().interactive(false).build());
     commands::init().expect("init should succeed");
 
     create_test_item(&env, "260101-ABCDEFG", "Task", "open", &[], None);
@@ -1857,7 +1905,7 @@ fn test_update_with_full_id() {
 #[test]
 fn test_close_already_closed() {
     let env = TestEnv::new();
-    env.write_global_config(&GlobalConfigBuilder::new().auto_open(false).build());
+    env.write_global_config(&GlobalConfigBuilder::new().interactive(false).build());
     commands::init().expect("init should succeed");
 
     create_test_item(&env, "260101-AAA", "Task", "open", &[], None);
@@ -1871,7 +1919,7 @@ fn test_close_already_closed() {
 #[test]
 fn test_reopen_already_open() {
     let env = TestEnv::new();
-    env.write_global_config(&GlobalConfigBuilder::new().auto_open(false).build());
+    env.write_global_config(&GlobalConfigBuilder::new().interactive(false).build());
     commands::init().expect("init should succeed");
 
     create_test_item(&env, "260101-AAA", "Task", "open", &[], None);
@@ -1884,7 +1932,7 @@ fn test_reopen_already_open() {
 #[test]
 fn test_close_with_partial_id() {
     let env = TestEnv::new();
-    env.write_global_config(&GlobalConfigBuilder::new().auto_open(false).build());
+    env.write_global_config(&GlobalConfigBuilder::new().interactive(false).build());
     commands::init().expect("init should succeed");
 
     create_test_item(&env, "260101-ABCDEFG", "Task", "open", &[], None);
@@ -1900,7 +1948,7 @@ fn test_close_with_partial_id() {
 #[test]
 fn test_reopen_with_partial_id() {
     let env = TestEnv::new();
-    env.write_global_config(&GlobalConfigBuilder::new().auto_open(false).build());
+    env.write_global_config(&GlobalConfigBuilder::new().interactive(false).build());
     commands::init().expect("init should succeed");
 
     create_test_item(&env, "260101-ABCDEFG", "Task", "open", &[], None);
@@ -1917,7 +1965,7 @@ fn test_reopen_with_partial_id() {
 #[test]
 fn test_close_nonexistent_item() {
     let env = TestEnv::new();
-    env.write_global_config(&GlobalConfigBuilder::new().auto_open(false).build());
+    env.write_global_config(&GlobalConfigBuilder::new().interactive(false).build());
     commands::init().expect("init should succeed");
 
     let result = execute_close("nonexistent");
@@ -1927,7 +1975,7 @@ fn test_close_nonexistent_item() {
 #[test]
 fn test_reopen_nonexistent_item() {
     let env = TestEnv::new();
-    env.write_global_config(&GlobalConfigBuilder::new().auto_open(false).build());
+    env.write_global_config(&GlobalConfigBuilder::new().interactive(false).build());
     commands::init().expect("init should succeed");
 
     let result = execute_reopen("nonexistent");
@@ -1937,7 +1985,7 @@ fn test_reopen_nonexistent_item() {
 #[test]
 fn test_close_and_reopen_preserves_labels() {
     let env = TestEnv::new();
-    env.write_global_config(&GlobalConfigBuilder::new().auto_open(false).build());
+    env.write_global_config(&GlobalConfigBuilder::new().interactive(false).build());
     commands::init().expect("init should succeed");
 
     create_test_item(
@@ -1975,7 +2023,8 @@ fn test_new_without_init() {
         title: "Task".to_string(),
         labels: vec![],
         category: None,
-        no_open: true,
+        interactive: false,
+        no_interactive: true,
     };
 
     let result = commands::new(args);
@@ -1985,7 +2034,7 @@ fn test_new_without_init() {
 #[test]
 fn test_list_without_init() {
     let env = TestEnv::new();
-    env.write_global_config(&GlobalConfigBuilder::new().auto_open(false).build());
+    env.write_global_config(&GlobalConfigBuilder::new().interactive(false).build());
     // Don't call init
 
     let filter = ListFilter {
@@ -1995,7 +2044,8 @@ fn test_list_without_init() {
         label: None,
         author: None,
         sort: SortBy::Id,
-        no_open: true,
+        interactive: false,
+        no_interactive: true,
     };
 
     let result = commands::list(&filter);
@@ -2005,13 +2055,14 @@ fn test_list_without_init() {
 #[test]
 fn test_search_without_init() {
     let env = TestEnv::new();
-    env.write_global_config(&GlobalConfigBuilder::new().auto_open(false).build());
+    env.write_global_config(&GlobalConfigBuilder::new().interactive(false).build());
     // Don't call init
 
     let args = SearchArgs {
         query: "test".to_string(),
         full_text: false,
-        no_open: true,
+        interactive: false,
+        no_interactive: true,
         closed: false,
     };
 
@@ -2022,7 +2073,7 @@ fn test_search_without_init() {
 #[test]
 fn test_update_without_init() {
     let env = TestEnv::new();
-    env.write_global_config(&GlobalConfigBuilder::new().auto_open(false).build());
+    env.write_global_config(&GlobalConfigBuilder::new().interactive(false).build());
     // Don't call init
 
     let args = UpdateArgs {
@@ -2040,7 +2091,7 @@ fn test_update_without_init() {
 #[test]
 fn test_close_without_init() {
     let env = TestEnv::new();
-    env.write_global_config(&GlobalConfigBuilder::new().auto_open(false).build());
+    env.write_global_config(&GlobalConfigBuilder::new().interactive(false).build());
     // Don't call init
 
     let result = execute_close("260101");
@@ -2050,7 +2101,7 @@ fn test_close_without_init() {
 #[test]
 fn test_reopen_without_init() {
     let env = TestEnv::new();
-    env.write_global_config(&GlobalConfigBuilder::new().auto_open(false).build());
+    env.write_global_config(&GlobalConfigBuilder::new().interactive(false).build());
     // Don't call init
 
     let result = execute_reopen("260101");
@@ -2072,7 +2123,8 @@ fn test_category_with_special_characters() {
         title: "Task".to_string(),
         labels: vec![],
         category: Some("my-category_v2".to_string()),
-        no_open: true,
+        interactive: false,
+        no_interactive: true,
     };
 
     let result = commands::new(args);
@@ -2096,7 +2148,8 @@ fn test_label_with_special_characters() {
             "priority_high".to_string(),
         ],
         category: None,
-        no_open: true,
+        interactive: false,
+        no_interactive: true,
     };
 
     commands::new(args).expect("new should succeed");
@@ -2118,7 +2171,8 @@ fn test_whitespace_only_title() {
         title: "   ".to_string(),
         labels: vec![],
         category: None,
-        no_open: true,
+        interactive: false,
+        no_interactive: true,
     };
 
     // Should create item (whitespace is trimmed to empty)
@@ -2136,7 +2190,8 @@ fn test_duplicate_labels_ignored() {
         title: "Task".to_string(),
         labels: vec!["bug".to_string(), "bug".to_string(), "bug".to_string()],
         category: None,
-        no_open: true,
+        interactive: false,
+        no_interactive: true,
     };
 
     commands::new(args).expect("new should succeed");
@@ -2155,7 +2210,7 @@ fn test_duplicate_labels_ignored() {
 #[test]
 fn test_search_partial_word() {
     let env = TestEnv::new();
-    env.write_global_config(&GlobalConfigBuilder::new().auto_open(false).build());
+    env.write_global_config(&GlobalConfigBuilder::new().interactive(false).build());
     commands::init().expect("init should succeed");
 
     create_test_item(
@@ -2170,7 +2225,8 @@ fn test_search_partial_word() {
     let args = SearchArgs {
         query: "auth".to_string(),
         full_text: false,
-        no_open: true,
+        interactive: false,
+        no_interactive: true,
         closed: false,
     };
 
@@ -2181,7 +2237,7 @@ fn test_search_partial_word() {
 #[test]
 fn test_list_author_case_insensitive() {
     let env = TestEnv::new();
-    env.write_global_config(&GlobalConfigBuilder::new().auto_open(false).build());
+    env.write_global_config(&GlobalConfigBuilder::new().interactive(false).build());
     commands::init().expect("init should succeed");
 
     create_test_item(&env, "260101-AAA", "Task", "open", &[], None);
@@ -2194,7 +2250,8 @@ fn test_list_author_case_insensitive() {
         label: None,
         author: Some("TEST USER".to_string()), // uppercase of "Test User"
         sort: SortBy::Id,
-        no_open: true,
+        interactive: false,
+        no_interactive: true,
     };
 
     let result = commands::list(&filter);
@@ -2204,7 +2261,7 @@ fn test_list_author_case_insensitive() {
 #[test]
 fn test_list_nonexistent_label_filter() {
     let env = TestEnv::new();
-    env.write_global_config(&GlobalConfigBuilder::new().auto_open(false).build());
+    env.write_global_config(&GlobalConfigBuilder::new().interactive(false).build());
     commands::init().expect("init should succeed");
 
     create_test_item(&env, "260101-AAA", "Task", "open", &["bug"], None);
@@ -2216,7 +2273,8 @@ fn test_list_nonexistent_label_filter() {
         label: Some("nonexistent-label".to_string()),
         author: None,
         sort: SortBy::Id,
-        no_open: true,
+        interactive: false,
+        no_interactive: true,
     };
 
     // Should succeed but return empty list
