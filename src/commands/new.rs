@@ -5,8 +5,6 @@
 //! Copyright (c) 2025 Dominic Rodemer. All rights reserved.
 //! Licensed under the MIT License.
 
-use std::path::Path;
-
 use anyhow::{Context, Result};
 use chrono::Utc;
 use owo_colors::OwoColorize;
@@ -14,8 +12,9 @@ use owo_colors::OwoColorize;
 use crate::{
     config::Config,
     editor, id,
-    item::{is_url, Frontmatter, Item, Status},
-    storage, ui,
+    item::{Frontmatter, Item, Status},
+    storage::{self, AttachmentResult},
+    ui,
 };
 
 /// Arguments for the new command
@@ -64,29 +63,15 @@ pub fn execute(args: NewArgs) -> Result<()> {
         let item_id = item.id().to_string();
 
         for source in &args.attachments {
-            if is_url(source) {
-                item.add_attachment(source.clone());
-                println!("  {} {}", "+".green(), source);
-            } else {
-                let source_path = Path::new(source);
-                let source_path = if source_path.is_relative() {
-                    std::env::current_dir()?.join(source_path)
-                } else {
-                    source_path.to_path_buf()
-                };
-
-                if source_path.exists() {
-                    let counter = item.next_attachment_counter();
-                    let new_filename =
-                        storage::copy_attachment(&source_path, item_dir, &item_id, counter)?;
-                    item.add_attachment(new_filename.clone());
-                    println!("  {} {} -> {}", "+".green(), source, new_filename);
-                } else {
-                    eprintln!(
-                        "  {} File not found: {}",
-                        "!".yellow(),
-                        source_path.display()
-                    );
+            match storage::process_attachment(source, &mut item, item_dir, &item_id)? {
+                AttachmentResult::UrlAdded(url) => {
+                    println!("  {} {}", "+".green(), url);
+                }
+                AttachmentResult::FileCopied { original, new_name } => {
+                    println!("  {} {} -> {}", "+".green(), original, new_name);
+                }
+                AttachmentResult::FileNotFound(path) => {
+                    eprintln!("  {} File not found: {}", "!".yellow(), path);
                 }
             }
         }

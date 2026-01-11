@@ -181,6 +181,64 @@ impl Drop for TestEnv {
     }
 }
 
+// =============================================================================
+// Test Setup Helpers
+// =============================================================================
+
+/// Creates a fully initialized test environment with default global config.
+///
+/// Equivalent to:
+/// ```
+/// let env = TestEnv::new();
+/// env.write_global_config(&GlobalConfigBuilder::new().build());
+/// qstack::commands::init().expect("init should succeed");
+/// ```
+pub fn setup_test_env() -> TestEnv {
+    let env = TestEnv::new();
+    env.write_global_config(&GlobalConfigBuilder::new().build());
+    qstack::commands::init().expect("init should succeed");
+    env
+}
+
+/// Creates a fully initialized test environment with non-interactive mode.
+///
+/// Useful for tests that need to avoid interactive prompts.
+pub fn setup_test_env_non_interactive() -> TestEnv {
+    let env = TestEnv::new();
+    env.write_global_config(&GlobalConfigBuilder::new().interactive(false).build());
+    qstack::commands::init().expect("init should succeed");
+    env
+}
+
+// =============================================================================
+// Config Builder Helpers
+// =============================================================================
+
+/// Helper to build TOML config lines from optional values.
+struct ConfigLines(Vec<String>);
+
+impl ConfigLines {
+    fn new() -> Self {
+        Self(Vec::new())
+    }
+
+    fn add_string(&mut self, key: &str, value: Option<&str>) {
+        if let Some(v) = value {
+            self.0.push(format!("{key} = \"{v}\""));
+        }
+    }
+
+    fn add_bool(&mut self, key: &str, value: Option<bool>) {
+        if let Some(v) = value {
+            self.0.push(format!("{key} = {v}"));
+        }
+    }
+
+    fn build(self) -> String {
+        self.0.join("\n")
+    }
+}
+
 /// Builder for creating test configurations.
 pub struct GlobalConfigBuilder {
     user_name: Option<String>,
@@ -247,30 +305,15 @@ impl GlobalConfigBuilder {
     }
 
     pub fn build(&self) -> String {
-        let mut lines = Vec::new();
-
-        if let Some(ref name) = self.user_name {
-            lines.push(format!("user_name = \"{}\"", name));
-        }
-
-        lines.push(format!("use_git_user = {}", self.use_git_user));
-
-        if let Some(ref editor) = self.editor {
-            lines.push(format!("editor = \"{}\"", editor));
-        }
-
-        lines.push(format!("interactive = {}", self.interactive));
-        lines.push(format!("id_pattern = \"{}\"", self.id_pattern));
-
-        if let Some(ref dir) = self.stack_dir {
-            lines.push(format!("stack_dir = \"{}\"", dir));
-        }
-
-        if let Some(ref dir) = self.archive_dir {
-            lines.push(format!("archive_dir = \"{}\"", dir));
-        }
-
-        lines.join("\n")
+        let mut lines = ConfigLines::new();
+        lines.add_string("user_name", self.user_name.as_deref());
+        lines.add_bool("use_git_user", Some(self.use_git_user));
+        lines.add_string("editor", self.editor.as_deref());
+        lines.add_bool("interactive", Some(self.interactive));
+        lines.add_string("id_pattern", Some(&self.id_pattern));
+        lines.add_string("stack_dir", self.stack_dir.as_deref());
+        lines.add_string("archive_dir", self.archive_dir.as_deref());
+        lines.build()
     }
 }
 
@@ -345,47 +388,28 @@ impl ProjectConfigBuilder {
     }
 
     pub fn build(&self) -> String {
-        let mut lines = Vec::new();
-
-        if let Some(ref name) = self.user_name {
-            lines.push(format!("user_name = \"{}\"", name));
-        }
-
-        if let Some(use_git) = self.use_git_user {
-            lines.push(format!("use_git_user = {}", use_git));
-        }
-
-        if let Some(ref editor) = self.editor {
-            lines.push(format!("editor = \"{}\"", editor));
-        }
-
-        if let Some(interactive) = self.interactive {
-            lines.push(format!("interactive = {}", interactive));
-        }
-
-        if let Some(ref pattern) = self.id_pattern {
-            lines.push(format!("id_pattern = \"{}\"", pattern));
-        }
-
-        if let Some(ref dir) = self.stack_dir {
-            lines.push(format!("stack_dir = \"{}\"", dir));
-        }
-
-        if let Some(ref dir) = self.archive_dir {
-            lines.push(format!("archive_dir = \"{}\"", dir));
-        }
-
-        lines.join("\n")
+        let mut lines = ConfigLines::new();
+        lines.add_string("user_name", self.user_name.as_deref());
+        lines.add_bool("use_git_user", self.use_git_user);
+        lines.add_string("editor", self.editor.as_deref());
+        lines.add_bool("interactive", self.interactive);
+        lines.add_string("id_pattern", self.id_pattern.as_deref());
+        lines.add_string("stack_dir", self.stack_dir.as_deref());
+        lines.add_string("archive_dir", self.archive_dir.as_deref());
+        lines.build()
     }
 }
 
-/// Creates a minimal test item file content.
+/// Creates test item file content with optional attachments.
+///
+/// Use `None` for attachments when not needed, or `Some(&[...])` to include them.
 pub fn make_item_content(
     id: &str,
     title: &str,
     status: &str,
     labels: &[&str],
     category: Option<&str>,
+    attachments: Option<&[&str]>,
 ) -> String {
     let labels_yaml = if labels.is_empty() {
         "[]".to_string()
@@ -405,6 +429,17 @@ pub fn make_item_content(
         None => "category: ~".to_string(),
     };
 
+    let attachments_yaml = match attachments {
+        Some(att) if !att.is_empty() => format!(
+            "attachments:\n{}",
+            att.iter()
+                .map(|a| format!("  - {}", a))
+                .collect::<Vec<_>>()
+                .join("\n")
+        ),
+        _ => String::new(),
+    };
+
     format!(
         r#"---
 id: {id}
@@ -414,6 +449,7 @@ created_at: 2026-01-09T12:00:00Z
 status: {status}
 labels: {labels_yaml}
 {category_yaml}
+{attachments_yaml}
 ---
 
 Test item body.
@@ -437,7 +473,7 @@ pub fn create_test_item(
         .collect::<String>();
 
     let filename = format!("{}-{}.md", id, slug);
-    let content = make_item_content(id, title, status, labels, category);
+    let content = make_item_content(id, title, status, labels, category, None);
 
     let dir = if let Some(cat) = category {
         env.stack_path().join(cat)
@@ -464,22 +500,29 @@ impl TestEnv {
         path
     }
 
-    /// Lists attachment files for an item by ID prefix (excludes archive).
-    pub fn list_attachment_files(&self, item_id: &str) -> Vec<PathBuf> {
+    /// Lists attachment files for an item in a given directory.
+    fn list_attachment_files_in(&self, item_id: &str, search_dir: &Path) -> Vec<PathBuf> {
         let pattern = format!("{item_id}-Attachment-");
-        let archive = self.archive_path();
 
-        walkdir::WalkDir::new(self.stack_path())
+        walkdir::WalkDir::new(search_dir)
             .into_iter()
             .filter_map(Result::ok)
             .filter(|e| e.file_type().is_file())
-            .filter(|e| !e.path().starts_with(&archive))
             .map(|e| e.into_path())
             .filter(|p| {
                 p.file_name()
                     .and_then(|n| n.to_str())
                     .is_some_and(|name| name.starts_with(&pattern))
             })
+            .collect()
+    }
+
+    /// Lists attachment files for an item by ID prefix (excludes archive).
+    pub fn list_attachment_files(&self, item_id: &str) -> Vec<PathBuf> {
+        let archive = self.archive_path();
+        self.list_attachment_files_in(item_id, &self.stack_path())
+            .into_iter()
+            .filter(|p| !p.starts_with(&archive))
             .collect()
     }
 
@@ -494,77 +537,8 @@ impl TestEnv {
 
     /// Lists attachment files in the archive directory for an item ID.
     pub fn list_archive_attachment_files(&self, item_id: &str) -> Vec<PathBuf> {
-        let pattern = format!("{item_id}-Attachment-");
-
-        walkdir::WalkDir::new(self.archive_path())
-            .into_iter()
-            .filter_map(Result::ok)
-            .filter(|e| e.file_type().is_file())
-            .map(|e| e.into_path())
-            .filter(|p| {
-                p.file_name()
-                    .and_then(|n| n.to_str())
-                    .is_some_and(|name| name.starts_with(&pattern))
-            })
-            .collect()
+        self.list_attachment_files_in(item_id, &self.archive_path())
     }
-}
-
-/// Creates a test item file with attachments.
-pub fn make_item_content_with_attachments(
-    id: &str,
-    title: &str,
-    status: &str,
-    labels: &[&str],
-    category: Option<&str>,
-    attachments: &[&str],
-) -> String {
-    let labels_yaml = if labels.is_empty() {
-        "[]".to_string()
-    } else {
-        format!(
-            "\n{}",
-            labels
-                .iter()
-                .map(|l| format!("  - {}", l))
-                .collect::<Vec<_>>()
-                .join("\n")
-        )
-    };
-
-    let category_yaml = match category {
-        Some(cat) => format!("category: {cat}"),
-        None => "category: ~".to_string(),
-    };
-
-    let attachments_yaml = if attachments.is_empty() {
-        String::new()
-    } else {
-        format!(
-            "attachments:\n{}",
-            attachments
-                .iter()
-                .map(|a| format!("  - {}", a))
-                .collect::<Vec<_>>()
-                .join("\n")
-        )
-    };
-
-    format!(
-        r#"---
-id: {id}
-title: {title}
-author: Test User
-created_at: 2026-01-09T12:00:00Z
-status: {status}
-labels: {labels_yaml}
-{category_yaml}
-{attachments_yaml}
----
-
-Test item body.
-"#
-    )
 }
 
 /// Creates a test item with pre-existing attachments.
@@ -583,7 +557,7 @@ pub fn create_test_item_with_attachments(
         .collect::<String>();
 
     let filename = format!("{}-{}.md", id, slug);
-    let content = make_item_content_with_attachments(id, title, status, &[], category, attachments);
+    let content = make_item_content(id, title, status, &[], category, Some(attachments));
 
     let dir = if let Some(cat) = category {
         env.stack_path().join(cat)

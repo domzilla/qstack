@@ -18,14 +18,15 @@ use crate::{
     item::{slugify, Item},
 };
 
-/// Walks all item files in the stack directory.
-pub fn walk_items(config: &Config) -> impl Iterator<Item = PathBuf> {
-    let stack_path = config.stack_path();
-    let archive_path = config.archive_path();
-
-    WalkDir::new(&stack_path)
-        .min_depth(1)
-        .max_depth(3)
+/// Walks markdown files in a directory with specified depth constraints.
+fn walk_markdown_files(
+    path: PathBuf,
+    min_depth: usize,
+    max_depth: usize,
+) -> impl Iterator<Item = PathBuf> {
+    WalkDir::new(path)
+        .min_depth(min_depth)
+        .max_depth(max_depth)
         .into_iter()
         .filter_map(Result::ok)
         .filter(|e| e.file_type().is_file())
@@ -34,26 +35,19 @@ pub fn walk_items(config: &Config) -> impl Iterator<Item = PathBuf> {
                 .extension()
                 .is_some_and(|ext| ext == ITEM_FILE_EXTENSION)
         })
-        .filter(move |e| !e.path().starts_with(&archive_path))
         .map(walkdir::DirEntry::into_path)
+}
+
+/// Walks all item files in the stack directory.
+pub fn walk_items(config: &Config) -> impl Iterator<Item = PathBuf> {
+    let archive_path = config.archive_path();
+
+    walk_markdown_files(config.stack_path(), 1, 3).filter(move |p| !p.starts_with(&archive_path))
 }
 
 /// Walks all archived item files.
 pub fn walk_archived(config: &Config) -> impl Iterator<Item = PathBuf> {
-    let archive_path = config.archive_path();
-
-    WalkDir::new(&archive_path)
-        .min_depth(1)
-        .max_depth(2)
-        .into_iter()
-        .filter_map(Result::ok)
-        .filter(|e| e.file_type().is_file())
-        .filter(|e| {
-            e.path()
-                .extension()
-                .is_some_and(|ext| ext == ITEM_FILE_EXTENSION)
-        })
-        .map(walkdir::DirEntry::into_path)
+    walk_markdown_files(config.archive_path(), 1, 2)
 }
 
 /// Walks all items (both active and archived).
@@ -189,6 +183,60 @@ pub fn move_to_category(config: &Config, path: &Path, category: Option<&str>) ->
 // =============================================================================
 // Attachment Operations
 // =============================================================================
+
+/// Result of processing a single attachment.
+#[derive(Debug)]
+pub enum AttachmentResult {
+    /// URL was added directly to frontmatter
+    UrlAdded(String),
+    /// File was copied and added
+    FileCopied { original: String, new_name: String },
+    /// File was not found
+    FileNotFound(String),
+}
+
+/// Processes a single attachment source (file path or URL).
+///
+/// - URLs are returned as-is for adding to frontmatter
+/// - Files are copied to the item directory with a standardized name
+///
+/// Returns `AttachmentResult` indicating what happened.
+pub fn process_attachment(
+    source: &str,
+    item: &mut crate::item::Item,
+    item_dir: &Path,
+    item_id: &str,
+) -> Result<AttachmentResult> {
+    use crate::item::is_url;
+
+    if is_url(source) {
+        item.add_attachment(source.to_string());
+        return Ok(AttachmentResult::UrlAdded(source.to_string()));
+    }
+
+    // File attachment - resolve path
+    let source_path = Path::new(source);
+    let source_path = if source_path.is_relative() {
+        std::env::current_dir()?.join(source_path)
+    } else {
+        source_path.to_path_buf()
+    };
+
+    if !source_path.exists() {
+        return Ok(AttachmentResult::FileNotFound(
+            source_path.display().to_string(),
+        ));
+    }
+
+    let counter = item.next_attachment_counter();
+    let new_filename = copy_attachment(&source_path, item_dir, item_id, counter)?;
+    item.add_attachment(new_filename.clone());
+
+    Ok(AttachmentResult::FileCopied {
+        original: source.to_string(),
+        new_name: new_filename,
+    })
+}
 
 /// Copies a file as an attachment to the item's directory.
 ///

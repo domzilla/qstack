@@ -5,15 +5,13 @@
 //! Copyright (c) 2025 Dominic Rodemer. All rights reserved.
 //! Licensed under the MIT License.
 
-use std::path::Path;
-
 use anyhow::{bail, Result};
 use owo_colors::OwoColorize;
 
 use crate::{
     config::Config,
     item::{is_url, Item},
-    storage,
+    storage::{self, AttachmentResult},
 };
 
 /// Arguments for the attach add subcommand
@@ -55,42 +53,18 @@ pub fn execute_add(args: &AttachAddArgs) -> Result<()> {
     let mut added_count = 0;
 
     for source in &args.sources {
-        let added = if is_url(source) {
-            // URL attachment - just add to frontmatter
-            item.add_attachment(source.clone());
-            println!("  {} {}", "+".green(), source);
-            true
-        } else {
-            // File attachment - copy to item directory
-            let source_path = Path::new(source);
-
-            // Handle relative paths
-            let source_path = if source_path.is_relative() {
-                std::env::current_dir()?.join(source_path)
-            } else {
-                source_path.to_path_buf()
-            };
-
-            if source_path.exists() {
-                let counter = item.next_attachment_counter();
-                let new_filename =
-                    storage::copy_attachment(&source_path, item_dir, &item_id, counter)?;
-
-                item.add_attachment(new_filename.clone());
-                println!("  {} {} -> {}", "+".green(), source, new_filename);
-                true
-            } else {
-                eprintln!(
-                    "  {} File not found: {}",
-                    "!".yellow(),
-                    source_path.display()
-                );
-                false
+        match storage::process_attachment(source, &mut item, item_dir, &item_id)? {
+            AttachmentResult::UrlAdded(url) => {
+                println!("  {} {}", "+".green(), url);
+                added_count += 1;
             }
-        };
-
-        if added {
-            added_count += 1;
+            AttachmentResult::FileCopied { original, new_name } => {
+                println!("  {} {} -> {}", "+".green(), original, new_name);
+                added_count += 1;
+            }
+            AttachmentResult::FileNotFound(path) => {
+                eprintln!("  {} File not found: {}", "!".yellow(), path);
+            }
         }
     }
 
