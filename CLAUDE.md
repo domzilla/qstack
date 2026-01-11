@@ -107,6 +107,9 @@ qstack setup                                   # One-time setup (config + comple
 qstack completions zsh                         # Generate shell completions
 ```
 
+## Shell Completions
+Shell completion scripts are generated statically by `clap_complete`. When adding, removing, or modifying CLI commands or arguments, users must regenerate completions by running `qstack setup` again. This should be noted in release notes when CLI changes occur.
+
 ## Storage Layout
 ```
 project-root/
