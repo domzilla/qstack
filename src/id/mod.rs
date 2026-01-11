@@ -22,6 +22,36 @@ use rand::Rng;
 /// Default ID pattern: YYMMDD-TTTTRRR
 pub const DEFAULT_PATTERN: &str = "%y%m%d-%T%RRR";
 
+/// Extracts the ID from an item filename.
+///
+/// Given a filename like `260109-02F7K9M-some-title.md`, extracts `260109-02F7K9M`.
+/// Returns `None` if the filename doesn't match the expected format.
+pub fn extract_from_filename(filename: &str) -> Option<&str> {
+    // Remove extension if present
+    let stem = filename.strip_suffix(".md").unwrap_or(filename);
+
+    // Split into parts: date-time-rest
+    let mut parts = stem.splitn(3, '-');
+    let date_part = parts.next()?;
+    let time_part = parts.next()?;
+
+    // Validate date part is 6 digits (YYMMDD)
+    if date_part.len() != 6 || !date_part.chars().all(|c| c.is_ascii_digit()) {
+        return None;
+    }
+
+    // The ID is date-time
+    let id_end = date_part.len() + 1 + time_part.len();
+    Some(&stem[..id_end])
+}
+
+/// Returns the short form of an ID (date portion only).
+///
+/// Given `260109-02F7K9M`, returns `260109`.
+pub fn short_form(id: &str) -> &str {
+    id.split('-').next().unwrap_or(id)
+}
+
 /// Generates a unique ID based on the given pattern.
 ///
 /// # Arguments
@@ -138,5 +168,35 @@ mod tests {
         assert_eq!(id.len(), 3);
         let day: u32 = id.parse().unwrap();
         assert!((1..=366).contains(&day));
+    }
+
+    #[test]
+    fn test_extract_from_filename() {
+        assert_eq!(
+            extract_from_filename("260109-02F7K9M-some-title.md"),
+            Some("260109-02F7K9M")
+        );
+        assert_eq!(
+            extract_from_filename("260109-02F7K9M.md"),
+            Some("260109-02F7K9M")
+        );
+        assert_eq!(
+            extract_from_filename("260109-02F7K9M-title"),
+            Some("260109-02F7K9M")
+        );
+    }
+
+    #[test]
+    fn test_extract_from_filename_invalid() {
+        assert_eq!(extract_from_filename("invalid.md"), None);
+        assert_eq!(extract_from_filename("26010-02F7K9M.md"), None); // 5 digits
+        assert_eq!(extract_from_filename("abcdef-02F7K9M.md"), None); // non-numeric
+    }
+
+    #[test]
+    fn test_short_form() {
+        assert_eq!(short_form("260109-02F7K9M"), "260109");
+        assert_eq!(short_form("260109"), "260109");
+        assert_eq!(short_form(""), "");
     }
 }

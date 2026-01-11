@@ -17,7 +17,7 @@ pub fn execute() -> Result<()> {
     let config = Config::for_init()?;
 
     // Check if already initialized
-    let config_path = config.project_root.join(PROJECT_CONFIG_FILE);
+    let config_path = config.project_root().join(PROJECT_CONFIG_FILE);
     if config_path.exists() {
         anyhow::bail!(
             "Project already initialized (found {})",
@@ -31,10 +31,10 @@ pub fn execute() -> Result<()> {
 
     // Create project config with comments
     // stack_dir and archive_dir are set explicitly, other options are commented out
-    ProjectConfig::save_with_comments(&config.project_root, stack_dir, archive_dir)?;
+    ProjectConfig::save_with_comments(config.project_root(), stack_dir, archive_dir)?;
 
     // Create stack directory
-    let stack_path = config.project_root.join(stack_dir);
+    let stack_path = config.project_root().join(stack_dir);
     fs::create_dir_all(&stack_path)
         .with_context(|| format!("Failed to create stack directory: {}", stack_path.display()))?;
 

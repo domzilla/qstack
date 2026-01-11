@@ -22,14 +22,14 @@ use crate::{id::DEFAULT_PATTERN, storage::git};
 /// Merged configuration with project settings overriding global
 #[derive(Debug, Clone)]
 pub struct Config {
-    /// Global configuration
-    pub global: GlobalConfig,
+    /// Global configuration (private - use resolution methods)
+    global: GlobalConfig,
 
-    /// Project configuration
-    pub project: ProjectConfig,
+    /// Project configuration (private - use resolution methods)
+    project: ProjectConfig,
 
     /// Resolved project root path
-    pub project_root: PathBuf,
+    project_root: PathBuf,
 }
 
 impl Config {
@@ -154,6 +154,11 @@ impl Config {
     // -------------------------------------------------------------------------
     // Path helpers
     // -------------------------------------------------------------------------
+
+    /// Returns the project root path
+    pub fn project_root(&self) -> &Path {
+        &self.project_root
+    }
 
     /// Returns the stack directory path
     pub fn stack_path(&self) -> PathBuf {
