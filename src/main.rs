@@ -118,9 +118,10 @@ qstack/archive/      Archive directory for closed items",
     /// Create a new item
     #[command(
         long_about = "Create a new item with the given title.\n\n\
-Generates a unique ID, creates a Markdown file with YAML frontmatter, and optionally \
-opens your editor. The filename is derived from the ID and a slugified version of \
-the title (e.g., '260109-0A2B-fix-login-bug.md').\n\n\
+Generates a unique ID, creates a Markdown file with YAML frontmatter, and opens \
+your editor based on the 'interactive' config setting (default: true). Use -i to \
+force the editor to open, or --no-interactive to skip it.\n\n\
+The filename is derived from the ID and a slugified title (e.g., '260109-0A2B-fix-login-bug.md').\n\n\
 The author is determined from (in order):\n  \
 1. user_name in ~/.qstack\n  \
 2. git config user.name (if use_git_user is true)\n  \
@@ -159,9 +160,10 @@ The author is determined from (in order):\n  \
     /// List items
     #[command(
         long_about = "List items in the current project.\n\n\
-By default, shows all open items in a table format and then presents an interactive \
-selector to choose an item to open. Use filters to narrow down results.\n\n\
-Use --no-interactive to just display the table without interactive selection.",
+Shows all open items in a table format. Based on the 'interactive' config setting \
+(default: true), presents a selector to choose an item to open. Use -i to force \
+interactive selection, or --no-interactive to just display the table.\n\n\
+Use filters to narrow down results.",
         after_help = concat!(
             h!("Examples:"), "\n  ",
             c!("qstack list"), "                        List items, select one to open\n  ",
@@ -210,12 +212,13 @@ Use --no-interactive to just display the table without interactive selection.",
 
     /// Search for items and interactively select one to open
     #[command(
-        long_about = "Search for items by title or ID and interactively select one to open.\n\n\
-Performs a case-insensitive substring search against item titles and IDs. If multiple \
-items match, displays an interactive selection menu using arrow keys.\n\n\
+        long_about = "Search for items by title or ID.\n\n\
+Performs a case-insensitive substring search against item titles and IDs. Based on \
+the 'interactive' config setting (default: true), presents a selector for matches. \
+Use -i to force interactive selection, or --no-interactive to just list results.\n\n\
 Search behavior:\n  \
-- Single match: opens the item directly\n  \
-- Multiple matches: shows interactive selector\n  \
+- Single match: opens the item directly (in interactive mode)\n  \
+- Multiple matches: shows interactive selector or lists results\n  \
 - No matches: returns an error\n\n\
 Use --full-text to also search within the markdown body content.",
         after_help = concat!(
@@ -343,8 +346,10 @@ preserve history.",
     /// List all labels used across items
     #[command(
         long_about = "List all unique labels used across items with counts.\n\n\
-Shows a table of all labels and how many items use each one. In interactive mode, \
-you can select a label to see all items with that label, then select an item to open.",
+Shows a table of all labels and how many items use each one. Based on the 'interactive' \
+config setting (default: true), you can select a label to see all items with that label, \
+then select an item to open. Use -i to force interactive mode, or --no-interactive to \
+just display the table.",
         after_help = concat!(
             h!("Examples:"), "\n  ",
             c!("qstack labels"), "                         List all labels\n  ",
@@ -365,8 +370,9 @@ you can select a label to see all items with that label, then select an item to 
     /// List all categories used across items
     #[command(
         long_about = "List all unique categories used across items with counts.\n\n\
-Shows a table of all categories and how many items are in each one. In interactive mode, \
-you can select a category to see all items in it, then select an item to open.",
+Shows a table of all categories and how many items are in each one. Based on the 'interactive' \
+config setting (default: true), you can select a category to see all items in it, then select \
+an item to open. Use -i to force interactive mode, or --no-interactive to just display the table.",
         after_help = concat!(
             h!("Examples:"), "\n  ",
             c!("qstack categories"), "                     List all categories\n  ",
