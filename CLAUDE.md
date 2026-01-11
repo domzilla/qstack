@@ -92,7 +92,6 @@ qstack new "Title" --label bug --category bugs # Create item
 qstack new "Title" --no-interactive            # Create without opening editor
 qstack new "Title" -i                          # Force open editor even if config says no
 qstack list --open --sort date                 # List items
-qstack list --id 260109                        # Show item details
 qstack search "query"                          # Search and select interactively
 qstack search "bug" --full-text --no-interactive  # Full-text search, list results
 qstack update --id 260109 --title "New Title"  # Update item

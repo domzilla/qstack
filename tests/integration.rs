@@ -211,7 +211,6 @@ fn test_list_empty_project() {
     let filter = ListFilter {
         open: false,
         closed: false,
-        id: None,
         label: None,
         author: None,
         sort: SortBy::Id,
@@ -246,7 +245,6 @@ fn test_list_shows_open_items() {
     let filter = ListFilter {
         open: true,
         closed: false,
-        id: None,
         label: None,
         author: None,
         sort: SortBy::Id,
@@ -278,7 +276,6 @@ fn test_list_filter_by_label() {
     let filter = ListFilter {
         open: false,
         closed: false,
-        id: None,
         label: Some("bug".to_string()),
         author: None,
         sort: SortBy::Id,
@@ -288,36 +285,6 @@ fn test_list_filter_by_label() {
 
     let result = commands::list(&filter);
     assert!(result.is_ok(), "list with label filter should succeed");
-}
-
-#[test]
-fn test_list_show_item_by_id() {
-    let env = TestEnv::new();
-    env.write_global_config(&GlobalConfigBuilder::new().interactive(false).build());
-    commands::init().expect("init should succeed");
-
-    create_test_item(
-        &env,
-        "260101-AAA",
-        "Target Task",
-        "open",
-        &["important"],
-        None,
-    );
-
-    let filter = ListFilter {
-        open: false,
-        closed: false,
-        id: Some("260101".to_string()),
-        label: None,
-        author: None,
-        sort: SortBy::Id,
-        interactive: false,
-        no_interactive: true,
-    };
-
-    let result = commands::list(&filter);
-    assert!(result.is_ok(), "list with id should succeed");
 }
 
 #[test]
@@ -332,7 +299,6 @@ fn test_list_sort_by_title() {
     let filter = ListFilter {
         open: false,
         closed: false,
-        id: None,
         label: None,
         author: None,
         sort: SortBy::Title,
@@ -749,7 +715,6 @@ fn test_list_interactive_combinations() {
         let filter = ListFilter {
             open: false,
             closed: false,
-            id: None,
             label: None,
             author: None,
             sort: SortBy::Id,
@@ -770,7 +735,6 @@ fn test_list_interactive_combinations() {
         let filter = ListFilter {
             open: false,
             closed: false,
-            id: None,
             label: None,
             author: None,
             sort: SortBy::Id,
@@ -792,7 +756,6 @@ fn test_list_interactive_combinations() {
         let filter = ListFilter {
             open: false,
             closed: false,
-            id: None,
             label: None,
             author: None,
             sort: SortBy::Id,
@@ -813,7 +776,6 @@ fn test_list_interactive_combinations() {
         let filter = ListFilter {
             open: false,
             closed: false,
-            id: None,
             label: None,
             author: None,
             sort: SortBy::Id,
@@ -1271,7 +1233,6 @@ fn test_list_shows_closed_items() {
     let filter = ListFilter {
         open: false,
         closed: true,
-        id: None,
         label: None,
         author: None,
         sort: SortBy::Id,
@@ -1295,7 +1256,6 @@ fn test_list_filter_by_author() {
     let filter = ListFilter {
         open: false,
         closed: false,
-        id: None,
         label: None,
         author: Some("Test User".to_string()),
         sort: SortBy::Id,
@@ -1319,7 +1279,6 @@ fn test_list_sort_by_date() {
     let filter = ListFilter {
         open: false,
         closed: false,
-        id: None,
         label: None,
         author: None,
         sort: SortBy::Date,
@@ -1352,7 +1311,6 @@ fn test_list_combined_filters() {
     let filter = ListFilter {
         open: true,
         closed: false,
-        id: None,
         label: Some("bug".to_string()),
         author: Some("Test User".to_string()),
         sort: SortBy::Title,
@@ -1362,34 +1320,6 @@ fn test_list_combined_filters() {
 
     let result = commands::list(&filter);
     assert!(result.is_ok(), "list with combined filters should succeed");
-}
-
-#[test]
-fn test_list_id_with_closed() {
-    let env = TestEnv::new();
-    env.write_global_config(&GlobalConfigBuilder::new().interactive(false).build());
-    commands::init().expect("init should succeed");
-
-    create_test_item(&env, "260101-AAA", "Closed Task", "closed", &[], None);
-    std::fs::rename(
-        env.stack_path().join("260101-AAA-closed-task.md"),
-        env.archive_path().join("260101-AAA-closed-task.md"),
-    )
-    .expect("move to archive");
-
-    let filter = ListFilter {
-        open: false,
-        closed: true,
-        id: Some("260101".to_string()),
-        label: None,
-        author: None,
-        sort: SortBy::Id,
-        interactive: false,
-        no_interactive: true,
-    };
-
-    let result = commands::list(&filter);
-    assert!(result.is_ok(), "list --id with --closed should succeed");
 }
 
 #[test]
@@ -1410,7 +1340,6 @@ fn test_list_open_and_closed_flags_together() {
     let filter = ListFilter {
         open: true,
         closed: true,
-        id: None,
         label: None,
         author: None,
         sort: SortBy::Id,
@@ -2040,7 +1969,6 @@ fn test_list_without_init() {
     let filter = ListFilter {
         open: false,
         closed: false,
-        id: None,
         label: None,
         author: None,
         sort: SortBy::Id,
@@ -2246,7 +2174,6 @@ fn test_list_author_case_insensitive() {
     let filter = ListFilter {
         open: false,
         closed: false,
-        id: None,
         label: None,
         author: Some("TEST USER".to_string()), // uppercase of "Test User"
         sort: SortBy::Id,
@@ -2269,7 +2196,6 @@ fn test_list_nonexistent_label_filter() {
     let filter = ListFilter {
         open: false,
         closed: false,
-        id: None,
         label: Some("nonexistent-label".to_string()),
         author: None,
         sort: SortBy::Id,

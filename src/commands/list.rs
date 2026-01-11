@@ -33,7 +33,6 @@ pub enum SortBy {
 pub struct ListFilter {
     pub open: bool,
     pub closed: bool,
-    pub id: Option<String>,
     pub label: Option<String>,
     pub author: Option<String>,
     pub sort: SortBy,
@@ -46,7 +45,6 @@ impl Default for ListFilter {
         Self {
             open: false,
             closed: false,
-            id: None,
             label: None,
             author: None,
             sort: SortBy::Id,
@@ -110,14 +108,6 @@ fn apply_item_filter(item: &Item, filter: &ItemFilter) -> bool {
 /// Executes the list command.
 pub fn execute(filter: &ListFilter) -> Result<()> {
     let config = Config::load()?;
-
-    // Handle single item detail view by ID
-    if let Some(ref partial_id) = filter.id {
-        let path = storage::find_by_id(&config, partial_id)?;
-        let item = Item::load(&path)?;
-        print_item_detail(&item, &config);
-        return Ok(());
-    }
 
     // Collect items based on status filter
     let item_filter = ItemFilter {
@@ -218,44 +208,6 @@ fn print_table(items: &[Item]) {
     }
 
     println!("{table}");
-}
-
-fn print_item_detail(item: &Item, config: &Config) {
-    println!("{}: {}", "ID".bold(), item.id());
-    println!("{}: {}", "Title".bold(), item.title());
-    println!("{}: {}", "Author".bold(), item.author());
-    println!(
-        "{}: {}",
-        "Created".bold(),
-        item.created_at().format("%Y-%m-%d %H:%M:%S UTC")
-    );
-
-    let status = match item.status() {
-        Status::Open => "open".green().to_string(),
-        Status::Closed => "closed".red().to_string(),
-    };
-    println!("{}: {}", "Status".bold(), status);
-
-    if !item.labels().is_empty() {
-        println!("{}: {}", "Labels".bold(), item.labels().join(", "));
-    }
-
-    if let Some(category) = item.category() {
-        println!("{}: {}", "Category".bold(), category);
-    }
-
-    if let Some(ref path) = item.path {
-        println!(
-            "{}: {}",
-            "File".bold(),
-            config.relative_path(path).display()
-        );
-    }
-
-    if !item.body.is_empty() {
-        println!("\n{}", "---".dimmed());
-        println!("{}", item.body);
-    }
 }
 
 fn truncate(s: &str, max: usize) -> String {

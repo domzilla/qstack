@@ -112,10 +112,7 @@ Output: Prints the relative path to the created file."
     #[command(
         long_about = "List items in the current project.\n\n\
 By default, shows all open items in a table format and then presents an interactive \
-selector to choose an item to open. Use filters to narrow down results or --id to \
-show full details of a specific item.\n\n\
-The --id option supports partial matching - you only need to provide enough \
-characters to uniquely identify an item (e.g., '260109' or even '2601').\n\n\
+selector to choose an item to open. Use filters to narrow down results.\n\n\
 Use --no-interactive to just display the table without interactive selection.",
         after_help = "Examples:\n  \
 qstack list                        List items, select one to open\n  \
@@ -123,8 +120,7 @@ qstack list --no-interactive       Just show the table\n  \
 qstack list --closed               List archived/closed items\n  \
 qstack list --label bug            Filter by label\n  \
 qstack list --author \"John\"        Filter by author\n  \
-qstack list --sort date            Sort by creation date\n  \
-qstack list --id 260109            Show details of item matching ID\n\n\
+qstack list --sort date            Sort by creation date\n\n\
 Interactive mode: Use arrow keys to navigate, Enter to select, Esc to cancel."
     )]
     List {
@@ -135,10 +131,6 @@ Interactive mode: Use arrow keys to navigate, Enter to select, Esc to cancel."
         /// Show only closed items
         #[arg(long, help = "Show only closed/archived items")]
         closed: bool,
-
-        /// Show details of a specific item by ID
-        #[arg(long, help = "Show full details of item (partial ID match supported)")]
-        id: Option<String>,
 
         /// Filter by label
         #[arg(long, help = "Filter items containing this label")]
@@ -321,7 +313,6 @@ fn run() -> Result<()> {
         Commands::List {
             open,
             closed,
-            id,
             label,
             author,
             sort,
@@ -330,7 +321,6 @@ fn run() -> Result<()> {
         } => commands::list(&ListFilter {
             open,
             closed,
-            id,
             label,
             author,
             sort,
