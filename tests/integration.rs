@@ -9,8 +9,7 @@ mod harness;
 
 use harness::{create_test_item, GlobalConfigBuilder, ProjectConfigBuilder, TestEnv};
 use qstack::commands::{
-    self, execute_close, execute_reopen, GetArgs, ListFilter, NewArgs, SearchArgs, SortBy,
-    UpdateArgs,
+    self, execute_close, execute_reopen, ListFilter, NewArgs, SearchArgs, SortBy, UpdateArgs,
 };
 
 // =============================================================================
@@ -333,91 +332,6 @@ fn test_list_sort_by_title() {
 
     let result = commands::list(&filter);
     assert!(result.is_ok(), "list with sort should succeed");
-}
-
-// =============================================================================
-// Get Command Tests
-// =============================================================================
-
-#[test]
-fn test_get_first_item() {
-    let env = TestEnv::new();
-    env.write_global_config(&GlobalConfigBuilder::new().auto_open(false).build());
-    commands::init().expect("init should succeed");
-
-    create_test_item(&env, "260101-AAA", "First", "open", &[], None);
-    create_test_item(&env, "260102-BBB", "Second", "open", &[], None);
-
-    let args = GetArgs {
-        label: None,
-        author: None,
-        sort: SortBy::Id,
-        no_open: true,
-        closed: false,
-    };
-
-    let result = commands::get(&args);
-    assert!(result.is_ok(), "get should succeed");
-}
-
-#[test]
-fn test_get_with_label_filter() {
-    let env = TestEnv::new();
-    env.write_global_config(&GlobalConfigBuilder::new().auto_open(false).build());
-    commands::init().expect("init should succeed");
-
-    create_test_item(&env, "260101-AAA", "Regular", "open", &[], None);
-    create_test_item(&env, "260102-BBB", "Important", "open", &["priority"], None);
-
-    let args = GetArgs {
-        label: Some("priority".to_string()),
-        author: None,
-        sort: SortBy::Id,
-        no_open: true,
-        closed: false,
-    };
-
-    let result = commands::get(&args);
-    assert!(result.is_ok(), "get with filter should succeed");
-}
-
-#[test]
-fn test_get_no_items_error() {
-    let env = TestEnv::new();
-    env.write_global_config(&GlobalConfigBuilder::new().auto_open(false).build());
-    commands::init().expect("init should succeed");
-
-    let args = GetArgs {
-        label: None,
-        author: None,
-        sort: SortBy::Id,
-        no_open: true,
-        closed: false,
-    };
-
-    let result = commands::get(&args);
-    assert!(result.is_err(), "get should fail when no items exist");
-}
-
-#[test]
-fn test_get_sort_by_date() {
-    let env = TestEnv::new();
-    env.write_global_config(&GlobalConfigBuilder::new().auto_open(false).build());
-    commands::init().expect("init should succeed");
-
-    create_test_item(&env, "260101-AAA", "Old Task", "open", &[], None);
-    create_test_item(&env, "260102-BBB", "New Task", "open", &[], None);
-
-    let args = GetArgs {
-        label: None,
-        author: None,
-        sort: SortBy::Date,
-        no_open: true,
-        closed: false,
-    };
-
-    let result = commands::get(&args);
-    assert!(result.is_ok(), "get with date sort should succeed");
 }
 
 // =============================================================================
@@ -802,40 +716,6 @@ fn test_config_auto_open_false_no_open_true() {
     let result = commands::new(args);
     assert!(result.is_ok(), "new should succeed");
     assert_eq!(env.count_all_items(), 1);
-}
-
-/// Tests get command with auto_open configurations.
-#[test]
-fn test_get_auto_open_combinations() {
-    // Test with auto_open=true
-    {
-        let env = TestEnv::new();
-        env.write_global_config(&GlobalConfigBuilder::new().auto_open(true).build());
-        commands::init().expect("init should succeed");
-        create_test_item(&env, "260101-AAA", "Task", "open", &[], None);
-
-        let args = GetArgs {
-            no_open: true, // Override auto_open
-            ..Default::default()
-        };
-
-        commands::get(&args).expect("get should succeed");
-    }
-
-    // Test with auto_open=false
-    {
-        let env = TestEnv::new();
-        env.write_global_config(&GlobalConfigBuilder::new().auto_open(false).build());
-        commands::init().expect("init should succeed");
-        create_test_item(&env, "260101-AAA", "Task", "open", &[], None);
-
-        let args = GetArgs {
-            no_open: false,
-            ..Default::default()
-        };
-
-        commands::get(&args).expect("get should succeed");
-    }
 }
 
 /// Tests list command with auto_open configurations.
@@ -1507,119 +1387,6 @@ fn test_list_open_and_closed_flags_together() {
 }
 
 // =============================================================================
-// Additional Get Command Tests
-// =============================================================================
-
-#[test]
-fn test_get_from_closed_items() {
-    let env = TestEnv::new();
-    env.write_global_config(&GlobalConfigBuilder::new().auto_open(false).build());
-    commands::init().expect("init should succeed");
-
-    create_test_item(&env, "260101-AAA", "Closed Task", "closed", &[], None);
-    std::fs::rename(
-        env.stack_path().join("260101-AAA-closed-task.md"),
-        env.archive_path().join("260101-AAA-closed-task.md"),
-    )
-    .expect("move to archive");
-
-    let args = GetArgs {
-        label: None,
-        author: None,
-        sort: SortBy::Id,
-        no_open: true,
-        closed: true,
-    };
-
-    let result = commands::get(&args);
-    assert!(result.is_ok(), "get --closed should succeed");
-}
-
-#[test]
-fn test_get_with_author_filter() {
-    let env = TestEnv::new();
-    env.write_global_config(&GlobalConfigBuilder::new().auto_open(false).build());
-    commands::init().expect("init should succeed");
-
-    create_test_item(&env, "260101-AAA", "Task by Test User", "open", &[], None);
-
-    // Author filter uses exact match (case-insensitive)
-    let args = GetArgs {
-        label: None,
-        author: Some("Test User".to_string()),
-        sort: SortBy::Id,
-        no_open: true,
-        closed: false,
-    };
-
-    let result = commands::get(&args);
-    assert!(result.is_ok(), "get with author filter should succeed");
-}
-
-#[test]
-fn test_get_sort_by_title() {
-    let env = TestEnv::new();
-    env.write_global_config(&GlobalConfigBuilder::new().auto_open(false).build());
-    commands::init().expect("init should succeed");
-
-    create_test_item(&env, "260101-AAA", "Zebra Task", "open", &[], None);
-    create_test_item(&env, "260102-BBB", "Alpha Task", "open", &[], None);
-
-    let args = GetArgs {
-        label: None,
-        author: None,
-        sort: SortBy::Title,
-        no_open: true,
-        closed: false,
-    };
-
-    let result = commands::get(&args);
-    assert!(result.is_ok(), "get with title sort should succeed");
-}
-
-#[test]
-fn test_get_combined_filters() {
-    let env = TestEnv::new();
-    env.write_global_config(&GlobalConfigBuilder::new().auto_open(false).build());
-    commands::init().expect("init should succeed");
-
-    create_test_item(&env, "260101-AAA", "Bug One", "open", &["bug"], None);
-    create_test_item(&env, "260102-BBB", "Bug Two", "open", &["bug"], None);
-
-    // Author filter uses exact match (case-insensitive)
-    let args = GetArgs {
-        label: Some("bug".to_string()),
-        author: Some("Test User".to_string()),
-        sort: SortBy::Date,
-        no_open: true,
-        closed: false,
-    };
-
-    let result = commands::get(&args);
-    assert!(result.is_ok(), "get with combined filters should succeed");
-}
-
-#[test]
-fn test_get_no_matching_filter() {
-    let env = TestEnv::new();
-    env.write_global_config(&GlobalConfigBuilder::new().auto_open(false).build());
-    commands::init().expect("init should succeed");
-
-    create_test_item(&env, "260101-AAA", "Regular Task", "open", &[], None);
-
-    let args = GetArgs {
-        label: Some("nonexistent".to_string()),
-        author: None,
-        sort: SortBy::Id,
-        no_open: true,
-        closed: false,
-    };
-
-    let result = commands::get(&args);
-    assert!(result.is_err(), "get with no matching items should fail");
-}
-
-// =============================================================================
 // Additional Search Command Tests
 // =============================================================================
 
@@ -2236,24 +2003,6 @@ fn test_list_without_init() {
 }
 
 #[test]
-fn test_get_without_init() {
-    let env = TestEnv::new();
-    env.write_global_config(&GlobalConfigBuilder::new().auto_open(false).build());
-    // Don't call init
-
-    let args = GetArgs {
-        label: None,
-        author: None,
-        sort: SortBy::Id,
-        no_open: true,
-        closed: false,
-    };
-
-    let result = commands::get(&args);
-    assert!(result.is_err(), "get without init should fail");
-}
-
-#[test]
 fn test_search_without_init() {
     let env = TestEnv::new();
     env.write_global_config(&GlobalConfigBuilder::new().auto_open(false).build());
@@ -2473,28 +2222,4 @@ fn test_list_nonexistent_label_filter() {
     // Should succeed but return empty list
     let result = commands::list(&filter);
     assert!(result.is_ok(), "list with no matching label should succeed");
-}
-
-#[test]
-fn test_get_author_case_insensitive() {
-    let env = TestEnv::new();
-    env.write_global_config(&GlobalConfigBuilder::new().auto_open(false).build());
-    commands::init().expect("init should succeed");
-
-    create_test_item(&env, "260101-AAA", "Task", "open", &[], None);
-
-    // Author filter uses exact match but is case-insensitive
-    let args = GetArgs {
-        label: None,
-        author: Some("test user".to_string()), // lowercase of "Test User"
-        sort: SortBy::Id,
-        no_open: true,
-        closed: false,
-    };
-
-    let result = commands::get(&args);
-    assert!(
-        result.is_ok(),
-        "get with case-insensitive author should work"
-    );
 }

@@ -51,7 +51,6 @@ qstack/
 │       ├── init.rs         # qstack init
 │       ├── new.rs          # qstack new <title>
 │       ├── list.rs         # qstack list [filters]
-│       ├── get.rs          # qstack get (first item)
 │       ├── search.rs       # qstack search <query>
 │       ├── update.rs       # qstack update --id <id>
 │       └── close.rs        # qstack close/reopen
@@ -93,8 +92,6 @@ qstack new "Title" --label bug --category bugs # Create item
 qstack new "Title" --no-open                   # Create without opening editor
 qstack list --open --sort date                 # List items
 qstack list --id 260109                        # Show item details
-qstack get                                     # Get first item, open in editor
-qstack get --sort date --no-open               # Get most recent, print path only
 qstack search "query"                          # Search and select interactively
 qstack search "bug" --full-text --no-open      # Full-text search, list results
 qstack update --id 260109 --title "New Title"  # Update item
