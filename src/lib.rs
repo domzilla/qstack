@@ -23,6 +23,7 @@ pub mod editor;
 pub mod id;
 pub mod item;
 pub mod storage;
+pub mod tui;
 pub mod ui;
 
 pub use config::{set_home_override, Config};

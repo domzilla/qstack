@@ -144,8 +144,8 @@ The author is determined from (in order):\n  \
         )
     )]
     New {
-        /// Title of the item
-        title: String,
+        /// Title of the item (omit to launch wizard)
+        title: Option<String>,
 
         /// Labels/tags for the item (multiple values allowed)
         #[arg(short, long, num_args = 1.., help = "Labels/tags for the item")]

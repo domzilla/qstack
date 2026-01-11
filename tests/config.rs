@@ -25,7 +25,7 @@ fn test_config_interactive_true_no_interactive_false() {
 
     // With interactive=true and no_interactive=false, editor would open (if terminal)
     let args = NewArgs {
-        title: "Test".to_string(),
+        title: Some("Test".to_string()),
         labels: vec![],
         category: None,
         attachments: vec![],
@@ -47,7 +47,7 @@ fn test_config_interactive_true_no_interactive_true() {
 
     // With no_interactive=true, editor should never open
     let args = NewArgs {
-        title: "Test".to_string(),
+        title: Some("Test".to_string()),
         labels: vec![],
         category: None,
         attachments: vec![],
@@ -69,7 +69,7 @@ fn test_config_interactive_false_no_interactive_false() {
 
     // With interactive=false, editor should never open
     let args = NewArgs {
-        title: "Test".to_string(),
+        title: Some("Test".to_string()),
         labels: vec![],
         category: None,
         attachments: vec![],
@@ -90,7 +90,7 @@ fn test_config_interactive_false_no_interactive_true() {
     commands::init().expect("init should succeed");
 
     let args = NewArgs {
-        title: "Test".to_string(),
+        title: Some("Test".to_string()),
         labels: vec![],
         category: None,
         attachments: vec![],
@@ -121,7 +121,7 @@ fn test_use_git_user_disabled() {
     commands::init().expect("init should succeed");
 
     let args = NewArgs {
-        title: "Test".to_string(),
+        title: Some("Test".to_string()),
         labels: vec![],
         category: None,
         attachments: vec![],
@@ -155,7 +155,7 @@ fn test_use_git_user_enabled_with_explicit_name() {
     commands::init().expect("init should succeed");
 
     let args = NewArgs {
-        title: "Test".to_string(),
+        title: Some("Test".to_string()),
         labels: vec![],
         category: None,
         attachments: vec![],
@@ -259,7 +259,7 @@ fn test_custom_stack_directory() {
     std::fs::create_dir_all(&archive_dir).expect("create archive dir");
 
     let args = NewArgs {
-        title: "Task".to_string(),
+        title: Some("Task".to_string()),
         labels: vec![],
         category: None,
         attachments: vec![],
@@ -328,7 +328,7 @@ fn test_different_users_in_parallel() {
         commands::init().expect("init should succeed");
 
         let args = NewArgs {
-            title: "Alice's Task".to_string(),
+            title: Some("Alice's Task".to_string()),
             labels: vec![],
             category: None,
             attachments: vec![],
@@ -349,7 +349,7 @@ fn test_different_users_in_parallel() {
         commands::init().expect("init should succeed");
 
         let args = NewArgs {
-            title: "Bob's Task".to_string(),
+            title: Some("Bob's Task".to_string()),
             labels: vec![],
             category: None,
             attachments: vec![],

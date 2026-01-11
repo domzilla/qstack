@@ -17,7 +17,7 @@ fn test_new_creates_item() {
     commands::init().expect("init should succeed");
 
     let args = NewArgs {
-        title: "Test Item".to_string(),
+        title: Some("Test Item".to_string()),
         labels: vec![],
         category: None,
         attachments: vec![],
@@ -46,7 +46,7 @@ fn test_new_with_labels() {
     commands::init().expect("init should succeed");
 
     let args = NewArgs {
-        title: "Bug Report".to_string(),
+        title: Some("Bug Report".to_string()),
         labels: vec!["bug".to_string(), "urgent".to_string()],
         category: None,
         attachments: vec![],
@@ -69,7 +69,7 @@ fn test_new_with_category() {
     commands::init().expect("init should succeed");
 
     let args = NewArgs {
-        title: "Bug in Login".to_string(),
+        title: Some("Bug in Login".to_string()),
         labels: vec![],
         category: Some("bugs".to_string()),
         attachments: vec![],
@@ -90,7 +90,7 @@ fn test_new_uses_custom_id_pattern() {
     commands::init().expect("init should succeed");
 
     let args = NewArgs {
-        title: "Custom ID Item".to_string(),
+        title: Some("Custom ID Item".to_string()),
         labels: vec![],
         category: None,
         attachments: vec![],
@@ -119,7 +119,7 @@ fn test_new_project_id_pattern_overrides_global() {
     std::fs::create_dir_all(env.archive_path()).expect("create archive dir");
 
     let args = NewArgs {
-        title: "Project Pattern".to_string(),
+        title: Some("Project Pattern".to_string()),
         labels: vec![],
         category: None,
         attachments: vec![],
@@ -144,7 +144,7 @@ fn test_new_with_labels_and_category() {
     commands::init().expect("init should succeed");
 
     let args = NewArgs {
-        title: "Critical Bug".to_string(),
+        title: Some("Critical Bug".to_string()),
         labels: vec!["bug".to_string(), "urgent".to_string(), "p0".to_string()],
         category: Some("bugs".to_string()),
         attachments: vec![],
@@ -178,7 +178,7 @@ fn test_new_with_attachments() {
     let file2 = env.create_test_file("debug.log", "log content");
 
     let args = NewArgs {
-        title: "Bug with attachments".to_string(),
+        title: Some("Bug with attachments".to_string()),
         labels: vec!["bug".to_string()],
         category: None,
         attachments: vec![
@@ -241,7 +241,7 @@ fn test_new_with_empty_labels() {
     commands::init().expect("init should succeed");
 
     let args = NewArgs {
-        title: "No Labels".to_string(),
+        title: Some("No Labels".to_string()),
         labels: vec![],
         category: None,
         attachments: vec![],
@@ -276,7 +276,7 @@ fn test_new_multiple_items_unique_ids() {
     // Create multiple items rapidly
     for i in 0..5 {
         let args = NewArgs {
-            title: format!("Task {}", i),
+            title: Some(format!("Task {i}")),
             labels: vec![],
             category: None,
             attachments: vec![],
@@ -315,7 +315,7 @@ fn test_new_nested_category() {
     commands::init().expect("init should succeed");
 
     let args = NewArgs {
-        title: "Nested Task".to_string(),
+        title: Some("Nested Task".to_string()),
         labels: vec![],
         category: Some("level1/level2".to_string()),
         attachments: vec![],
@@ -336,7 +336,7 @@ fn test_new_without_init() {
     // Don't call init
 
     let args = NewArgs {
-        title: "Task".to_string(),
+        title: Some("Task".to_string()),
         labels: vec![],
         category: None,
         attachments: vec![],

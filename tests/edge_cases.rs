@@ -22,7 +22,7 @@ fn test_special_characters_in_title() {
     commands::init().expect("init should succeed");
 
     let args = NewArgs {
-        title: "Bug: 100% failure rate (critical!)".to_string(),
+        title: Some("Bug: 100% failure rate (critical!)".to_string()),
         labels: vec![],
         category: None,
         attachments: vec![],
@@ -41,7 +41,7 @@ fn test_unicode_in_title() {
     commands::init().expect("init should succeed");
 
     let args = NewArgs {
-        title: "Support für Umlaute (日本語テスト)".to_string(),
+        title: Some("Support für Umlaute (日本語テスト)".to_string()),
         labels: vec![],
         category: None,
         attachments: vec![],
@@ -61,7 +61,7 @@ fn test_empty_title() {
 
     // Empty title should still work (will create file with just ID)
     let args = NewArgs {
-        title: "".to_string(),
+        title: Some("".to_string()),
         labels: vec![],
         category: None,
         attachments: vec![],
@@ -81,7 +81,7 @@ fn test_very_long_title() {
 
     let long_title = "A".repeat(500);
     let args = NewArgs {
-        title: long_title,
+        title: Some(long_title),
         labels: vec![],
         category: None,
         attachments: vec![],
@@ -105,7 +105,7 @@ fn test_whitespace_only_title() {
     commands::init().expect("init should succeed");
 
     let args = NewArgs {
-        title: "   ".to_string(),
+        title: Some("   ".to_string()),
         labels: vec![],
         category: None,
         attachments: vec![],
@@ -126,7 +126,7 @@ fn test_category_with_special_characters() {
 
     // Category names should be sanitized
     let args = NewArgs {
-        title: "Task".to_string(),
+        title: Some("Task".to_string()),
         labels: vec![],
         category: Some("my-category_v2".to_string()),
         attachments: vec![],
@@ -148,7 +148,7 @@ fn test_label_with_special_characters() {
     commands::init().expect("init should succeed");
 
     let args = NewArgs {
-        title: "Task".to_string(),
+        title: Some("Task".to_string()),
         labels: vec![
             "bug-fix".to_string(),
             "v2.0".to_string(),
@@ -176,7 +176,7 @@ fn test_duplicate_labels_ignored() {
     commands::init().expect("init should succeed");
 
     let args = NewArgs {
-        title: "Task".to_string(),
+        title: Some("Task".to_string()),
         labels: vec!["bug".to_string(), "bug".to_string(), "bug".to_string()],
         category: None,
         attachments: vec![],

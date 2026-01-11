@@ -10,17 +10,48 @@ use std::io::IsTerminal;
 
 use anyhow::{Context, Result};
 use comfy_table::{presets::UTF8_FULL_CONDENSED, Cell, Color, ContentArrangement, Table};
-use dialoguer::{theme::ColorfulTheme, Select};
 
 use crate::{
     config::Config,
-    editor,
+    editor, id,
     item::{Item, Status},
+    tui::screens::select_from_list as tui_select,
 };
 
 // =============================================================================
 // Interactive Mode Resolution
 // =============================================================================
+
+/// Common interactive mode flags used across commands.
+///
+/// Consolidates the `--interactive` / `--no-interactive` flag pattern.
+#[derive(Debug, Clone, Copy, Default)]
+pub struct InteractiveArgs {
+    /// Force interactive mode
+    pub interactive: bool,
+    /// Force non-interactive mode
+    pub no_interactive: bool,
+}
+
+impl InteractiveArgs {
+    /// Resolves interactive mode from flags and config.
+    ///
+    /// Priority: explicit `--interactive` > explicit `--no-interactive` > config default
+    pub const fn resolve(&self, config_default: bool) -> bool {
+        if self.interactive {
+            true
+        } else if self.no_interactive {
+            false
+        } else {
+            config_default
+        }
+    }
+
+    /// Checks if we should run interactive mode (combines flag resolution with terminal check).
+    pub fn should_run(&self, config: &Config) -> bool {
+        self.resolve(config.interactive()) && std::io::stdout().is_terminal()
+    }
+}
 
 /// Resolves interactive mode from CLI flags and config.
 ///
@@ -57,12 +88,7 @@ pub fn should_run_interactive(
 ///
 /// Displays a list of options and returns the index of the selected item.
 pub fn select_from_list<T: ToString>(prompt: &str, options: &[T]) -> Result<usize> {
-    Select::with_theme(&ColorfulTheme::default())
-        .with_prompt(prompt)
-        .items(options)
-        .default(0)
-        .interact()
-        .context("Selection cancelled")
+    tui_select(prompt, options)
 }
 
 /// Interactive selection for items - returns index.
@@ -134,7 +160,7 @@ pub fn print_items_table_ref(items: &[&Item]) {
         let status_cell = status_cell(item.status());
         let labels = item.labels().join(", ");
         let category = item.category().unwrap_or("-");
-        let short_id = short_id(item.id());
+        let short_id = id::short_form(item.id());
 
         table.add_row(vec![
             Cell::new(short_id),
@@ -156,7 +182,7 @@ pub fn print_items_table_compact(items: &[&Item]) {
     for item in items {
         let status_cell = status_cell(item.status());
         let labels = item.labels().join(", ");
-        let short_id = short_id(item.id());
+        let short_id = id::short_form(item.id());
 
         table.add_row(vec![
             Cell::new(short_id),
@@ -177,9 +203,9 @@ fn status_cell(status: Status) -> Cell {
     }
 }
 
-/// Extracts the short ID (first part before the dash) for display.
+/// Extracts the short ID for display.
 ///
-/// Given "260109-02F7K9M-title", returns "260109".
+/// Re-export of `id::short_form` for convenience.
 pub fn short_id(id: &str) -> &str {
-    id.split('-').next().unwrap_or(id)
+    id::short_form(id)
 }
