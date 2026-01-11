@@ -6,6 +6,7 @@
 //! Licensed under the MIT License.
 
 use anyhow::Result;
+use clap::builder::{styling::AnsiColor, Styles};
 use clap::{Parser, Subcommand};
 use owo_colors::OwoColorize;
 
@@ -13,30 +14,71 @@ use qstack::commands::{
     self, CategoriesArgs, LabelsArgs, ListFilter, NewArgs, SearchArgs, SortBy, UpdateArgs,
 };
 
-const GLOBAL_HELP: &str = "\
-Configuration Files:
-  ~/.qstack          Global configuration (user name, editor, ID pattern)
-  .qstack            Project configuration (stack directory, archive directory)
+const STYLES: Styles = Styles::styled()
+    .header(AnsiColor::Yellow.on_default().bold())
+    .usage(AnsiColor::Yellow.on_default().bold())
+    .literal(AnsiColor::Green.on_default())
+    .placeholder(AnsiColor::Cyan.on_default());
 
-ID Pattern Tokens (for id_pattern config):
-  %y  Year (2 digits)           %m  Month (01-12)
-  %d  Day of month (01-31)      %j  Day of year (001-366)
-  %T  Time as Base32 (4 chars)  %R  Random Base32 char (repeat: %RRR)
-  %%  Literal percent sign
+// Help text colorization macros
+macro_rules! h {
+    ($s:expr) => {
+        concat!("\x1b[1;33m", $s, "\x1b[0m")
+    };
+}
 
-Getting Started:
-  qstack init                    Initialize project in current directory
-  qstack new \"My first task\"     Create a new item
-  qstack list                    List all open items
-  qstack close --id <ID>         Close an item
+macro_rules! c {
+    ($s:expr) => {
+        concat!("\x1b[32m", $s, "\x1b[0m")
+    };
+}
 
-Learn more:
-  qstack <COMMAND> --help        Show detailed help for a command";
+macro_rules! a {
+    ($s:expr) => {
+        concat!("\x1b[36m", $s, "\x1b[0m")
+    };
+}
+
+macro_rules! global_help {
+    () => {
+        concat!(
+            h!("Configuration Files:"),
+            "\n  ",
+            "~/.qstack          Global configuration (user name, editor, ID pattern)\n  ",
+            ".qstack            Project configuration (stack directory, archive directory)\n\n",
+            h!("ID Pattern Tokens:"),
+            "\n  ",
+            "%y  Year (2 digits)           %m  Month (01-12)\n  ",
+            "%d  Day of month (01-31)      %j  Day of year (001-366)\n  ",
+            "%T  Time as Base32 (4 chars)  %R  Random Base32 char (repeat: %RRR)\n  ",
+            "%%  Literal percent sign\n\n",
+            h!("Getting Started:"),
+            "\n  ",
+            c!("qstack init"),
+            "                    Initialize project in current directory\n  ",
+            c!("qstack new "),
+            a!("\"My first task\""),
+            "     Create a new item\n  ",
+            c!("qstack list"),
+            "                    List all open items\n  ",
+            c!("qstack close --id "),
+            a!("<ID>"),
+            "         Close an item\n\n",
+            h!("Learn more:"),
+            "\n  ",
+            c!("qstack "),
+            a!("<COMMAND>"),
+            c!(" --help"),
+            "        Show detailed help for a command"
+        )
+    };
+}
 
 #[derive(Parser)]
 #[command(name = "qstack")]
 #[command(author = "Dominic Rodemer")]
 #[command(version)]
+#[command(styles = STYLES)]
 #[command(about = "CLI-based task and issue tracker with documentation-as-code philosophy")]
 #[command(
     long_about = "qstack is a CLI-based task and issue tracker that follows a documentation-as-code \
@@ -47,7 +89,7 @@ Each item gets a unique ID, a slugified filename, and can be organized into cate
 The tool integrates with Git for seamless version control and supports customizable \
 ID patterns using Crockford's Base32 encoding."
 )]
-#[command(after_help = GLOBAL_HELP)]
+#[command(after_help = global_help!())]
 struct Cli {
     #[command(subcommand)]
     command: Commands,
@@ -64,10 +106,12 @@ Directory structure created:\n  \
 .qstack              Project configuration file\n  \
 qstack/              Stack directory for items\n  \
 qstack/archive/      Archive directory for closed items",
-        after_help = "Examples:\n  \
-qstack init                     Initialize in current directory\n  \
-cd myproject && qstack init     Initialize in a specific project\n\n\
-Note: Run this command once per project, typically at the repository root."
+        after_help = concat!(
+            h!("Examples:"), "\n  ",
+            c!("qstack init"), "                     Initialize in current directory\n  ",
+            c!("cd myproject && qstack init"), "     Initialize in a specific project\n\n",
+            h!("Note:"), " Run this command once per project, typically at the repository root."
+        )
     )]
     Init,
 
@@ -81,13 +125,15 @@ The author is determined from (in order):\n  \
 1. user_name in ~/.qstack\n  \
 2. git config user.name (if use_git_user is true)\n  \
 3. Interactive prompt (saved to ~/.qstack for future use)",
-        after_help = "Examples:\n  \
-qstack new \"Fix login bug\"\n  \
-qstack new \"Add dark mode\" --label feature --label ui\n  \
-qstack new \"Memory leak in parser\" --label bug --category bugs\n  \
-qstack new \"Update docs\" -l docs -c documentation\n  \
-qstack new \"Quick note\" --no-interactive       Skip editor\n\n\
-Output: Prints the relative path to the created file."
+        after_help = concat!(
+            h!("Examples:"), "\n  ",
+            c!("qstack new "), a!("\"Fix login bug\""), "\n  ",
+            c!("qstack new "), a!("\"Add dark mode\""), c!(" --label "), a!("feature"), c!(" --label "), a!("ui"), "\n  ",
+            c!("qstack new "), a!("\"Memory leak\""), c!(" --label "), a!("bug"), c!(" --category "), a!("bugs"), "\n  ",
+            c!("qstack new "), a!("\"Update docs\""), c!(" -l "), a!("docs"), c!(" -c "), a!("documentation"), "\n  ",
+            c!("qstack new "), a!("\"Quick note\""), c!(" --no-interactive"), "       Skip editor\n\n",
+            h!("Output:"), " Prints the relative path to the created file."
+        )
     )]
     New {
         /// Title of the item
@@ -116,14 +162,16 @@ Output: Prints the relative path to the created file."
 By default, shows all open items in a table format and then presents an interactive \
 selector to choose an item to open. Use filters to narrow down results.\n\n\
 Use --no-interactive to just display the table without interactive selection.",
-        after_help = "Examples:\n  \
-qstack list                        List items, select one to open\n  \
-qstack list --no-interactive       Just show the table\n  \
-qstack list --closed               List archived/closed items\n  \
-qstack list --label bug            Filter by label\n  \
-qstack list --author \"John\"        Filter by author\n  \
-qstack list --sort date            Sort by creation date\n\n\
-Interactive mode: Use arrow keys to navigate, Enter to select, Esc to cancel."
+        after_help = concat!(
+            h!("Examples:"), "\n  ",
+            c!("qstack list"), "                        List items, select one to open\n  ",
+            c!("qstack list --no-interactive"), "       Just show the table\n  ",
+            c!("qstack list --closed"), "               List archived/closed items\n  ",
+            c!("qstack list --label "), a!("bug"), "            Filter by label\n  ",
+            c!("qstack list --author "), a!("\"John\""), "        Filter by author\n  ",
+            c!("qstack list --sort "), a!("date"), "            Sort by creation date\n\n",
+            h!("Interactive mode:"), " Use arrow keys to navigate, Enter to select, Esc to cancel."
+        )
     )]
     List {
         /// Show only open items
@@ -170,13 +218,15 @@ Search behavior:\n  \
 - Multiple matches: shows interactive selector\n  \
 - No matches: returns an error\n\n\
 Use --full-text to also search within the markdown body content.",
-        after_help = "Examples:\n  \
-qstack search \"login bug\"             Search and select interactively\n  \
-qstack search \"260109\"                Search by ID\n  \
-qstack search \"auth\" --full-text      Include body content in search\n  \
-qstack search \"bug\" --no-interactive  Just list matching items\n  \
-qstack search \"old task\" --closed     Search in archived items\n\n\
-Interactive mode: Use arrow keys to navigate, Enter to select, Esc to cancel."
+        after_help = concat!(
+            h!("Examples:"), "\n  ",
+            c!("qstack search "), a!("\"login bug\""), "             Search and select interactively\n  ",
+            c!("qstack search "), a!("\"260109\""), "                Search by ID\n  ",
+            c!("qstack search "), a!("\"auth\""), c!(" --full-text"), "      Include body content in search\n  ",
+            c!("qstack search "), a!("\"bug\""), c!(" --no-interactive"), "  Just list matching items\n  ",
+            c!("qstack search "), a!("\"old task\""), c!(" --closed"), "     Search in archived items\n\n",
+            h!("Interactive mode:"), " Use arrow keys to navigate, Enter to select, Esc to cancel."
+        )
     )]
     Search {
         /// Search query (matches against title and ID)
@@ -207,13 +257,15 @@ is renamed to reflect the new slug. In Git repositories, uses 'git mv' to preser
 history.\n\n\
 Labels are additive - new labels are added without removing existing ones. \
 To modify labels directly, edit the Markdown file.",
-        after_help = "Examples:\n  \
-qstack update --id 260109 --title \"New title\"\n  \
-qstack update --id 2601 --label urgent --label p1\n  \
-qstack update --id 260109 --category bugs\n  \
-qstack update --id 260109 --no-category          Move to stack root\n  \
-qstack update --id 26 --title \"Fix\" --label done  Multiple updates\n\n\
-Note: The --id flag supports partial matching for convenience."
+        after_help = concat!(
+            h!("Examples:"), "\n  ",
+            c!("qstack update --id "), a!("260109"), c!(" --title "), a!("\"New title\""), "\n  ",
+            c!("qstack update --id "), a!("2601"), c!(" --label "), a!("urgent"), c!(" --label "), a!("p1"), "\n  ",
+            c!("qstack update --id "), a!("260109"), c!(" --category "), a!("bugs"), "\n  ",
+            c!("qstack update --id "), a!("260109"), c!(" --no-category"), "          Move to stack root\n  ",
+            c!("qstack update --id "), a!("26"), c!(" --title "), a!("\"Fix\""), c!(" --label "), a!("done"), "  Multiple updates\n\n",
+            h!("Note:"), " The --id flag supports partial matching for convenience."
+        )
     )]
     Update {
         /// Item ID (partial match supported)
@@ -247,11 +299,13 @@ Note: The --id flag supports partial matching for convenience."
 Sets the item's status to 'closed' and moves it from the stack directory to the \
 archive subdirectory. In Git repositories, uses 'git mv' to preserve history.\n\n\
 Closed items are excluded from 'qstack list' by default (use --closed to see them).",
-        after_help = "Examples:\n  \
-qstack close --id 260109              Close by full ID\n  \
-qstack close --id 2601                Close by partial ID\n  \
-qstack list --closed                  View closed items\n  \
-qstack reopen --id 260109             Reopen if needed"
+        after_help = concat!(
+            h!("Examples:"), "\n  ",
+            c!("qstack close --id "), a!("260109"), "              Close by full ID\n  ",
+            c!("qstack close --id "), a!("2601"), "                Close by partial ID\n  ",
+            c!("qstack list --closed"), "                  View closed items\n  ",
+            c!("qstack reopen --id "), a!("260109"), "             Reopen if needed"
+        )
     )]
     Close {
         /// Item ID (partial match supported)
@@ -269,10 +323,12 @@ qstack reopen --id 260109             Reopen if needed"
 Sets the item's status to 'open' and moves it from the archive directory back \
 to the stack (or its original category). In Git repositories, uses 'git mv' to \
 preserve history.",
-        after_help = "Examples:\n  \
-qstack reopen --id 260109             Reopen by full ID\n  \
-qstack reopen --id 2601               Reopen by partial ID\n  \
-qstack list                           Verify item is back in open list"
+        after_help = concat!(
+            h!("Examples:"), "\n  ",
+            c!("qstack reopen --id "), a!("260109"), "             Reopen by full ID\n  ",
+            c!("qstack reopen --id "), a!("2601"), "               Reopen by partial ID\n  ",
+            c!("qstack list"), "                           Verify item is back in open list"
+        )
     )]
     Reopen {
         /// Item ID (partial match supported)
@@ -289,10 +345,12 @@ qstack list                           Verify item is back in open list"
         long_about = "List all unique labels used across items with counts.\n\n\
 Shows a table of all labels and how many items use each one. In interactive mode, \
 you can select a label to see all items with that label, then select an item to open.",
-        after_help = "Examples:\n  \
-qstack labels                         List all labels\n  \
-qstack labels --no-interactive        Just show the table\n  \
-qstack labels -i                      Force interactive selection"
+        after_help = concat!(
+            h!("Examples:"), "\n  ",
+            c!("qstack labels"), "                         List all labels\n  ",
+            c!("qstack labels --no-interactive"), "        Just show the table\n  ",
+            c!("qstack labels -i"), "                      Force interactive selection"
+        )
     )]
     Labels {
         /// Force interactive mode (show selector)
@@ -309,10 +367,12 @@ qstack labels -i                      Force interactive selection"
         long_about = "List all unique categories used across items with counts.\n\n\
 Shows a table of all categories and how many items are in each one. In interactive mode, \
 you can select a category to see all items in it, then select an item to open.",
-        after_help = "Examples:\n  \
-qstack categories                     List all categories\n  \
-qstack categories --no-interactive    Just show the table\n  \
-qstack categories -i                  Force interactive selection"
+        after_help = concat!(
+            h!("Examples:"), "\n  ",
+            c!("qstack categories"), "                     List all categories\n  ",
+            c!("qstack categories --no-interactive"), "    Just show the table\n  ",
+            c!("qstack categories -i"), "                  Force interactive selection"
+        )
     )]
     Categories {
         /// Force interactive mode (show selector)
