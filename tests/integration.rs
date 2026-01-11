@@ -38,25 +38,21 @@ fn test_init_creates_project_structure() {
 }
 
 #[test]
-fn test_init_creates_global_config_if_missing() {
+fn test_init_fails_without_global_config() {
     let env = TestEnv::new();
     assert!(
         !env.global_config_path().exists(),
         "Global config should not exist initially"
     );
 
-    // Run init
-    commands::init().expect("init should succeed");
+    // Run init - should fail because global config doesn't exist
+    let result = commands::init();
+    assert!(result.is_err(), "init should fail without global config");
 
-    // Global config should be auto-created
+    let err = result.unwrap_err().to_string();
     assert!(
-        env.global_config_path().exists(),
-        "Global config should be created"
-    );
-    let content = env.read_global_config();
-    assert!(
-        content.contains("interactive"),
-        "Config should contain interactive setting"
+        err.contains("qstack setup"),
+        "Error should mention running 'qstack setup': {err}"
     );
 }
 

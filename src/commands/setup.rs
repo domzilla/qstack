@@ -40,27 +40,17 @@ pub fn execute(cmd: &mut Command) -> Result<()> {
 
 /// Creates the global config file if it doesn't exist
 fn setup_global_config() -> Result<()> {
-    let config_path = GlobalConfig::path();
+    let path = GlobalConfig::path()
+        .ok_or_else(|| anyhow::anyhow!("Could not determine home directory"))?;
 
-    match &config_path {
-        Some(path) if path.exists() => {
-            eprintln!(
-                "{} Global config already exists: {}",
-                "✓".green(),
-                path.display()
-            );
-        }
-        Some(path) => {
-            // Loading will auto-create with comments
-            GlobalConfig::load()?;
-            eprintln!("{} Created global config: {}", "✓".green(), path.display());
-        }
-        None => {
-            eprintln!(
-                "{} Could not determine home directory, skipping global config",
-                "⚠".yellow()
-            );
-        }
+    if GlobalConfig::create_default_if_missing()? {
+        eprintln!("{} Created global config: {}", "✓".green(), path.display());
+    } else {
+        eprintln!(
+            "{} Global config already exists: {}",
+            "✓".green(),
+            path.display()
+        );
     }
 
     Ok(())

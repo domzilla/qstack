@@ -116,18 +116,18 @@ impl GlobalConfig {
         dirs::home_dir().map(|home| home.join(GLOBAL_CONFIG_FILE))
     }
 
-    /// Loads the global config from ~/.qstack, creating it if it doesn't exist
+    /// Loads the global config from ~/.qstack.
+    /// Fails if the config doesn't exist — user must run `qstack setup` first.
     pub fn load() -> Result<Self> {
         let Some(path) = Self::path() else {
-            return Ok(Self::default());
+            anyhow::bail!("Could not determine home directory");
         };
 
         if !path.exists() {
-            // Auto-generate default config with comments
-            let config = Self::default();
-            Self::save_with_comments(&path, &config)?;
-            eprintln!("{} Created global config: {}", "✓".green(), path.display());
-            return Ok(config);
+            anyhow::bail!(
+                "Global config not found. Run {} first.",
+                "qstack setup".green()
+            );
         }
 
         let content = fs::read_to_string(&path)
@@ -135,6 +135,22 @@ impl GlobalConfig {
 
         toml::from_str(&content)
             .with_context(|| format!("Failed to parse global config: {}", path.display()))
+    }
+
+    /// Creates the global config with default values and comments.
+    /// Used by `qstack setup`. Returns true if created, false if already exists.
+    pub fn create_default_if_missing() -> Result<bool> {
+        let Some(path) = Self::path() else {
+            anyhow::bail!("Could not determine home directory");
+        };
+
+        if path.exists() {
+            return Ok(false);
+        }
+
+        let config = Self::default();
+        Self::save_with_comments(&path, &config)?;
+        Ok(true)
     }
 
     /// Saves the global config to ~/.qstack

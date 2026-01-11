@@ -8,11 +8,13 @@ A CLI-based task and issue tracker that follows a "documentation as code" philos
 cargo install --path .
 ```
 
-After installation, run the one-time setup to enable shell completions:
+**Required:** Run the one-time setup before using qstack:
 
 ```bash
 qstack setup
 ```
+
+This creates the global configuration (`~/.qstack`) and installs shell completions for tab completion of commands and arguments.
 
 > **Note:** Run `qstack setup` again after updating qstack to refresh shell completions with any new commands or options.
 
