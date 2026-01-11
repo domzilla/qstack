@@ -53,7 +53,9 @@ qstack/
 │       ├── list.rs         # qstack list [filters]
 │       ├── search.rs       # qstack search <query>
 │       ├── update.rs       # qstack update --id <id>
-│       └── close.rs        # qstack close/reopen
+│       ├── close.rs        # qstack close/reopen
+│       ├── labels.rs       # qstack labels
+│       └── categories.rs   # qstack categories
 ├── scripts/
 │   └── install-hooks.sh    # Git hooks installer
 ├── tests/
@@ -97,6 +99,8 @@ qstack search "bug" --full-text --no-interactive  # Full-text search, list resul
 qstack update --id 260109 --title "New Title"  # Update item
 qstack close --id 260109                       # Archive item
 qstack reopen --id 260109                      # Restore item
+qstack labels                                  # List all labels (interactive selection)
+qstack categories                              # List all categories (interactive selection)
 ```
 
 ## Storage Layout

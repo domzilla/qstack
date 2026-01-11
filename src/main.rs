@@ -9,7 +9,9 @@ use anyhow::Result;
 use clap::{Parser, Subcommand};
 use owo_colors::OwoColorize;
 
-use qstack::commands::{self, ListFilter, NewArgs, SearchArgs, SortBy, UpdateArgs};
+use qstack::commands::{
+    self, CategoriesArgs, LabelsArgs, ListFilter, NewArgs, SearchArgs, SortBy, UpdateArgs,
+};
 
 const GLOBAL_HELP: &str = "\
 Configuration Files:
@@ -281,6 +283,46 @@ qstack list                           Verify item is back in open list"
         )]
         id: String,
     },
+
+    /// List all labels used across items
+    #[command(
+        long_about = "List all unique labels used across items with counts.\n\n\
+Shows a table of all labels and how many items use each one. In interactive mode, \
+you can select a label to see all items with that label, then select an item to open.",
+        after_help = "Examples:\n  \
+qstack labels                         List all labels\n  \
+qstack labels --no-interactive        Just show the table\n  \
+qstack labels -i                      Force interactive selection"
+    )]
+    Labels {
+        /// Force interactive mode (show selector)
+        #[arg(short = 'i', long, conflicts_with = "no_interactive")]
+        interactive: bool,
+
+        /// Force non-interactive mode (just show table)
+        #[arg(long)]
+        no_interactive: bool,
+    },
+
+    /// List all categories used across items
+    #[command(
+        long_about = "List all unique categories used across items with counts.\n\n\
+Shows a table of all categories and how many items are in each one. In interactive mode, \
+you can select a category to see all items in it, then select an item to open.",
+        after_help = "Examples:\n  \
+qstack categories                     List all categories\n  \
+qstack categories --no-interactive    Just show the table\n  \
+qstack categories -i                  Force interactive selection"
+    )]
+    Categories {
+        /// Force interactive mode (show selector)
+        #[arg(short = 'i', long, conflicts_with = "no_interactive")]
+        interactive: bool,
+
+        /// Force non-interactive mode (just show table)
+        #[arg(long)]
+        no_interactive: bool,
+    },
 }
 
 fn main() {
@@ -359,5 +401,21 @@ fn run() -> Result<()> {
         Commands::Close { id } => commands::execute_close(&id),
 
         Commands::Reopen { id } => commands::execute_reopen(&id),
+
+        Commands::Labels {
+            interactive,
+            no_interactive,
+        } => commands::labels(&LabelsArgs {
+            interactive,
+            no_interactive,
+        }),
+
+        Commands::Categories {
+            interactive,
+            no_interactive,
+        } => commands::categories(&CategoriesArgs {
+            interactive,
+            no_interactive,
+        }),
     }
 }
