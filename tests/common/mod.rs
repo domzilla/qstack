@@ -311,16 +311,19 @@ impl ProjectConfigBuilder {
         self
     }
 
+    #[allow(dead_code)]
     pub fn use_git_user(mut self, use_git: bool) -> Self {
         self.use_git_user = Some(use_git);
         self
     }
 
+    #[allow(dead_code)]
     pub fn editor(mut self, editor: impl Into<String>) -> Self {
         self.editor = Some(editor.into());
         self
     }
 
+    #[allow(dead_code)]
     pub fn interactive(mut self, interactive: bool) -> Self {
         self.interactive = Some(interactive);
         self
@@ -481,6 +484,7 @@ impl TestEnv {
     }
 
     /// Checks if an attachment file exists in the given directory.
+    #[allow(dead_code)]
     pub fn attachment_exists(&self, item_path: &Path, attachment_name: &str) -> bool {
         item_path
             .parent()
