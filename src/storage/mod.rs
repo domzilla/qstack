@@ -39,7 +39,7 @@ fn walk_markdown_files(
         .map(walkdir::DirEntry::into_path)
 }
 
-/// Walks all item files in the stack directory.
+/// Walks all item files in the qstack directory.
 pub fn walk_items(config: &Config) -> impl Iterator<Item = PathBuf> {
     let archive_path = config.archive_path();
 
@@ -172,7 +172,7 @@ pub fn target_directory(config: &Config, category: Option<&str>) -> PathBuf {
 /// Derives the category from an item's file path.
 ///
 /// Returns `Some(category)` if the item is in a category subdirectory,
-/// or `None` if it's in the root of the stack/archive.
+/// or `None` if it's in the root of qstack/archive.
 ///
 /// Works for both active items (in `stack_path`) and archived items (in `archive_path`).
 pub fn derive_category(config: &Config, path: &Path) -> Option<String> {
@@ -184,7 +184,7 @@ pub fn derive_category(config: &Config, path: &Path) -> Option<String> {
     let stack_path = stack_path.canonicalize().ok()?;
     let archive_path = archive_path.canonicalize().unwrap_or(archive_path);
 
-    // Determine base path (archive or stack)
+    // Determine base path (archive or qstack)
     let relative = if path.starts_with(&archive_path) {
         path.strip_prefix(&archive_path).ok()?
     } else if path.starts_with(&stack_path) {
@@ -265,7 +265,7 @@ pub fn archive_item(config: &Config, path: &Path) -> Result<(PathBuf, Vec<String
     Ok((dest, warnings))
 }
 
-/// Moves an item from the archive back to the stack.
+/// Moves an item from the archive back to qstack.
 ///
 /// Derives category from archive path structure and restores to same category.
 /// Returns the new path and any warnings from moving attachments.
@@ -355,8 +355,8 @@ pub fn move_to_category(
 /// Removes an empty category directory if it's safe to do so.
 ///
 /// Only removes directories that:
-/// - Are inside the stack directory (including archive)
-/// - Are not the stack root or archive root
+/// - Are inside the qstack directory (including archive)
+/// - Are not the qstack root or archive root
 /// - Are empty
 fn cleanup_empty_category_dir(config: &Config, dir: &Path) {
     let stack_path = config.stack_path();
@@ -367,7 +367,7 @@ fn cleanup_empty_category_dir(config: &Config, dir: &Path) {
         return;
     }
 
-    // Only clean up directories inside stack (which includes archive)
+    // Only clean up directories inside qstack (which includes archive)
     if !dir.starts_with(&stack_path) {
         return;
     }

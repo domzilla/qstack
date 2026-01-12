@@ -392,7 +392,7 @@ pub fn execute(filter: ListFilter, interactive: InteractiveArgs) -> Result<()> {
 
 | Command | File | Key Functions |
 |---------|------|---------------|
-| `init` | `init.rs` | Creates `.qstack` and stack directory |
+| `init` | `init.rs` | Creates `.qstack` and qstack directory |
 | `new` | `new.rs` | Creates item, optionally launches wizard |
 | `list` | `list.rs` | Lists items, labels (`--labels`), categories (`--categories`), attachments (`--attachments`), metadata (`--meta`) |
 | `search` | `search.rs` | Query matching with full-text option |
@@ -502,7 +502,7 @@ User: qstack reopen --id 260109
 ```
 project/
 ├── .qstack                 # Project config (TOML)
-└── qstack/                 # Stack directory
+└── qstack/                 # qstack directory
     ├── .archive/           # Closed items (preserves category structure)
     │   ├── bugs/           # Archived items from bugs category
     │   │   └── 260108-...-old-bug.md

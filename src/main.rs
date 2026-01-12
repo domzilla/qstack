@@ -52,7 +52,7 @@ macro_rules! global_help {
             h!("Configuration Files:"),
             "\n  ",
             "~/.qstack          Global configuration (user name, editor, ID pattern)\n  ",
-            ".qstack            Project configuration (stack directory, archive directory)\n\n",
+            ".qstack            Project configuration (qstack directory, archive directory)\n\n",
             h!("ID Pattern Tokens:"),
             "\n  ",
             "%y  Year (2 digits)           %m  Month (01-12)\n  ",
@@ -105,12 +105,12 @@ enum Commands {
     /// Initialize a new qstack project in the current directory
     #[command(
         long_about = "Initialize a new qstack project in the current directory.\n\n\
-Creates a .qstack configuration file and the stack directory structure. \
+Creates a .qstack configuration file and the qstack directory structure. \
 The configuration file contains all available options with detailed comments.\n\n\
 Directory structure created:\n  \
 .qstack              Project configuration file\n  \
-qstack/              Stack directory for items\n  \
-qstack/archive/      Archive directory for closed items",
+qstack/              Directory for items\n  \
+qstack/.archive/     Archive directory for closed items",
         after_help = concat!(
             h!("Examples:"), "\n  ",
             c!("qstack init"), "                     Initialize in current directory\n  ",
@@ -216,7 +216,7 @@ Special modes:\n  \
         closed: bool,
 
         /// Filter by label (can be specified multiple times for AND logic)
-        #[arg(long, help = "Filter items containing this label (can repeat)")]
+        #[arg(long, num_args = 1.., help = "Filter items by label(s)")]
         label: Vec<String>,
 
         /// Filter by author
@@ -360,9 +360,9 @@ To modify labels directly, edit the Markdown file.",
         after_help = concat!(
             h!("Examples:"), "\n  ",
             c!("qstack update --id "), a!("260109-0A2B3C4"), c!(" --title "), a!("\"New title\""), "\n  ",
-            c!("qstack update --id "), a!("2601"), c!(" --label "), a!("urgent"), c!(" --label "), a!("p1"), "  Partial ID\n  ",
+            c!("qstack update --id "), a!("2601"), c!(" --label "), a!("urgent p1"), "  Partial ID\n  ",
             c!("qstack update --id "), a!("260109-0A2B3C4"), c!(" --category "), a!("bugs"), "\n  ",
-            c!("qstack update --id "), a!("260109-0A2B3C4"), c!(" --no-category"), "  Move to stack root\n  ",
+            c!("qstack update --id "), a!("260109-0A2B3C4"), c!(" --remove-category"), "  Move to qstack root\n  ",
             c!("qstack update --id "), a!("26"), c!(" --title "), a!("\"Fix\""), c!(" --label "), a!("done"), "  Partial ID\n\n",
             h!("Note:"), " The --id flag supports partial matching for convenience."
         ),
@@ -391,12 +391,12 @@ To modify labels directly, edit the Markdown file.",
         #[arg(long, help = "New title (renames file if changed)")]
         title: Option<String>,
 
-        /// Add labels (can be specified multiple times)
-        #[arg(long, help = "Add label(s) to item (can repeat)")]
+        /// Add labels
+        #[arg(long, num_args = 1.., help = "Add label(s) to item")]
         label: Vec<String>,
 
-        /// Remove labels (can be specified multiple times)
-        #[arg(long, help = "Remove label(s) from item (can repeat)")]
+        /// Remove labels
+        #[arg(long, num_args = 1.., help = "Remove label(s) from item")]
         remove_label: Vec<String>,
 
         /// Move to category
@@ -411,7 +411,7 @@ To modify labels directly, edit the Markdown file.",
         #[arg(
             long,
             conflicts_with = "category",
-            help = "Remove from category (move to stack root)"
+            help = "Remove from category (move to qstack root)"
         )]
         remove_category: bool,
     },
@@ -419,7 +419,7 @@ To modify labels directly, edit the Markdown file.",
     /// Close an item (move to archive)
     #[command(
         long_about = "Close an item by moving it to the archive directory.\n\n\
-Sets the item's status to 'closed' and moves it from the stack directory to the \
+Sets the item's status to 'closed' and moves it from the qstack directory to the \
 archive subdirectory. In Git repositories, uses 'git mv' to preserve history.\n\n\
 Closed items are excluded from 'qstack list' by default (use --closed to see them).",
         after_help = concat!(
@@ -455,7 +455,7 @@ Closed items are excluded from 'qstack list' by default (use --closed to see the
     #[command(
         long_about = "Reopen a closed item by moving it back from the archive.\n\n\
 Sets the item's status to 'open' and moves it from the archive directory back \
-to the stack (or its original category). In Git repositories, uses 'git mv' to \
+to qstack (or its original category). In Git repositories, uses 'git mv' to \
 preserve history.",
         after_help = concat!(
             h!("Examples:"), "\n  ",

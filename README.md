@@ -40,6 +40,7 @@ qstack new                                   # Launch wizard
 # List and filter
 qstack list                                  # Interactive selection
 qstack list --label bug --sort date          # Filter and sort
+qstack list --category bugs                  # Filter by category
 qstack list --closed                         # Show archived items
 
 # Search
@@ -49,6 +50,8 @@ qstack search "memory" --full-text           # Search body content too
 # Update
 qstack update --id 260109 --title "New title"
 qstack update --id 26 --label urgent         # Partial ID match
+qstack update --id 26 --remove-label bug     # Remove a label
+qstack update --id 26 --remove-category      # Move to qstack root
 
 # Attachments
 qstack attachments add --id 260109 screenshot.png
@@ -67,12 +70,12 @@ qstack reopen --id 260109
 | `init` | Initialize a new qstack project |
 | `new [title]` | Create a new item (omit title for wizard) |
 | `list` | List items with filters and sorting |
+| `list --labels` | List all labels in use |
+| `list --categories` | List all categories in use |
 | `search <query>` | Search by title, ID, or content |
 | `update --id <id>` | Update title, labels, or category |
 | `close --id <id>` | Archive an item |
 | `reopen --id <id>` | Restore from archive |
-| `labels` | List all labels in use |
-| `categories` | List all categories in use |
 | `attachments` | List, add, or remove attachments |
 | `setup` | Configure qstack and install completions |
 | `completions <shell>` | Generate shell completion script |
@@ -103,7 +106,7 @@ qstack/
 ├── 260109-0A2B3C4-fix-login-bug.md
 ├── bugs/
 │   └── 260110-0B3C4D5-memory-leak.md
-└── archive/
+└── .archive/
     └── 260108-0Z1Y2X3-old-task.md
 ```
 
@@ -119,7 +122,6 @@ status: open
 labels:
   - bug
   - urgent
-category: bugs
 attachments:
   - 260109-0A2B3C4-Attachment-1-screenshot.png
   - https://github.com/org/repo/issues/42
@@ -133,6 +135,8 @@ Description and notes in Markdown.
 3. See console error
 ```
 
+**Note:** Category is derived from the folder path, not stored in frontmatter. An item in `qstack/bugs/` has category `bugs`.
+
 ## Configuration
 
 Two config files (TOML format):
@@ -140,7 +144,7 @@ Two config files (TOML format):
 | File | Scope |
 |------|-------|
 | `~/.qstack` | Global defaults (user name, editor, ID pattern) |
-| `.qstack` | Project overrides (stack directory, archive directory) |
+| `.qstack` | Project overrides (qstack directory, archive directory) |
 
 Project settings override global settings.
 
@@ -154,7 +158,7 @@ Project settings override global settings.
 | `interactive` | `true` | Enable TUI by default |
 | `id_pattern` | `%y%m%d-%T%RRR` | ID format pattern |
 | `stack_dir` | `qstack` | Directory for items |
-| `archive_dir` | `archive` | Subdirectory for closed items |
+| `archive_dir` | `.archive` | Subdirectory for closed items |
 
 ### ID Pattern Tokens
 

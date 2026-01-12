@@ -120,7 +120,7 @@ qstack/
 ## CLI Commands
 ```bash
 qstack init                                    # Initialize project
-qstack new "Title" --label bug --category bugs # Create item
+qstack new "Title" --label bug urgent --category bugs # Create item
 qstack new                                     # Launch wizard
 qstack new "Title" --no-interactive            # Create without editor
 qstack new "Title" -i                          # Force editor open
@@ -137,7 +137,7 @@ qstack search "bug" --full-text --no-interactive  # Full-text search
 qstack update --id 260109 --title "New Title"  # Update item
 qstack update --id 26 --label urgent           # Partial ID match
 qstack update --id 26 --remove-label urgent    # Remove label
-qstack update --id 26 --remove-category        # Move to stack root
+qstack update --id 26 --remove-category        # Move to qstack root
 qstack update --file path/to/item.md --title X # Update by file path
 qstack close --id 260109                       # Archive item
 qstack close --file qstack/260109-*.md         # Close by file path

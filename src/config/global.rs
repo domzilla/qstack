@@ -211,7 +211,7 @@ interactive = {interactive}
 # Default: "qstack"
 # stack_dir = "qstack"
 
-# Default subdirectory name for archived (closed) items within the stack directory.
+# Default subdirectory name for archived (closed) items within the qstack directory.
 # Used when initializing new projects. Can be overridden per-project.
 # Default: ".archive"
 # archive_dir = ".archive"
@@ -225,7 +225,7 @@ interactive = {interactive}
             .with_context(|| format!("Failed to write global config: {}", path.display()))
     }
 
-    /// Returns the effective stack directory name
+    /// Returns the effective qstack directory name
     pub fn stack_dir(&self) -> &str {
         self.stack_dir.as_deref().unwrap_or(DEFAULT_STACK_DIR)
     }

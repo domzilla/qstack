@@ -33,10 +33,14 @@ pub fn execute() -> Result<()> {
     // stack_dir and archive_dir are set explicitly, other options are commented out
     ProjectConfig::save_with_comments(config.project_root(), stack_dir, archive_dir)?;
 
-    // Create stack directory
+    // Create qstack directory
     let stack_path = config.project_root().join(stack_dir);
-    fs::create_dir_all(&stack_path)
-        .with_context(|| format!("Failed to create stack directory: {}", stack_path.display()))?;
+    fs::create_dir_all(&stack_path).with_context(|| {
+        format!(
+            "Failed to create qstack directory: {}",
+            stack_path.display()
+        )
+    })?;
 
     // Create archive directory
     let archive_path = stack_path.join(archive_dir);
@@ -49,7 +53,7 @@ pub fn execute() -> Result<()> {
 
     println!("{} Initialized qstack project", "✓".green());
     println!("  {} {}", "Config:".dimmed(), config_path.display());
-    println!("  {} {}", "Stack:".dimmed(), stack_path.display());
+    println!("  {} {}", "qstack:".dimmed(), stack_path.display());
 
     Ok(())
 }

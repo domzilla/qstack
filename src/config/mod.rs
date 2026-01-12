@@ -75,7 +75,7 @@ impl Config {
             .unwrap_or(&self.global.id_pattern)
     }
 
-    /// Returns the effective stack directory name (project overrides global)
+    /// Returns the effective qstack directory name (project overrides global)
     pub fn stack_dir(&self) -> &str {
         self.project
             .stack_dir
@@ -160,7 +160,7 @@ impl Config {
         &self.project_root
     }
 
-    /// Returns the stack directory path
+    /// Returns the qstack directory path
     pub fn stack_path(&self) -> PathBuf {
         self.project_root.join(self.stack_dir())
     }
@@ -170,7 +170,7 @@ impl Config {
         self.stack_path().join(self.archive_dir())
     }
 
-    /// Returns path to a category subdirectory within the stack
+    /// Returns path to a category subdirectory within qstack
     pub fn category_path(&self, category: &str) -> PathBuf {
         self.stack_path().join(category)
     }

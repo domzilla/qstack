@@ -145,7 +145,7 @@ impl ProjectConfig {
 # Directory name for storing items (relative to project root).
 stack_dir = "{stack_dir}"
 
-# Subdirectory name for archived (closed) items within the stack directory.
+# Subdirectory name for archived (closed) items within the qstack directory.
 archive_dir = "{archive_dir}"
 "#
         );
