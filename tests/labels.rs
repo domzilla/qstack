@@ -19,7 +19,7 @@ fn test_labels_empty_project() {
     let filter = ListFilter {
         mode: ListMode::Labels,
         status: StatusFilter::Open,
-        label: None,
+        labels: Vec::new(),
         author: None,
         sort: SortBy::Id,
         interactive: InteractiveArgs {
@@ -47,7 +47,7 @@ fn test_labels_shows_unique_labels() {
     let filter = ListFilter {
         mode: ListMode::Labels,
         status: StatusFilter::Open,
-        label: None,
+        labels: Vec::new(),
         author: None,
         sort: SortBy::Id,
         interactive: InteractiveArgs {
@@ -93,7 +93,7 @@ fn test_labels_includes_archived_items() {
     let filter = ListFilter {
         mode: ListMode::Labels,
         status: StatusFilter::Open,
-        label: None,
+        labels: Vec::new(),
         author: None,
         sort: SortBy::Id,
         interactive: InteractiveArgs {
@@ -118,7 +118,7 @@ fn test_labels_without_init() {
     let filter = ListFilter {
         mode: ListMode::Labels,
         status: StatusFilter::Open,
-        label: None,
+        labels: Vec::new(),
         author: None,
         sort: SortBy::Id,
         interactive: InteractiveArgs {

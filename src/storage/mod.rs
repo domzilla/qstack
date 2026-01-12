@@ -169,9 +169,52 @@ pub fn target_directory(config: &Config, category: Option<&str>) -> PathBuf {
     category.map_or_else(|| config.stack_path(), |cat| config.category_path(cat))
 }
 
+/// Derives the category from an item's file path.
+///
+/// Returns `Some(category)` if the item is in a category subdirectory,
+/// or `None` if it's in the root of the stack/archive.
+///
+/// Works for both active items (in `stack_path`) and archived items (in `archive_path`).
+pub fn derive_category(config: &Config, path: &Path) -> Option<String> {
+    let stack_path = config.stack_path();
+    let archive_path = config.archive_path();
+
+    // Canonicalize paths to handle symlinks (e.g., /var -> /private/var on macOS)
+    let path = path.canonicalize().ok()?;
+    let stack_path = stack_path.canonicalize().ok()?;
+    let archive_path = archive_path.canonicalize().unwrap_or(archive_path);
+
+    // Determine base path (archive or stack)
+    let relative = if path.starts_with(&archive_path) {
+        path.strip_prefix(&archive_path).ok()?
+    } else if path.starts_with(&stack_path) {
+        path.strip_prefix(&stack_path).ok()?
+    } else {
+        return None;
+    };
+
+    // Get parent directory relative to base
+    let parent = relative.parent()?;
+
+    // If parent is empty (item in root), no category
+    if parent.as_os_str().is_empty() {
+        return None;
+    }
+
+    // First component is the category
+    let category = parent.iter().next()?.to_str()?;
+
+    // Don't treat archive dir as category (shouldn't happen with new structure)
+    if category == config.archive_dir() {
+        return None;
+    }
+
+    Some(category.to_string())
+}
+
 /// Creates a new item file and returns its path.
-pub fn create_item(config: &Config, item: &Item) -> Result<PathBuf> {
-    let dir = target_directory(config, item.category());
+pub fn create_item(config: &Config, item: &Item, category: Option<&str>) -> Result<PathBuf> {
+    let dir = target_directory(config, category);
 
     std::fs::create_dir_all(&dir)
         .with_context(|| format!("Failed to create directory: {}", dir.display()))?;
@@ -185,48 +228,72 @@ pub fn create_item(config: &Config, item: &Item) -> Result<PathBuf> {
 
 /// Moves an item to the archive.
 ///
+/// Preserves category folder structure in archive.
 /// Returns the new path and any warnings from moving attachments.
 pub fn archive_item(config: &Config, path: &Path) -> Result<(PathBuf, Vec<String>)> {
     let filename = path
         .file_name()
         .ok_or_else(|| anyhow::anyhow!("Invalid file path"))?;
 
-    let archive_path = config.archive_path();
-    std::fs::create_dir_all(&archive_path)?;
+    // Derive category from source path to preserve folder structure
+    let category = derive_category(config, path);
+    let archive_base = config.archive_path();
+
+    // Target directory: archive/category/ or archive/
+    let dest_dir = category
+        .as_deref()
+        .map_or_else(|| archive_base.clone(), |cat| archive_base.join(cat));
+
+    std::fs::create_dir_all(&dest_dir)?;
+
+    // Remember source directory for cleanup
+    let src_dir = path.parent().map(Path::to_path_buf);
 
     // Move attachments first
-    let warnings = path.parent().map_or_else(Vec::new, |src_dir| {
-        move_attachments(src_dir, &archive_path, path)
-    });
+    let warnings = src_dir
+        .as_ref()
+        .map_or_else(Vec::new, |dir| move_attachments(dir, &dest_dir, path));
 
-    let dest = archive_path.join(filename);
+    let dest = dest_dir.join(filename);
     git::move_file(path, &dest)?;
+
+    // Clean up empty source directory if it was a category
+    if let Some(src_dir) = src_dir {
+        cleanup_empty_category_dir(config, &src_dir);
+    }
 
     Ok((dest, warnings))
 }
 
 /// Moves an item from the archive back to the stack.
 ///
+/// Derives category from archive path structure and restores to same category.
 /// Returns the new path and any warnings from moving attachments.
-pub fn unarchive_item(
-    config: &Config,
-    path: &Path,
-    category: Option<&str>,
-) -> Result<(PathBuf, Vec<String>)> {
+pub fn unarchive_item(config: &Config, path: &Path) -> Result<(PathBuf, Vec<String>)> {
     let filename = path
         .file_name()
         .ok_or_else(|| anyhow::anyhow!("Invalid file path"))?;
 
-    let dest_dir = target_directory(config, category);
+    // Derive category from archive path to restore to same category
+    let category = derive_category(config, path);
+    let dest_dir = target_directory(config, category.as_deref());
     std::fs::create_dir_all(&dest_dir)?;
 
+    // Remember source directory for cleanup
+    let src_dir = path.parent().map(Path::to_path_buf);
+
     // Move attachments first
-    let warnings = path.parent().map_or_else(Vec::new, |src_dir| {
-        move_attachments(src_dir, &dest_dir, path)
-    });
+    let warnings = src_dir
+        .as_ref()
+        .map_or_else(Vec::new, |dir| move_attachments(dir, &dest_dir, path));
 
     let dest = dest_dir.join(filename);
     git::move_file(path, &dest)?;
+
+    // Clean up empty archive category directory
+    if let Some(src_dir) = src_dir {
+        cleanup_empty_category_dir(config, &src_dir);
+    }
 
     Ok((dest, warnings))
 }
@@ -265,15 +332,53 @@ pub fn move_to_category(
     let warnings = if path == dest {
         Vec::new()
     } else {
+        // Remember source directory for cleanup
+        let src_dir = path.parent().map(Path::to_path_buf);
+
         // Move attachments first
-        let warnings = path.parent().map_or_else(Vec::new, |src_dir| {
-            move_attachments(src_dir, &dest_dir, path)
-        });
+        let warnings = src_dir
+            .as_ref()
+            .map_or_else(Vec::new, |dir| move_attachments(dir, &dest_dir, path));
         git::move_file(path, &dest)?;
+
+        // Clean up empty source directory if it was a category
+        if let Some(src_dir) = src_dir {
+            cleanup_empty_category_dir(config, &src_dir);
+        }
+
         warnings
     };
 
     Ok((dest, warnings))
+}
+
+/// Removes an empty category directory if it's safe to do so.
+///
+/// Only removes directories that:
+/// - Are inside the stack directory (including archive)
+/// - Are not the stack root or archive root
+/// - Are empty
+fn cleanup_empty_category_dir(config: &Config, dir: &Path) {
+    let stack_path = config.stack_path();
+    let archive_path = config.archive_path();
+
+    // Never remove root directories
+    if dir == stack_path || dir == archive_path {
+        return;
+    }
+
+    // Only clean up directories inside stack (which includes archive)
+    if !dir.starts_with(&stack_path) {
+        return;
+    }
+
+    // Check if directory is empty
+    if let Ok(mut entries) = std::fs::read_dir(dir) {
+        if entries.next().is_none() {
+            // Directory is empty, remove it
+            let _ = std::fs::remove_dir(dir);
+        }
+    }
 }
 
 // =============================================================================

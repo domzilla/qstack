@@ -63,7 +63,7 @@ fn test_empty_title() {
     env.write_global_config(&GlobalConfigBuilder::new().build());
     commands::init().expect("init should succeed");
 
-    // Empty title should still work (will create file with just ID)
+    // Empty title should be rejected
     let args = NewArgs {
         title: Some("".to_string()),
         labels: vec![],
@@ -75,8 +75,9 @@ fn test_empty_title() {
         },
     };
 
-    commands::new(args).expect("new should succeed with empty title");
-    assert_eq!(env.count_all_items(), 1);
+    let result = commands::new(args);
+    assert!(result.is_err(), "new should fail with empty title");
+    assert_eq!(env.count_all_items(), 0);
 }
 
 #[test]
@@ -123,9 +124,9 @@ fn test_whitespace_only_title() {
         },
     };
 
-    // Should create item (whitespace is trimmed to empty)
+    // Whitespace-only title should be rejected (trimmed to empty)
     let result = commands::new(args);
-    assert!(result.is_ok(), "whitespace title should be handled");
+    assert!(result.is_err(), "whitespace-only title should be rejected");
 }
 
 #[test]

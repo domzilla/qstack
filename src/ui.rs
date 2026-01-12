@@ -19,7 +19,7 @@ use crate::{
     constants::{UI_LABELS_TRUNCATE_LEN, UI_TITLE_TRUNCATE_LEN},
     editor,
     item::{Item, Status},
-    storage::AttachmentResult,
+    storage::{self, AttachmentResult},
     tui::screens::{
         select_from_list as tui_select, select_from_list_filtered as tui_select_filtered,
         select_from_list_with_header,
@@ -130,7 +130,11 @@ pub fn select_from_list_filtered<T: ToString>(
 /// Formats items as columns: ID | Status | Title | Labels | Category
 /// Works with both `&[Item]` and `&[&Item]` via `AsRef<Item>`.
 /// Returns `Some(index)` if an item was selected, `None` if cancelled.
-pub fn select_item<T: AsRef<Item>>(prompt: &str, items: &[T]) -> Result<Option<usize>> {
+pub fn select_item<T: AsRef<Item>>(
+    prompt: &str,
+    items: &[T],
+    config: &Config,
+) -> Result<Option<usize>> {
     let header = format!(
         "{:<15} {:>6}  {:<40}  {:<20}  {}",
         "ID", "Status", "Title", "Labels", "Category"
@@ -145,7 +149,11 @@ pub fn select_item<T: AsRef<Item>>(prompt: &str, items: &[T]) -> Result<Option<u
                 Status::Closed => "closed",
             };
             let labels = truncate(&item.labels().join(", "), UI_LABELS_TRUNCATE_LEN);
-            let category = item.category().unwrap_or("-");
+            let category_opt = item
+                .path
+                .as_ref()
+                .and_then(|p| storage::derive_category(config, p));
+            let category = category_opt.as_deref().unwrap_or("-");
             let title = truncate(item.title(), UI_TITLE_TRUNCATE_LEN);
             format!(
                 "{:<15} {:>6}  {:<40}  {:<20}  {}",

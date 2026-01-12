@@ -54,7 +54,7 @@ pub enum ListMode {
 pub struct ListFilter {
     pub mode: ListMode,
     pub status: StatusFilter,
-    pub label: Option<String>,
+    pub labels: Vec<String>,
     pub author: Option<String>,
     pub sort: SortBy,
     pub interactive: InteractiveArgs,
@@ -69,7 +69,7 @@ impl Default for ListFilter {
         Self {
             mode: ListMode::default(),
             status: StatusFilter::default(),
-            label: None,
+            labels: Vec::new(),
             author: None,
             sort: SortBy::Id,
             interactive: InteractiveArgs::default(),
@@ -81,7 +81,7 @@ impl Default for ListFilter {
 
 /// Common filter options for item queries
 pub struct ItemFilter {
-    pub label: Option<String>,
+    pub labels: Vec<String>,
     pub author: Option<String>,
 }
 
@@ -113,16 +113,20 @@ pub fn sort_items(items: &mut [Item], sort: SortBy) {
 }
 
 fn apply_item_filter(item: &Item, filter: &ItemFilter) -> bool {
-    // Label filter
-    if let Some(ref label) = filter.label {
+    // Label filter (AND logic - item must have ALL specified labels)
+    for label in &filter.labels {
         if !item.labels().iter().any(|l| l.eq_ignore_ascii_case(label)) {
             return false;
         }
     }
 
-    // Author filter
+    // Author filter (case-insensitive substring match)
     if let Some(ref author) = filter.author {
-        if !item.author().eq_ignore_ascii_case(author) {
+        if !item
+            .author()
+            .to_lowercase()
+            .contains(&author.to_lowercase())
+        {
             return false;
         }
     }
@@ -147,7 +151,7 @@ pub fn execute(filter: &ListFilter) -> Result<()> {
 fn execute_items(filter: &ListFilter, config: &Config) -> Result<()> {
     // Collect items based on status filter
     let item_filter = ItemFilter {
-        label: filter.label.clone(),
+        labels: filter.labels.clone(),
         author: filter.author.clone(),
     };
 
@@ -183,7 +187,7 @@ fn execute_items(filter: &ListFilter, config: &Config) -> Result<()> {
     }
 
     // Interactive: TUI selection
-    let Some(selection) = ui::select_item("Select an item to open", &items)? else {
+    let Some(selection) = ui::select_item("Select an item to open", &items, config)? else {
         return Ok(()); // User cancelled
     };
     let item = &items[selection];
@@ -195,7 +199,7 @@ fn execute_items(filter: &ListFilter, config: &Config) -> Result<()> {
 /// Lists all unique labels across items.
 fn execute_labels(filter: &ListFilter, config: &Config) -> Result<()> {
     let item_filter = ItemFilter {
-        label: None,
+        labels: Vec::new(),
         author: None,
     };
 
@@ -270,7 +274,7 @@ fn execute_labels(filter: &ListFilter, config: &Config) -> Result<()> {
     }
 
     // Interactive: TUI selection for items
-    let Some(item_selection) = ui::select_item("Select an item to open", &filtered)? else {
+    let Some(item_selection) = ui::select_item("Select an item to open", &filtered, config)? else {
         return Ok(()); // User cancelled
     };
     let item = filtered[item_selection];
@@ -282,35 +286,41 @@ fn execute_labels(filter: &ListFilter, config: &Config) -> Result<()> {
 /// Lists all unique categories across items.
 fn execute_categories(filter: &ListFilter, config: &Config) -> Result<()> {
     let item_filter = ItemFilter {
-        label: None,
+        labels: Vec::new(),
         author: None,
     };
 
     // Load all items to get complete category vocabulary
     let all_items = storage::load_all_items(config);
-    let all_category_counts =
-        ui::count_by(&all_items, |item: &Item| item.category().map(String::from));
+    let all_category_counts = ui::count_by(&all_items, |item: &Item| {
+        item.path
+            .as_ref()
+            .and_then(|p| storage::derive_category(config, p))
+    });
 
     if all_category_counts.is_empty() {
-        println!("No items found.");
+        println!("No categories found.");
         return Ok(());
     }
 
     // Count only open items per category (for display and selectability)
     let open_items = collect_items(config, false, &item_filter);
-    let open_category_counts =
-        ui::count_by(&open_items, |item: &Item| item.category().map(String::from));
+    let open_category_counts = ui::count_by(&open_items, |item: &Item| {
+        item.path
+            .as_ref()
+            .and_then(|p| storage::derive_category(config, p))
+    });
 
     // Build category list: all categories with their open counts
     let mut categories: Vec<(Option<String>, usize)> = all_category_counts
         .keys()
-        .map(|cat| {
-            let open_count = open_category_counts.get(cat).copied().unwrap_or(0);
-            (cat.clone(), open_count)
+        .map(|category| {
+            let open_count = open_category_counts.get(category).copied().unwrap_or(0);
+            (category.clone(), open_count)
         })
         .collect();
 
-    // Sort by open count (descending), then alphabetically (None last)
+    // Sort by count (descending), then alphabetically (None/"Uncategorized" last)
     categories.sort_by(|a, b| {
         b.1.cmp(&a.1).then_with(|| match (&a.0, &b.0) {
             (None, None) => std::cmp::Ordering::Equal,
@@ -322,7 +332,7 @@ fn execute_categories(filter: &ListFilter, config: &Config) -> Result<()> {
 
     // Check interactive mode
     if !filter.interactive.should_run(config) {
-        // Non-interactive: print categories with open count, one per line
+        // Non-interactive: print categories with count, one per line
         for (category, count) in &categories {
             let name = category.as_deref().unwrap_or("Uncategorized");
             println!("{name} ({count})");
@@ -361,7 +371,13 @@ fn execute_categories(filter: &ListFilter, config: &Config) -> Result<()> {
     // Filter open items in selected category
     let filtered: Vec<&Item> = open_items
         .iter()
-        .filter(|item| item.category().map(String::from) == *selected_category)
+        .filter(|item| {
+            let cat = item
+                .path
+                .as_ref()
+                .and_then(|p| storage::derive_category(config, p));
+            cat == *selected_category
+        })
         .collect();
 
     if filtered.is_empty() {
@@ -370,7 +386,7 @@ fn execute_categories(filter: &ListFilter, config: &Config) -> Result<()> {
     }
 
     // Interactive: TUI selection for items
-    let Some(item_selection) = ui::select_item("Select an item to open", &filtered)? else {
+    let Some(item_selection) = ui::select_item("Select an item to open", &filtered, config)? else {
         return Ok(()); // User cancelled
     };
     let item = filtered[item_selection];
@@ -406,7 +422,7 @@ fn execute_meta(filter: &ListFilter, config: &Config) -> Result<()> {
     let item_ref = storage::ItemRef::from_options(filter.id.clone(), filter.file.clone())?;
 
     // Find and load the item
-    let storage::LoadedItem { item, .. } = item_ref.resolve(config)?;
+    let storage::LoadedItem { path, item } = item_ref.resolve(config)?;
 
     // Print frontmatter fields
     println!("id: {}", item.id());
@@ -416,13 +432,12 @@ fn execute_meta(filter: &ListFilter, config: &Config) -> Result<()> {
     println!("status: {}", item.status());
 
     let labels = item.labels();
-    if labels.is_empty() {
-        println!("labels: []");
-    } else {
+    if !labels.is_empty() {
         println!("labels: {}", labels.join(", "));
     }
 
-    if let Some(category) = item.category() {
+    // Derive category from path
+    if let Some(category) = storage::derive_category(config, &path) {
         println!("category: {category}");
     }
 

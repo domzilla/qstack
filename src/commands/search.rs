@@ -26,7 +26,7 @@ pub fn execute(args: &SearchArgs) -> Result<()> {
 
     // Collect all items
     let item_filter = ItemFilter {
-        label: None,
+        labels: Vec::new(),
         author: None,
     };
 
@@ -69,7 +69,7 @@ pub fn execute(args: &SearchArgs) -> Result<()> {
         );
     }
 
-    let Some(selection) = ui::select_item("Select an item", &items)? else {
+    let Some(selection) = ui::select_item("Select an item", &items, &config)? else {
         return Ok(()); // User cancelled
     };
     ui::open_item_in_editor(&items[selection], &config)?;

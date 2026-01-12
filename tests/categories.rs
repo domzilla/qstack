@@ -19,7 +19,7 @@ fn test_categories_empty_project() {
     let filter = ListFilter {
         mode: ListMode::Categories,
         status: StatusFilter::Open,
-        label: None,
+        labels: Vec::new(),
         author: None,
         sort: SortBy::Id,
         interactive: InteractiveArgs {
@@ -48,7 +48,7 @@ fn test_categories_shows_unique_categories() {
     let filter = ListFilter {
         mode: ListMode::Categories,
         status: StatusFilter::Open,
-        label: None,
+        labels: Vec::new(),
         author: None,
         sort: SortBy::Id,
         interactive: InteractiveArgs {
@@ -87,7 +87,7 @@ fn test_categories_includes_archived_items() {
     let filter = ListFilter {
         mode: ListMode::Categories,
         status: StatusFilter::Open,
-        label: None,
+        labels: Vec::new(),
         author: None,
         sort: SortBy::Id,
         interactive: InteractiveArgs {
@@ -112,7 +112,7 @@ fn test_categories_without_init() {
     let filter = ListFilter {
         mode: ListMode::Categories,
         status: StatusFilter::Open,
-        label: None,
+        labels: Vec::new(),
         author: None,
         sort: SortBy::Id,
         interactive: InteractiveArgs {

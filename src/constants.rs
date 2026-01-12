@@ -25,8 +25,8 @@ pub const ITEM_FILE_EXTENSION: &str = "md";
 /// Default directory name for storing items.
 pub const DEFAULT_STACK_DIR: &str = "qstack";
 
-/// Default directory name for archived items.
-pub const DEFAULT_ARCHIVE_DIR: &str = "archive";
+/// Default subdirectory name for archived items (inside `stack_dir`).
+pub const DEFAULT_ARCHIVE_DIR: &str = ".archive";
 
 /// Global configuration file name.
 pub const GLOBAL_CONFIG_FILE: &str = ".qstack";

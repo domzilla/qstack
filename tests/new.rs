@@ -173,10 +173,7 @@ fn test_new_with_labels_and_category() {
     assert!(content.contains("- bug"), "Should have bug label");
     assert!(content.contains("- urgent"), "Should have urgent label");
     assert!(content.contains("- p0"), "Should have p0 label");
-    assert!(
-        content.contains("category: bugs"),
-        "Should have bugs category"
-    );
+    // Category is derived from folder path, not stored in metadata
 }
 
 #[test]

@@ -24,6 +24,27 @@ pub struct UpdateArgs {
 
 /// Executes the update command.
 pub fn execute(args: UpdateArgs) -> Result<()> {
+    // Validate title is not empty (if provided)
+    if let Some(ref title) = args.title {
+        if title.trim().is_empty() {
+            anyhow::bail!("Title cannot be empty");
+        }
+    }
+
+    // Validate labels are not empty
+    for label in &args.labels {
+        if label.trim().is_empty() {
+            anyhow::bail!("Label cannot be empty");
+        }
+    }
+
+    // Validate category is not empty (if provided)
+    if let Some(ref cat) = args.category {
+        if cat.trim().is_empty() {
+            anyhow::bail!("Category cannot be empty");
+        }
+    }
+
     let config = Config::load()?;
 
     // Resolve item from --id or --file
@@ -47,17 +68,18 @@ pub fn execute(args: UpdateArgs) -> Result<()> {
         changed = true;
     }
 
-    // Update category
-    if args.clear_category {
-        if item.category().is_some() {
-            item.set_category(None);
-            changed = true;
-        }
+    // Check for category change (derived from path, not stored in metadata)
+    let current_category = storage::derive_category(&config, &path);
+    let category_changed = if args.clear_category {
+        current_category.is_some()
     } else if let Some(ref new_category) = args.category {
-        if item.category() != Some(new_category.as_str()) {
-            item.set_category(Some(new_category.clone()));
-            changed = true;
-        }
+        current_category.as_deref() != Some(new_category.as_str())
+    } else {
+        false
+    };
+
+    if category_changed {
+        changed = true;
     }
 
     if !changed {
@@ -75,7 +97,7 @@ pub fn execute(args: UpdateArgs) -> Result<()> {
     }
 
     // Handle category change (move to different directory)
-    if args.clear_category || args.category.is_some() {
+    if category_changed {
         let category = if args.clear_category {
             None
         } else {

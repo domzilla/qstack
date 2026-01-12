@@ -230,11 +230,14 @@ fn test_list_labels_includes_closed_labels_with_zero_count() {
 
     let stdout = String::from_utf8_lossy(&output);
 
-    // Should show both labels - active with count 1, archived with count 0
-    assert!(stdout.contains("active (1)"), "Should show open label");
+    // Labels from closed items should be shown with (0) count
+    assert!(
+        stdout.contains("active (1)"),
+        "Should show open label with count"
+    );
     assert!(
         stdout.contains("archived (0)"),
-        "Should show closed label with 0 count"
+        "Should show closed labels with (0) count"
     );
 }
 
@@ -293,7 +296,55 @@ fn test_list_categories_empty_no_extra_output() {
         .args(["list", "--categories", "--no-interactive"])
         .assert()
         .success()
-        .stdout(predicate::str::is_match(r"^No items found\.\n$").unwrap());
+        .stdout(predicate::str::is_match(r"^No categories found\.\n$").unwrap());
+}
+
+#[test]
+fn test_list_categories_includes_closed_categories_with_zero_count() {
+    let env = TestEnv::new();
+    env.write_global_config(&GlobalConfigBuilder::new().interactive(false).build());
+    commands::init().expect("init");
+
+    // Create open item with one category
+    create_test_item(&env, "260101-AAA", "Open Task", "open", &[], Some("active"));
+
+    // Create closed item with different category
+    create_test_item(
+        &env,
+        "260102-BBB",
+        "Closed Task",
+        "closed",
+        &[],
+        Some("archived"),
+    );
+    // Move to archive preserving category structure
+    let archive_category_dir = env.archive_path().join("archived");
+    fs::create_dir_all(&archive_category_dir).expect("create archive category dir");
+    fs::rename(
+        env.stack_path().join("archived/260102-BBB-closed-task.md"),
+        archive_category_dir.join("260102-BBB-closed-task.md"),
+    )
+    .expect("move to archive");
+
+    let output = qstack_cmd(&env)
+        .args(["list", "--categories", "--no-interactive"])
+        .assert()
+        .success()
+        .get_output()
+        .stdout
+        .clone();
+
+    let stdout = String::from_utf8_lossy(&output);
+
+    // Categories from closed items should be shown with (0) count
+    assert!(
+        stdout.contains("active (1)"),
+        "Should show open category with count"
+    );
+    assert!(
+        stdout.contains("archived (0)"),
+        "Should show closed categories with (0) count"
+    );
 }
 
 #[test]
@@ -469,11 +520,21 @@ fn test_list_meta_empty_labels() {
 
     create_test_item(&env, "260101-AAA", "Task", "open", &[], None);
 
-    qstack_cmd(&env)
+    let output = qstack_cmd(&env)
         .args(["list", "--meta", "--id", "260101"])
         .assert()
         .success()
-        .stdout(predicate::str::contains("labels: []"));
+        .get_output()
+        .stdout
+        .clone();
+
+    let stdout = String::from_utf8_lossy(&output);
+
+    // Labels line should not appear when empty
+    assert!(
+        !stdout.contains("labels:"),
+        "Labels line should not appear when empty"
+    );
 }
 
 #[test]

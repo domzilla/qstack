@@ -85,7 +85,7 @@ impl TestEnv {
 
     /// Returns the path to the archive directory.
     pub fn archive_path(&self) -> PathBuf {
-        self.stack_path().join("archive")
+        self.stack_path().join(".archive")
     }
 
     /// Creates a global config file with the given content.
@@ -108,9 +108,24 @@ impl TestEnv {
         self.list_files_in(&self.stack_path())
     }
 
-    /// Lists all files in the archive directory.
+    /// Lists all files in the archive directory (recursive, including categories).
     pub fn list_archive_files(&self) -> Vec<PathBuf> {
-        self.list_files_in(&self.archive_path())
+        self.list_files_recursive(&self.archive_path())
+    }
+
+    /// Lists all .md files in a directory recursively.
+    fn list_files_recursive(&self, dir: &Path) -> Vec<PathBuf> {
+        if !dir.exists() {
+            return Vec::new();
+        }
+        walkdir::WalkDir::new(dir)
+            .min_depth(1)
+            .into_iter()
+            .filter_map(Result::ok)
+            .filter(|e| e.file_type().is_file())
+            .filter(|e| e.path().extension().is_some_and(|ext| ext == "md"))
+            .map(|e| e.into_path())
+            .collect()
     }
 
     /// Lists all .md files in a directory (non-recursive).

@@ -184,12 +184,17 @@ Shell completion scripts are generated statically by `clap_complete`. When addin
 project-root/
 ├── .qstack             # Project config (TOML)
 └── qstack/             # Item storage
-    ├── archive/        # Closed items
+    ├── .archive/       # Closed items (hidden, preserves category structure)
+    │   ├── bugs/       # Archived items from bugs category
+    │   │   └── 260109-02F7K9M-fix-login-styling.md
+    │   └── 260109-02F8L1P-old-task.md  # Archived uncategorized item
     ├── bugs/           # Category subdirectory
     │   ├── 260109-02F7K9M-fix-login-styling.md
     │   └── 260109-02F7K9M-Attachment-1-screenshot.png
-    └── 260109-02F8L1P-add-dark-mode.md
+    └── 260109-02F8L1P-add-dark-mode.md  # Uncategorized item in root
 ```
+
+**Category**: Derived from folder path, NOT stored in item metadata. Moving an item to a different folder changes its category.
 
 ## Item File Format
 ```yaml
@@ -202,7 +207,6 @@ status: open
 labels:
   - bug
   - ui
-category: bugs
 attachments:
   - 260109-02F7K9M-Attachment-1-screenshot.png
   - https://github.com/org/repo/issues/42
@@ -210,6 +214,8 @@ attachments:
 
 Description and notes go here in Markdown.
 ```
+
+Note: Category is NOT stored in frontmatter - it's derived from the item's folder location.
 
 ## ID Generation
 Default pattern `%y%m%d-%T%RRR` produces IDs like `260109-0A2B3C4`:
@@ -234,7 +240,7 @@ Project values override global values when set.
 | `interactive` | `bool` | `true` |
 | `id_pattern` | `String` | `"%y%m%d-%T%RRR"` |
 | `stack_dir` | `String` | `"qstack"` |
-| `archive_dir` | `String` | `"archive"` |
+| `archive_dir` | `String` | `".archive"` |
 
 When adding a new config option:
 1. Add the field to both `GlobalConfig` and `ProjectConfig`

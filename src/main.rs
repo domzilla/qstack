@@ -7,7 +7,7 @@
 
 use anyhow::Result;
 use clap::builder::{styling::AnsiColor, Styles};
-use clap::{Parser, Subcommand};
+use clap::{ArgGroup, Parser, Subcommand};
 use owo_colors::OwoColorize;
 
 use clap::CommandFactory;
@@ -200,16 +200,24 @@ Special modes:\n  \
     )]
     List {
         /// Show only open items
-        #[arg(long, help = "Show only open items (default if no status filter)")]
+        #[arg(
+            long,
+            conflicts_with = "closed",
+            help = "Show only open items (default if no status filter)"
+        )]
         open: bool,
 
         /// Show only closed items
-        #[arg(long, help = "Show only closed/archived items")]
+        #[arg(
+            long,
+            conflicts_with = "open",
+            help = "Show only closed/archived items"
+        )]
         closed: bool,
 
-        /// Filter by label
-        #[arg(long, help = "Filter items containing this label")]
-        label: Option<String>,
+        /// Filter by label (can be specified multiple times for AND logic)
+        #[arg(long, help = "Filter items containing this label (can repeat)")]
+        label: Vec<String>,
 
         /// Filter by author
         #[arg(long, help = "Filter items by author name (substring match)")]
@@ -353,14 +361,15 @@ To modify labels directly, edit the Markdown file.",
             c!("qstack update --id "), a!("260109-0A2B3C4"), c!(" --no-category"), "  Move to stack root\n  ",
             c!("qstack update --id "), a!("26"), c!(" --title "), a!("\"Fix\""), c!(" --label "), a!("done"), "  Partial ID\n\n",
             h!("Note:"), " The --id flag supports partial matching for convenience."
-        )
+        ),
+        group = ArgGroup::new("item_ref").required(true)
     )]
     Update {
         /// Item ID (partial match supported)
         #[arg(
             long,
             conflicts_with = "file",
-            required_unless_present = "file",
+            group = "item_ref",
             help = "Item ID to update (partial match supported)"
         )]
         id: Option<String>,
@@ -369,7 +378,7 @@ To modify labels directly, edit the Markdown file.",
         #[arg(
             long,
             conflicts_with = "id",
-            required_unless_present = "id",
+            group = "item_ref",
             help = "Item file path"
         )]
         file: Option<std::path::PathBuf>,
@@ -383,11 +392,19 @@ To modify labels directly, edit the Markdown file.",
         label: Vec<String>,
 
         /// Move to category
-        #[arg(long, help = "Move item to category subdirectory")]
+        #[arg(
+            long,
+            conflicts_with = "no_category",
+            help = "Move item to category subdirectory"
+        )]
         category: Option<String>,
 
         /// Remove from category (move to root)
-        #[arg(long, help = "Remove from category (move to stack root)")]
+        #[arg(
+            long,
+            conflicts_with = "category",
+            help = "Remove from category (move to stack root)"
+        )]
         no_category: bool,
     },
 
@@ -403,14 +420,15 @@ Closed items are excluded from 'qstack list' by default (use --closed to see the
             c!("qstack close --id "), a!("2601"), "                Close by partial ID\n  ",
             c!("qstack list --closed"), "                  View closed items\n  ",
             c!("qstack reopen --id "), a!("260109-0A2B3C4"), "     Reopen if needed"
-        )
+        ),
+        group = ArgGroup::new("item_ref").required(true)
     )]
     Close {
         /// Item ID (partial match supported)
         #[arg(
             long,
             conflicts_with = "file",
-            required_unless_present = "file",
+            group = "item_ref",
             help = "Item ID to close (partial match supported)"
         )]
         id: Option<String>,
@@ -419,7 +437,7 @@ Closed items are excluded from 'qstack list' by default (use --closed to see the
         #[arg(
             long,
             conflicts_with = "id",
-            required_unless_present = "id",
+            group = "item_ref",
             help = "Item file path"
         )]
         file: Option<std::path::PathBuf>,
@@ -436,14 +454,15 @@ preserve history.",
             c!("qstack reopen --id "), a!("260109-0A2B3C4"), "     Reopen by full ID\n  ",
             c!("qstack reopen --id "), a!("2601"), "               Reopen by partial ID\n  ",
             c!("qstack list"), "                           Verify item is back in open list"
-        )
+        ),
+        group = ArgGroup::new("item_ref").required(true)
     )]
     Reopen {
         /// Item ID (partial match supported)
         #[arg(
             long,
             conflicts_with = "file",
-            required_unless_present = "file",
+            group = "item_ref",
             help = "Item ID to reopen (partial match supported)"
         )]
         id: Option<String>,
@@ -452,7 +471,7 @@ preserve history.",
         #[arg(
             long,
             conflicts_with = "id",
-            required_unless_present = "id",
+            group = "item_ref",
             help = "Item file path"
         )]
         file: Option<std::path::PathBuf>,
@@ -539,14 +558,15 @@ enum AttachmentsAction {
             c!("qstack attachments add --id "), a!("260109-0A2B3C4"), " ", a!("file1.txt file2.txt"), "\n  ",
             c!("qstack attachments add --id "), a!("260109-0A2B3C4"), " ", a!("https://github.com/issue/42"), "\n\n",
             h!("Note:"), " Files are copied to the item directory. URLs are stored as references."
-        )
+        ),
+        group = ArgGroup::new("item_ref").required(true)
     )]
     Add {
         /// Item ID (partial match supported)
         #[arg(
             long,
             conflicts_with = "file",
-            required_unless_present = "file",
+            group = "item_ref",
             help = "Item ID (partial match supported)"
         )]
         id: Option<String>,
@@ -555,7 +575,7 @@ enum AttachmentsAction {
         #[arg(
             long,
             conflicts_with = "id",
-            required_unless_present = "id",
+            group = "item_ref",
             help = "Item file path"
         )]
         file: Option<std::path::PathBuf>,
@@ -572,14 +592,15 @@ enum AttachmentsAction {
             c!("qstack attachments remove --id "), a!("260109-0A2B3C4"), " ", a!("1"), "\n  ",
             c!("qstack attachments remove --id "), a!("260109-0A2B3C4"), " ", a!("1 2 3"), "    Remove multiple\n\n",
             h!("Note:"), " Use ", c!("qstack list --attachments --id <ID>"), " to see indices."
-        )
+        ),
+        group = ArgGroup::new("item_ref").required(true)
     )]
     Remove {
         /// Item ID (partial match supported)
         #[arg(
             long,
             conflicts_with = "file",
-            required_unless_present = "file",
+            group = "item_ref",
             help = "Item ID (partial match supported)"
         )]
         id: Option<String>,
@@ -588,7 +609,7 @@ enum AttachmentsAction {
         #[arg(
             long,
             conflicts_with = "id",
-            required_unless_present = "id",
+            group = "item_ref",
             help = "Item file path"
         )]
         file: Option<std::path::PathBuf>,
@@ -665,7 +686,7 @@ fn run() -> Result<()> {
             commands::list(&ListFilter {
                 mode,
                 status,
-                label,
+                labels: label,
                 author,
                 sort,
                 interactive: InteractiveArgs {

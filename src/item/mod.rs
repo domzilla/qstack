@@ -61,10 +61,6 @@ pub struct Frontmatter {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub labels: Vec<String>,
 
-    /// Category (matches parent subdirectory)
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub category: Option<String>,
-
     /// Attached files (relative paths) and URLs
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub attachments: Vec<String>,
@@ -151,11 +147,6 @@ impl Item {
         &self.frontmatter.labels
     }
 
-    /// Returns the category
-    pub fn category(&self) -> Option<&str> {
-        self.frontmatter.category.as_deref()
-    }
-
     /// Returns the creation timestamp
     pub const fn created_at(&self) -> DateTime<Utc> {
         self.frontmatter.created_at
@@ -169,11 +160,6 @@ impl Item {
     /// Sets the title
     pub fn set_title(&mut self, title: String) {
         self.frontmatter.title = title;
-    }
-
-    /// Sets the category
-    pub fn set_category(&mut self, category: Option<String>) {
-        self.frontmatter.category = category;
     }
 
     /// Adds a label
@@ -257,7 +243,6 @@ mod tests {
             created_at: Utc::now(),
             status: Status::Open,
             labels: vec![],
-            category: None,
             attachments: vec![],
         }
     }

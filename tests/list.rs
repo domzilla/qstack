@@ -19,7 +19,7 @@ fn test_list_empty_project() {
     let filter = ListFilter {
         mode: ListMode::Items,
         status: StatusFilter::All,
-        label: None,
+        labels: Vec::new(),
         author: None,
         sort: SortBy::Id,
         interactive: InteractiveArgs {
@@ -57,7 +57,7 @@ fn test_list_shows_open_items() {
     let filter = ListFilter {
         mode: ListMode::Items,
         status: StatusFilter::Open,
-        label: None,
+        labels: Vec::new(),
         author: None,
         sort: SortBy::Id,
         interactive: InteractiveArgs {
@@ -92,7 +92,7 @@ fn test_list_filter_by_label() {
     let filter = ListFilter {
         mode: ListMode::Items,
         status: StatusFilter::All,
-        label: Some("bug".to_string()),
+        labels: vec!["bug".to_string()],
         author: None,
         sort: SortBy::Id,
         interactive: InteractiveArgs {
@@ -119,7 +119,7 @@ fn test_list_sort_by_title() {
     let filter = ListFilter {
         mode: ListMode::Items,
         status: StatusFilter::All,
-        label: None,
+        labels: Vec::new(),
         author: None,
         sort: SortBy::Title,
         interactive: InteractiveArgs {
@@ -153,7 +153,7 @@ fn test_list_shows_closed_items() {
     let filter = ListFilter {
         mode: ListMode::Items,
         status: StatusFilter::Closed,
-        label: None,
+        labels: Vec::new(),
         author: None,
         sort: SortBy::Id,
         interactive: InteractiveArgs {
@@ -180,7 +180,7 @@ fn test_list_filter_by_author() {
     let filter = ListFilter {
         mode: ListMode::Items,
         status: StatusFilter::All,
-        label: None,
+        labels: Vec::new(),
         author: Some("Test User".to_string()),
         sort: SortBy::Id,
         interactive: InteractiveArgs {
@@ -207,7 +207,7 @@ fn test_list_sort_by_date() {
     let filter = ListFilter {
         mode: ListMode::Items,
         status: StatusFilter::All,
-        label: None,
+        labels: Vec::new(),
         author: None,
         sort: SortBy::Date,
         interactive: InteractiveArgs {
@@ -243,7 +243,7 @@ fn test_list_combined_filters() {
     let filter = ListFilter {
         mode: ListMode::Items,
         status: StatusFilter::Open,
-        label: Some("bug".to_string()),
+        labels: vec!["bug".to_string()],
         author: Some("Test User".to_string()),
         sort: SortBy::Title,
         interactive: InteractiveArgs {
@@ -276,7 +276,7 @@ fn test_list_open_and_closed_flags_together() {
     let filter = ListFilter {
         mode: ListMode::Items,
         status: StatusFilter::All,
-        label: None,
+        labels: Vec::new(),
         author: None,
         sort: SortBy::Id,
         interactive: InteractiveArgs {
@@ -303,7 +303,7 @@ fn test_list_without_init() {
     let filter = ListFilter {
         mode: ListMode::Items,
         status: StatusFilter::All,
-        label: None,
+        labels: Vec::new(),
         author: None,
         sort: SortBy::Id,
         interactive: InteractiveArgs {
@@ -330,7 +330,7 @@ fn test_list_author_case_insensitive() {
     let filter = ListFilter {
         mode: ListMode::Items,
         status: StatusFilter::All,
-        label: None,
+        labels: Vec::new(),
         author: Some("TEST USER".to_string()), // uppercase of "Test User"
         sort: SortBy::Id,
         interactive: InteractiveArgs {
@@ -356,7 +356,7 @@ fn test_list_nonexistent_label_filter() {
     let filter = ListFilter {
         mode: ListMode::Items,
         status: StatusFilter::All,
-        label: Some("nonexistent-label".to_string()),
+        labels: vec!["nonexistent-label".to_string()],
         author: None,
         sort: SortBy::Id,
         interactive: InteractiveArgs {
@@ -384,7 +384,7 @@ fn test_list_interactive_combinations() {
         let filter = ListFilter {
             mode: ListMode::Items,
             status: StatusFilter::All,
-            label: None,
+            labels: Vec::new(),
             author: None,
             sort: SortBy::Id,
             interactive: InteractiveArgs {
@@ -408,7 +408,7 @@ fn test_list_interactive_combinations() {
         let filter = ListFilter {
             mode: ListMode::Items,
             status: StatusFilter::All,
-            label: None,
+            labels: Vec::new(),
             author: None,
             sort: SortBy::Id,
             interactive: InteractiveArgs {
@@ -433,7 +433,7 @@ fn test_list_interactive_combinations() {
         let filter = ListFilter {
             mode: ListMode::Items,
             status: StatusFilter::All,
-            label: None,
+            labels: Vec::new(),
             author: None,
             sort: SortBy::Id,
             interactive: InteractiveArgs {
@@ -457,7 +457,7 @@ fn test_list_interactive_combinations() {
         let filter = ListFilter {
             mode: ListMode::Items,
             status: StatusFilter::All,
-            label: None,
+            labels: Vec::new(),
             author: None,
             sort: SortBy::Id,
             interactive: InteractiveArgs {

@@ -58,7 +58,7 @@ fn execute_status_change(
     // Move to/from archive
     let (new_path, warnings) = match operation {
         StatusChange::Close => storage::archive_item(&config, &path)?,
-        StatusChange::Reopen => storage::unarchive_item(&config, &path, item.category())?,
+        StatusChange::Reopen => storage::unarchive_item(&config, &path)?,
     };
 
     // Print any attachment move warnings

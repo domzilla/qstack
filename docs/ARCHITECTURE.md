@@ -118,7 +118,6 @@ pub struct Frontmatter {
     pub created_at: DateTime<Utc>,
     pub status: Status,
     pub labels: Vec<String>,
-    pub category: Option<String>,
     pub attachments: Vec<String>,
 }
 
@@ -199,7 +198,7 @@ impl Config {
 | `interactive` | `bool` | `true` | TUI by default |
 | `id_pattern` | `String` | `%y%m%d-%T%RRR` | ID format |
 | `stack_dir` | `String` | `qstack` | Item directory |
-| `archive_dir` | `String` | `archive` | Archive subdirectory |
+| `archive_dir` | `String` | `.archive` | Archive subdirectory |
 
 ### Storage Module (`src/storage/`)
 
@@ -213,10 +212,14 @@ pub fn walk_items(config: &Config) -> impl Iterator<Item = PathBuf>
 pub fn walk_archived(config: &Config) -> impl Iterator<Item = PathBuf>
 pub fn walk_all(config: &Config) -> impl Iterator<Item = PathBuf>
 
+// Category derivation
+pub fn derive_category(config: &Config, path: &Path) -> Option<String>
+
 // CRUD operations
 pub fn find_by_id(config: &Config, partial_id: &str) -> Result<PathBuf>
-pub fn create_item(config: &Config, item: &Item) -> Result<PathBuf>
+pub fn create_item(config: &Config, item: &Item, category: Option<&str>) -> Result<PathBuf>
 pub fn archive_item(config: &Config, path: &Path) -> Result<(PathBuf, Vec<String>)>
+pub fn unarchive_item(config: &Config, path: &Path) -> Result<(PathBuf, Vec<String>)>
 pub fn rename_item(path: &Path, new_filename: &str) -> Result<PathBuf>
 pub fn move_to_category(config: &Config, path: &Path, category: Option<&str>) -> Result<...>
 ```
@@ -407,7 +410,7 @@ Centralized magic values:
 // File system
 pub const ITEM_FILE_EXTENSION: &str = "md";
 pub const DEFAULT_STACK_DIR: &str = "qstack";
-pub const DEFAULT_ARCHIVE_DIR: &str = "archive";
+pub const DEFAULT_ARCHIVE_DIR: &str = ".archive";
 
 // UI
 pub const UI_TITLE_TRUNCATE_LEN: usize = 40;
@@ -471,8 +474,25 @@ User: qstack close --id 260109
 2. Item::load() parses file
 3. item.set_status(Status::Closed)
 4. storage::archive_item():
-   a. move_attachments() relocates attachment files
-   b. git::move_file() moves item to archive/
+   a. derive_category() extracts category from path
+   b. move_attachments() relocates attachment files
+   c. git::move_file() moves item to .archive/{category}/
+5. item.save() updates frontmatter
+6. Print success message
+```
+
+### Reopening an Item
+
+```
+User: qstack reopen --id 260109
+
+1. storage::find_by_id() locates item in archive
+2. Item::load() parses file
+3. item.set_status(Status::Open)
+4. storage::unarchive_item():
+   a. derive_category() extracts category from archive path
+   b. move_attachments() relocates attachment files
+   c. git::move_file() moves item back to {category}/
 5. item.save() updates frontmatter
 6. Print success message
 ```
@@ -483,13 +503,17 @@ User: qstack close --id 260109
 project/
 ├── .qstack                 # Project config (TOML)
 └── qstack/                 # Stack directory
-    ├── archive/            # Closed items
-    │   └── 260108-...-old-task.md
+    ├── .archive/           # Closed items (preserves category structure)
+    │   ├── bugs/           # Archived items from bugs category
+    │   │   └── 260108-...-old-bug.md
+    │   └── 260108-...-old-task.md  # Archived uncategorized item
     ├── bugs/               # Category subdirectory
     │   ├── 260109-...-fix-login.md
     │   └── 260109-...-Attachment-1-screenshot.png
     └── 260110-...-add-feature.md
 ```
+
+**Category**: Derived from folder path, NOT stored in item metadata. Moving an item to a different folder changes its category. Archive preserves the original category folder structure.
 
 ## Testing Strategy
 

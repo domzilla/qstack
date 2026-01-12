@@ -175,11 +175,11 @@ fn test_attach_add_nonexistent_file() {
         file: None,
         sources: vec!["/nonexistent/file.txt".to_string()],
     };
-    // Should succeed but with warning, not adding the file
+    // Should fail when all files are not found
     let result = commands::attach_add(&args);
     assert!(
-        result.is_ok(),
-        "Should succeed even with missing file (warning)"
+        result.is_err(),
+        "Should fail when no attachments were added"
     );
 
     let attachments = env.list_attachment_files("260101-AAA");
@@ -435,7 +435,7 @@ fn make_attachments_filter(id: &str) -> ListFilter {
     ListFilter {
         mode: ListMode::Attachments,
         status: StatusFilter::Open,
-        label: None,
+        labels: Vec::new(),
         author: None,
         sort: SortBy::Id,
         interactive: InteractiveArgs {

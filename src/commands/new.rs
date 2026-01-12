@@ -44,6 +44,25 @@ pub fn execute(args: NewArgs) -> Result<()> {
 
     let title = args.title.unwrap();
 
+    // Validate title is not empty
+    if title.trim().is_empty() {
+        anyhow::bail!("Title cannot be empty");
+    }
+
+    // Validate labels are not empty
+    for label in &args.labels {
+        if label.trim().is_empty() {
+            anyhow::bail!("Label cannot be empty");
+        }
+    }
+
+    // Validate category is not empty
+    if let Some(ref cat) = args.category {
+        if cat.trim().is_empty() {
+            anyhow::bail!("Category cannot be empty");
+        }
+    }
+
     // Get author name (prompts if not available)
     let author = config.user_name_or_prompt()?;
 
@@ -58,15 +77,14 @@ pub fn execute(args: NewArgs) -> Result<()> {
         created_at: Utc::now(),
         status: Status::Open,
         labels: args.labels,
-        category: args.category,
         attachments: vec![],
     };
 
     // Create item
     let mut item = Item::new(frontmatter);
 
-    // Save to disk
-    let path = storage::create_item(&config, &item)?;
+    // Save to disk (category determines folder placement)
+    let path = storage::create_item(&config, &item, args.category.as_deref())?;
 
     // Process attachments if any
     if !args.attachments.is_empty() {
@@ -96,8 +114,9 @@ fn collect_existing_metadata(config: &Config) -> (Vec<String>, Vec<String>) {
 
     for path in paths {
         if let Ok(item) = Item::load(&path) {
-            if let Some(cat) = item.category() {
-                categories.insert(cat.to_string());
+            // Derive category from path
+            if let Some(cat) = storage::derive_category(config, &path) {
+                categories.insert(cat);
             }
             for label in item.labels() {
                 labels.insert(label.clone());
@@ -140,7 +159,6 @@ fn execute_wizard(config: &Config) -> Result<()> {
         created_at: Utc::now(),
         status: Status::Open,
         labels: output.labels,
-        category: output.category,
         attachments: vec![],
     };
 
@@ -148,8 +166,8 @@ fn execute_wizard(config: &Config) -> Result<()> {
     let mut item = Item::new(frontmatter);
     item.body = output.content;
 
-    // Save to disk
-    let path = storage::create_item(&config, &item)?;
+    // Save to disk (category determines folder placement)
+    let path = storage::create_item(&config, &item, output.category.as_deref())?;
 
     // Process attachments
     if !output.attachments.is_empty() {

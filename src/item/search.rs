@@ -47,7 +47,6 @@ mod tests {
             created_at: Utc::now(),
             status: Status::Open,
             labels: vec![],
-            category: None,
             attachments: vec![],
         };
         let mut item = Item::new(frontmatter);

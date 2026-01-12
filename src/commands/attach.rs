@@ -46,6 +46,10 @@ pub fn execute_add(args: &AttachAddArgs) -> Result<()> {
     // Process attachments
     let added_count = ui::process_and_save_attachments(&mut item, &path, &args.sources)?;
 
+    if added_count == 0 {
+        bail!("No attachments were added (all files not found)");
+    }
+
     println!(
         "\n{} Added {} attachment(s) to {}",
         "✓".green(),

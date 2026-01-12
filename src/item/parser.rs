@@ -94,7 +94,6 @@ mod tests {
             created_at: Utc::now(),
             status: super::super::Status::Open,
             labels: vec!["bug".to_string()],
-            category: Some("bugs".to_string()),
             attachments: vec![],
         }
     }

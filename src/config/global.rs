@@ -213,8 +213,8 @@ interactive = {interactive}
 
 # Default subdirectory name for archived (closed) items within the stack directory.
 # Used when initializing new projects. Can be overridden per-project.
-# Default: "archive"
-# archive_dir = "archive"
+# Default: ".archive"
+# archive_dir = ".archive"
 "#,
             use_git_user = config.use_git_user,
             interactive = config.interactive,
@@ -294,7 +294,7 @@ mod tests {
         assert!(config.interactive);
         assert_eq!(config.id_pattern, DEFAULT_PATTERN);
         assert_eq!(config.stack_dir(), "qstack");
-        assert_eq!(config.archive_dir(), "archive");
+        assert_eq!(config.archive_dir(), ".archive");
     }
 
     #[test]
