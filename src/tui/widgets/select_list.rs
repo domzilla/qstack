@@ -225,9 +225,8 @@ impl Clone for SelectList {
         let mut new_list = Self::new(self.items.clone());
         new_list.title.clone_from(&self.title);
         new_list.disabled.clone_from(&self.disabled);
-        if let Some(idx) = self.state.selected() {
-            new_list.state.select(Some(idx));
-        }
+        // Always preserve selection state, including None (all items disabled)
+        new_list.state.select(self.state.selected());
         new_list
     }
 }
