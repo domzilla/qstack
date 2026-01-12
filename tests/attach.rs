@@ -437,6 +437,7 @@ fn make_attachments_filter(id: &str) -> ListFilter {
         status: StatusFilter::Open,
         labels: Vec::new(),
         author: None,
+        category: None,
         sort: SortBy::Id,
         interactive: InteractiveArgs {
             interactive: false,
@@ -522,8 +523,9 @@ fn test_update_category_moves_attachments() {
         file: None,
         title: None,
         labels: vec![],
+        remove_labels: vec![],
         category: Some("bugs".to_string()),
-        clear_category: false,
+        remove_category: false,
     };
     commands::update(args).expect("update category should succeed");
 

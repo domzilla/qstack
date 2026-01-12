@@ -21,6 +21,7 @@ fn test_labels_empty_project() {
         status: StatusFilter::Open,
         labels: Vec::new(),
         author: None,
+        category: None,
         sort: SortBy::Id,
         interactive: InteractiveArgs {
             interactive: false,
@@ -49,6 +50,7 @@ fn test_labels_shows_unique_labels() {
         status: StatusFilter::Open,
         labels: Vec::new(),
         author: None,
+        category: None,
         sort: SortBy::Id,
         interactive: InteractiveArgs {
             interactive: false,
@@ -95,6 +97,7 @@ fn test_labels_includes_archived_items() {
         status: StatusFilter::Open,
         labels: Vec::new(),
         author: None,
+        category: None,
         sort: SortBy::Id,
         interactive: InteractiveArgs {
             interactive: false,
@@ -120,6 +123,7 @@ fn test_labels_without_init() {
         status: StatusFilter::Open,
         labels: Vec::new(),
         author: None,
+        category: None,
         sort: SortBy::Id,
         interactive: InteractiveArgs {
             interactive: false,

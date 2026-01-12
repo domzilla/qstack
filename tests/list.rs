@@ -21,6 +21,7 @@ fn test_list_empty_project() {
         status: StatusFilter::All,
         labels: Vec::new(),
         author: None,
+        category: None,
         sort: SortBy::Id,
         interactive: InteractiveArgs {
             interactive: false,
@@ -59,6 +60,7 @@ fn test_list_shows_open_items() {
         status: StatusFilter::Open,
         labels: Vec::new(),
         author: None,
+        category: None,
         sort: SortBy::Id,
         interactive: InteractiveArgs {
             interactive: false,
@@ -94,6 +96,7 @@ fn test_list_filter_by_label() {
         status: StatusFilter::All,
         labels: vec!["bug".to_string()],
         author: None,
+        category: None,
         sort: SortBy::Id,
         interactive: InteractiveArgs {
             interactive: false,
@@ -121,6 +124,7 @@ fn test_list_sort_by_title() {
         status: StatusFilter::All,
         labels: Vec::new(),
         author: None,
+        category: None,
         sort: SortBy::Title,
         interactive: InteractiveArgs {
             interactive: false,
@@ -155,6 +159,7 @@ fn test_list_shows_closed_items() {
         status: StatusFilter::Closed,
         labels: Vec::new(),
         author: None,
+        category: None,
         sort: SortBy::Id,
         interactive: InteractiveArgs {
             interactive: false,
@@ -182,6 +187,7 @@ fn test_list_filter_by_author() {
         status: StatusFilter::All,
         labels: Vec::new(),
         author: Some("Test User".to_string()),
+        category: None,
         sort: SortBy::Id,
         interactive: InteractiveArgs {
             interactive: false,
@@ -209,6 +215,7 @@ fn test_list_sort_by_date() {
         status: StatusFilter::All,
         labels: Vec::new(),
         author: None,
+        category: None,
         sort: SortBy::Date,
         interactive: InteractiveArgs {
             interactive: false,
@@ -245,6 +252,7 @@ fn test_list_combined_filters() {
         status: StatusFilter::Open,
         labels: vec!["bug".to_string()],
         author: Some("Test User".to_string()),
+        category: None,
         sort: SortBy::Title,
         interactive: InteractiveArgs {
             interactive: false,
@@ -278,6 +286,7 @@ fn test_list_open_and_closed_flags_together() {
         status: StatusFilter::All,
         labels: Vec::new(),
         author: None,
+        category: None,
         sort: SortBy::Id,
         interactive: InteractiveArgs {
             interactive: false,
@@ -305,6 +314,7 @@ fn test_list_without_init() {
         status: StatusFilter::All,
         labels: Vec::new(),
         author: None,
+        category: None,
         sort: SortBy::Id,
         interactive: InteractiveArgs {
             interactive: false,
@@ -332,6 +342,7 @@ fn test_list_author_case_insensitive() {
         status: StatusFilter::All,
         labels: Vec::new(),
         author: Some("TEST USER".to_string()), // uppercase of "Test User"
+        category: None,
         sort: SortBy::Id,
         interactive: InteractiveArgs {
             interactive: false,
@@ -358,6 +369,7 @@ fn test_list_nonexistent_label_filter() {
         status: StatusFilter::All,
         labels: vec!["nonexistent-label".to_string()],
         author: None,
+        category: None,
         sort: SortBy::Id,
         interactive: InteractiveArgs {
             interactive: false,
@@ -386,6 +398,7 @@ fn test_list_interactive_combinations() {
             status: StatusFilter::All,
             labels: Vec::new(),
             author: None,
+            category: None,
             sort: SortBy::Id,
             interactive: InteractiveArgs {
                 interactive: false,
@@ -410,6 +423,7 @@ fn test_list_interactive_combinations() {
             status: StatusFilter::All,
             labels: Vec::new(),
             author: None,
+            category: None,
             sort: SortBy::Id,
             interactive: InteractiveArgs {
                 interactive: false,
@@ -435,6 +449,7 @@ fn test_list_interactive_combinations() {
             status: StatusFilter::All,
             labels: Vec::new(),
             author: None,
+            category: None,
             sort: SortBy::Id,
             interactive: InteractiveArgs {
                 interactive: false,
@@ -459,6 +474,7 @@ fn test_list_interactive_combinations() {
             status: StatusFilter::All,
             labels: Vec::new(),
             author: None,
+            category: None,
             sort: SortBy::Id,
             interactive: InteractiveArgs {
                 interactive: false,

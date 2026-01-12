@@ -164,7 +164,7 @@ fn test_label_with_special_characters() {
         title: Some("Task".to_string()),
         labels: vec![
             "bug-fix".to_string(),
-            "v2.0".to_string(),
+            "v2.0".to_string(), // will be normalized to v2-0
             "priority_high".to_string(),
         ],
         category: None,
@@ -180,7 +180,10 @@ fn test_label_with_special_characters() {
     let files = env.list_stack_files();
     let content = env.read_item(&files[0]);
     assert!(content.contains("- bug-fix"), "Label with dash");
-    assert!(content.contains("- v2.0"), "Label with dot");
+    assert!(
+        content.contains("- v2-0"),
+        "Label with dot normalized to dash"
+    );
     assert!(content.contains("- priority_high"), "Label with underscore");
 }
 
@@ -233,8 +236,9 @@ fn test_partial_id_matching() {
         file: None,
         title: Some("Updated".to_string()),
         labels: vec![],
+        remove_labels: vec![],
         category: None,
-        clear_category: false,
+        remove_category: false,
     };
 
     commands::update(args).expect("update with partial ID should succeed");
@@ -255,8 +259,9 @@ fn test_ambiguous_partial_id() {
         file: None,
         title: Some("Updated".to_string()),
         labels: vec![],
+        remove_labels: vec![],
         category: None,
-        clear_category: false,
+        remove_category: false,
     };
 
     let result = commands::update(args);

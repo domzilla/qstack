@@ -23,8 +23,9 @@ fn test_update_title() {
         file: None,
         title: Some("New Title".to_string()),
         labels: vec![],
+        remove_labels: vec![],
         category: None,
-        clear_category: false,
+        remove_category: false,
     };
 
     commands::update(args).expect("update should succeed");
@@ -51,8 +52,9 @@ fn test_update_add_labels() {
         file: None,
         title: None,
         labels: vec!["new-label".to_string()],
+        remove_labels: vec![],
         category: None,
-        clear_category: false,
+        remove_category: false,
     };
 
     commands::update(args).expect("update should succeed");
@@ -79,8 +81,9 @@ fn test_update_move_to_category() {
         file: None,
         title: None,
         labels: vec![],
+        remove_labels: vec![],
         category: Some("bugs".to_string()),
-        clear_category: false,
+        remove_category: false,
     };
 
     commands::update(args).expect("update should succeed");
@@ -102,8 +105,9 @@ fn test_update_clear_category() {
         file: None,
         title: None,
         labels: vec![],
+        remove_labels: vec![],
         category: None,
-        clear_category: true,
+        remove_category: true,
     };
 
     commands::update(args).expect("update should succeed");
@@ -126,8 +130,9 @@ fn test_update_nonexistent_id() {
         file: None,
         title: Some("New Title".to_string()),
         labels: vec![],
+        remove_labels: vec![],
         category: None,
-        clear_category: false,
+        remove_category: false,
     };
 
     let result = commands::update(args);
@@ -151,8 +156,9 @@ fn test_update_multiple_labels_at_once() {
             "urgent".to_string(),
             "critical".to_string(),
         ],
+        remove_labels: vec![],
         category: None,
-        clear_category: false,
+        remove_category: false,
     };
 
     commands::update(args).expect("update should succeed");
@@ -177,8 +183,9 @@ fn test_update_title_and_category_combined() {
         file: None,
         title: Some("New Title".to_string()),
         labels: vec![],
+        remove_labels: vec![],
         category: Some("bugs".to_string()),
-        clear_category: false,
+        remove_category: false,
     };
 
     commands::update(args).expect("update should succeed");
@@ -213,8 +220,9 @@ fn test_update_title_and_labels_combined() {
         file: None,
         title: Some("New Title".to_string()),
         labels: vec!["new-label".to_string()],
+        remove_labels: vec![],
         category: None,
-        clear_category: false,
+        remove_category: false,
     };
 
     commands::update(args).expect("update should succeed");
@@ -245,8 +253,9 @@ fn test_update_all_fields_combined() {
         file: None,
         title: Some("Updated Title".to_string()),
         labels: vec!["label1".to_string(), "label2".to_string()],
+        remove_labels: vec![],
         category: Some("features".to_string()),
-        clear_category: false,
+        remove_category: false,
     };
 
     commands::update(args).expect("update should succeed");
@@ -274,8 +283,9 @@ fn test_update_category_then_clear() {
         file: None,
         title: None,
         labels: vec![],
+        remove_labels: vec![],
         category: Some("bugs".to_string()),
-        clear_category: false,
+        remove_category: false,
     };
     commands::update(args).expect("update should succeed");
 
@@ -285,8 +295,9 @@ fn test_update_category_then_clear() {
         file: None,
         title: None,
         labels: vec![],
+        remove_labels: vec![],
         category: None,
-        clear_category: true,
+        remove_category: true,
     };
     commands::update(args).expect("clear category should succeed");
 
@@ -310,8 +321,9 @@ fn test_update_with_full_id() {
         file: None,
         title: Some("Updated".to_string()),
         labels: vec![],
+        remove_labels: vec![],
         category: None,
-        clear_category: false,
+        remove_category: false,
     };
 
     let result = commands::update(args);
@@ -329,8 +341,9 @@ fn test_update_without_init() {
         file: None,
         title: Some("New".to_string()),
         labels: vec![],
+        remove_labels: vec![],
         category: None,
-        clear_category: false,
+        remove_category: false,
     };
 
     let result = commands::update(args);

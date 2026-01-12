@@ -126,6 +126,7 @@ qstack new "Title" --no-interactive            # Create without editor
 qstack new "Title" -i                          # Force editor open
 qstack list --open --sort date                 # List items
 qstack list --label bug --author "John"        # Filter items
+qstack list --category bugs                    # Filter by category
 qstack list --labels                           # List all unique labels
 qstack list --categories                       # List all unique categories
 qstack list --attachments --id 260109          # List attachments for item
@@ -135,6 +136,8 @@ qstack search "query"                          # Search and select
 qstack search "bug" --full-text --no-interactive  # Full-text search
 qstack update --id 260109 --title "New Title"  # Update item
 qstack update --id 26 --label urgent           # Partial ID match
+qstack update --id 26 --remove-label urgent    # Remove label
+qstack update --id 26 --remove-category        # Move to stack root
 qstack update --file path/to/item.md --title X # Update by file path
 qstack close --id 260109                       # Archive item
 qstack close --file qstack/260109-*.md         # Close by file path
@@ -217,7 +220,7 @@ Description and notes go here in Markdown.
 
 Note: Category is NOT stored in frontmatter - it's derived from the item's folder location.
 
-**Label/Category Normalization**: Spaces in labels and categories are silently replaced with hyphens (`my label` → `my-label`).
+**Label/Category Normalization**: Non-alphanumeric characters (except `-` and `_`) in labels and categories are silently replaced with hyphens (`my label` → `my-label`, `level1/level2` → `level1-level2`).
 
 ## ID Generation
 Default pattern `%y%m%d-%T%RRR` produces IDs like `260109-0A2B3C4`:

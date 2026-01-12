@@ -22,12 +22,18 @@ pub struct SearchArgs {
 
 /// Executes the search command.
 pub fn execute(args: &SearchArgs) -> Result<()> {
+    // Empty query = no matches
+    if args.query.trim().is_empty() {
+        anyhow::bail!("No items found matching \"{}\"", args.query);
+    }
+
     let config = Config::load()?;
 
     // Collect all items
     let item_filter = ItemFilter {
         labels: Vec::new(),
         author: None,
+        category: None,
     };
 
     let mut items = collect_items(&config, args.closed, &item_filter);

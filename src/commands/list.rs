@@ -56,6 +56,7 @@ pub struct ListFilter {
     pub status: StatusFilter,
     pub labels: Vec<String>,
     pub author: Option<String>,
+    pub category: Option<String>,
     pub sort: SortBy,
     pub interactive: InteractiveArgs,
     /// Item ID (required for --attachments and --meta modes)
@@ -71,6 +72,7 @@ impl Default for ListFilter {
             status: StatusFilter::default(),
             labels: Vec::new(),
             author: None,
+            category: None,
             sort: SortBy::Id,
             interactive: InteractiveArgs::default(),
             id: None,
@@ -83,6 +85,7 @@ impl Default for ListFilter {
 pub struct ItemFilter {
     pub labels: Vec<String>,
     pub author: Option<String>,
+    pub category: Option<String>,
 }
 
 /// Collects and filters items from storage.
@@ -99,7 +102,7 @@ pub fn collect_items(config: &Config, include_archived: bool, filter: &ItemFilte
     paths
         .into_iter()
         .filter_map(|path| Item::load(&path).ok())
-        .filter(|item| apply_item_filter(item, filter))
+        .filter(|item| apply_item_filter(config, item, filter))
         .collect()
 }
 
@@ -112,7 +115,7 @@ pub fn sort_items(items: &mut [Item], sort: SortBy) {
     }
 }
 
-fn apply_item_filter(item: &Item, filter: &ItemFilter) -> bool {
+fn apply_item_filter(config: &Config, item: &Item, filter: &ItemFilter) -> bool {
     // Label filter (AND logic - item must have ALL specified labels)
     for label in &filter.labels {
         if !item.labels().iter().any(|l| l.eq_ignore_ascii_case(label)) {
@@ -128,6 +131,19 @@ fn apply_item_filter(item: &Item, filter: &ItemFilter) -> bool {
             .contains(&author.to_lowercase())
         {
             return false;
+        }
+    }
+
+    // Category filter (case-insensitive match)
+    if let Some(ref cat) = filter.category {
+        let item_category = item
+            .path
+            .as_ref()
+            .and_then(|p| storage::derive_category(config, p));
+        match item_category {
+            Some(c) if c.eq_ignore_ascii_case(cat) => {}
+            None if cat.eq_ignore_ascii_case("uncategorized") => {}
+            _ => return false,
         }
     }
 
@@ -153,6 +169,7 @@ fn execute_items(filter: &ListFilter, config: &Config) -> Result<()> {
     let item_filter = ItemFilter {
         labels: filter.labels.clone(),
         author: filter.author.clone(),
+        category: filter.category.clone(),
     };
 
     let mut items = match filter.status {
@@ -201,6 +218,7 @@ fn execute_labels(filter: &ListFilter, config: &Config) -> Result<()> {
     let item_filter = ItemFilter {
         labels: Vec::new(),
         author: None,
+        category: None,
     };
 
     // Load all items to get complete label vocabulary
@@ -288,6 +306,7 @@ fn execute_categories(filter: &ListFilter, config: &Config) -> Result<()> {
     let item_filter = ItemFilter {
         labels: Vec::new(),
         author: None,
+        category: None,
     };
 
     // Load all items to get complete category vocabulary

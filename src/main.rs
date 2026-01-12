@@ -223,6 +223,10 @@ Special modes:\n  \
         #[arg(long, help = "Filter items by author name (substring match)")]
         author: Option<String>,
 
+        /// Filter by category
+        #[arg(long = "category", help = "Filter items by category")]
+        filter_category: Option<String>,
+
         /// Sort order
         #[arg(
             long,
@@ -391,10 +395,14 @@ To modify labels directly, edit the Markdown file.",
         #[arg(long, help = "Add label(s) to item (can repeat)")]
         label: Vec<String>,
 
+        /// Remove labels (can be specified multiple times)
+        #[arg(long, help = "Remove label(s) from item (can repeat)")]
+        remove_label: Vec<String>,
+
         /// Move to category
         #[arg(
             long,
-            conflicts_with = "no_category",
+            conflicts_with = "remove_category",
             help = "Move item to category subdirectory"
         )]
         category: Option<String>,
@@ -405,7 +413,7 @@ To modify labels directly, edit the Markdown file.",
             conflicts_with = "category",
             help = "Remove from category (move to stack root)"
         )]
-        no_category: bool,
+        remove_category: bool,
     },
 
     /// Close an item (move to archive)
@@ -657,6 +665,7 @@ fn run() -> Result<()> {
             closed,
             label,
             author,
+            filter_category,
             sort,
             interactive,
             no_interactive,
@@ -688,6 +697,7 @@ fn run() -> Result<()> {
                 status,
                 labels: label,
                 author,
+                category: filter_category,
                 sort,
                 interactive: InteractiveArgs {
                     interactive,
@@ -719,15 +729,17 @@ fn run() -> Result<()> {
             file,
             title,
             label,
+            remove_label,
             category,
-            no_category,
+            remove_category,
         } => commands::update(UpdateArgs {
             id,
             file,
             title,
             labels: label,
+            remove_labels: remove_label,
             category,
-            clear_category: no_category,
+            remove_category,
         }),
 
         Commands::Close { id, file } => commands::execute_close(id, file),

@@ -20,12 +20,21 @@ use serde::{Deserialize, Serialize};
 
 pub use self::slug::slugify;
 
-/// Normalizes a label or category by replacing spaces with hyphens.
+/// Normalizes a label or category by replacing invalid characters with hyphens.
 ///
-/// Labels and categories cannot contain spaces - they are silently replaced.
+/// Only alphanumeric characters, hyphens, and underscores are allowed.
+/// All other characters are silently replaced with hyphens.
 #[must_use]
 pub fn normalize_identifier(s: &str) -> String {
-    s.replace(' ', "-")
+    s.chars()
+        .map(|c| {
+            if c.is_alphanumeric() || c == '-' || c == '_' {
+                c
+            } else {
+                '-'
+            }
+        })
+        .collect()
 }
 
 /// Item status

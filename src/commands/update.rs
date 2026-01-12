@@ -18,8 +18,9 @@ pub struct UpdateArgs {
     pub file: Option<PathBuf>,
     pub title: Option<String>,
     pub labels: Vec<String>,
+    pub remove_labels: Vec<String>,
     pub category: Option<String>,
-    pub clear_category: bool,
+    pub remove_category: bool,
 }
 
 /// Executes the update command.
@@ -33,6 +34,13 @@ pub fn execute(args: UpdateArgs) -> Result<()> {
 
     // Validate labels are not empty
     for label in &args.labels {
+        if label.trim().is_empty() {
+            anyhow::bail!("Label cannot be empty");
+        }
+    }
+
+    // Validate remove labels are not empty
+    for label in &args.remove_labels {
         if label.trim().is_empty() {
             anyhow::bail!("Label cannot be empty");
         }
@@ -68,12 +76,21 @@ pub fn execute(args: UpdateArgs) -> Result<()> {
         changed = true;
     }
 
-    // Normalize category (spaces -> hyphens)
+    // Remove labels
+    for label in &args.remove_labels {
+        let normalized = normalize_identifier(label);
+        if item.labels().contains(&normalized) {
+            item.remove_label(&normalized);
+            changed = true;
+        }
+    }
+
+    // Normalize category
     let new_category = args.category.as_deref().map(normalize_identifier);
 
     // Check for category change (derived from path, not stored in metadata)
     let current_category = storage::derive_category(&config, &path);
-    let category_changed = if args.clear_category {
+    let category_changed = if args.remove_category {
         current_category.is_some()
     } else if let Some(ref cat) = new_category {
         current_category.as_deref() != Some(cat.as_str())
@@ -101,7 +118,7 @@ pub fn execute(args: UpdateArgs) -> Result<()> {
 
     // Handle category change (move to different directory)
     if category_changed {
-        let category = if args.clear_category {
+        let category = if args.remove_category {
             None
         } else {
             new_category.as_deref()

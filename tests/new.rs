@@ -324,7 +324,7 @@ fn test_new_multiple_items_unique_ids() {
 }
 
 #[test]
-fn test_new_nested_category() {
+fn test_new_category_with_slash_normalized() {
     let env = TestEnv::new();
     env.write_global_config(&GlobalConfigBuilder::new().build());
     commands::init().expect("init should succeed");
@@ -332,7 +332,7 @@ fn test_new_nested_category() {
     let args = NewArgs {
         title: Some("Nested Task".to_string()),
         labels: vec![],
-        category: Some("level1/level2".to_string()),
+        category: Some("level1/level2".to_string()), // slash normalized to hyphen
         attachments: vec![],
         interactive: InteractiveArgs {
             interactive: false,
@@ -340,10 +340,14 @@ fn test_new_nested_category() {
         },
     };
 
-    commands::new(args).expect("new should succeed with nested category");
+    commands::new(args).expect("new should succeed");
 
-    let nested_path = env.stack_path().join("level1").join("level2");
-    assert!(nested_path.exists(), "Nested category should be created");
+    // Slashes in category names are normalized to hyphens
+    let normalized_path = env.stack_path().join("level1-level2");
+    assert!(
+        normalized_path.exists(),
+        "Category with normalized slash should exist"
+    );
 }
 
 #[test]
