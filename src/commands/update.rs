@@ -10,7 +10,7 @@ use std::path::PathBuf;
 use anyhow::Result;
 use owo_colors::OwoColorize;
 
-use crate::{config::Config, storage, ui};
+use crate::{config::Config, item::normalize_identifier, storage, ui};
 
 /// Arguments for the update command
 pub struct UpdateArgs {
@@ -63,17 +63,20 @@ pub fn execute(args: UpdateArgs) -> Result<()> {
     }
 
     // Add labels
-    for label in args.labels {
+    for label in &args.labels {
         item.add_label(label);
         changed = true;
     }
+
+    // Normalize category (spaces -> hyphens)
+    let new_category = args.category.as_deref().map(normalize_identifier);
 
     // Check for category change (derived from path, not stored in metadata)
     let current_category = storage::derive_category(&config, &path);
     let category_changed = if args.clear_category {
         current_category.is_some()
-    } else if let Some(ref new_category) = args.category {
-        current_category.as_deref() != Some(new_category.as_str())
+    } else if let Some(ref cat) = new_category {
+        current_category.as_deref() != Some(cat.as_str())
     } else {
         false
     };
@@ -101,7 +104,7 @@ pub fn execute(args: UpdateArgs) -> Result<()> {
         let category = if args.clear_category {
             None
         } else {
-            args.category.as_deref()
+            new_category.as_deref()
         };
         let (new_path, warnings) = storage::move_to_category(&config, &path, category)?;
         path = new_path;

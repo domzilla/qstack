@@ -15,7 +15,7 @@ use owo_colors::OwoColorize;
 use crate::{
     config::Config,
     editor, id,
-    item::{Frontmatter, Item, Status},
+    item::{normalize_identifier, Frontmatter, Item, Status},
     storage,
     tui::{self, screens::NewItemWizard},
     ui::{self, InteractiveArgs},
@@ -69,6 +69,14 @@ pub fn execute(args: NewArgs) -> Result<()> {
     // Generate ID
     let id = id::generate(config.id_pattern());
 
+    // Normalize labels and category (spaces -> hyphens)
+    let labels: Vec<String> = args
+        .labels
+        .iter()
+        .map(|l| normalize_identifier(l))
+        .collect();
+    let category = args.category.as_deref().map(normalize_identifier);
+
     // Create frontmatter
     let frontmatter = Frontmatter {
         id,
@@ -76,7 +84,7 @@ pub fn execute(args: NewArgs) -> Result<()> {
         author,
         created_at: Utc::now(),
         status: Status::Open,
-        labels: args.labels,
+        labels,
         attachments: vec![],
     };
 
@@ -84,7 +92,7 @@ pub fn execute(args: NewArgs) -> Result<()> {
     let mut item = Item::new(frontmatter);
 
     // Save to disk (category determines folder placement)
-    let path = storage::create_item(&config, &item, args.category.as_deref())?;
+    let path = storage::create_item(&config, &item, category.as_deref())?;
 
     // Process attachments if any
     if !args.attachments.is_empty() {
@@ -151,6 +159,14 @@ fn execute_wizard(config: &Config) -> Result<()> {
     // Generate ID
     let id = id::generate(config.id_pattern());
 
+    // Normalize labels and category (spaces -> hyphens)
+    let labels: Vec<String> = output
+        .labels
+        .iter()
+        .map(|l| normalize_identifier(l))
+        .collect();
+    let category = output.category.as_deref().map(normalize_identifier);
+
     // Create frontmatter from wizard output
     let frontmatter = Frontmatter {
         id,
@@ -158,7 +174,7 @@ fn execute_wizard(config: &Config) -> Result<()> {
         author,
         created_at: Utc::now(),
         status: Status::Open,
-        labels: output.labels,
+        labels,
         attachments: vec![],
     };
 
@@ -167,7 +183,7 @@ fn execute_wizard(config: &Config) -> Result<()> {
     item.body = output.content;
 
     // Save to disk (category determines folder placement)
-    let path = storage::create_item(&config, &item, output.category.as_deref())?;
+    let path = storage::create_item(&config, &item, category.as_deref())?;
 
     // Process attachments
     if !output.attachments.is_empty() {

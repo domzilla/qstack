@@ -217,6 +217,8 @@ Description and notes go here in Markdown.
 
 Note: Category is NOT stored in frontmatter - it's derived from the item's folder location.
 
+**Label/Category Normalization**: Spaces in labels and categories are silently replaced with hyphens (`my label` → `my-label`).
+
 ## ID Generation
 Default pattern `%y%m%d-%T%RRR` produces IDs like `260109-0A2B3C4`:
 - `%y%m%d` - Date (YYMMDD)

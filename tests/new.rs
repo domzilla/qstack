@@ -347,6 +347,51 @@ fn test_new_nested_category() {
 }
 
 #[test]
+fn test_new_normalizes_spaces_in_labels_and_category() {
+    let env = TestEnv::new();
+    env.write_global_config(&GlobalConfigBuilder::new().build());
+    commands::init().expect("init should succeed");
+
+    let args = NewArgs {
+        title: Some("Test Item".to_string()),
+        labels: vec!["my label".to_string(), "another one".to_string()],
+        category: Some("my category".to_string()),
+        attachments: vec![],
+        interactive: InteractiveArgs {
+            interactive: false,
+            no_interactive: true,
+        },
+    };
+
+    commands::new(args).expect("new should succeed");
+
+    // Category folder should have hyphens instead of spaces
+    let category_path = env.stack_path().join("my-category");
+    assert!(
+        category_path.exists(),
+        "Category folder should use hyphens: my-category"
+    );
+
+    let files = env.list_category_files("my-category");
+    assert_eq!(files.len(), 1, "Should have one item in category");
+
+    // Labels should have hyphens instead of spaces
+    let content = env.read_item(&files[0]);
+    assert!(
+        content.contains("- my-label"),
+        "Label should be normalized to my-label"
+    );
+    assert!(
+        content.contains("- another-one"),
+        "Label should be normalized to another-one"
+    );
+    assert!(
+        !content.contains("my label"),
+        "Should not contain spaces in labels"
+    );
+}
+
+#[test]
 fn test_new_without_init() {
     let env = TestEnv::new();
     env.write_global_config(&GlobalConfigBuilder::new().build());

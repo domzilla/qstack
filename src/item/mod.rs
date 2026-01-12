@@ -20,6 +20,14 @@ use serde::{Deserialize, Serialize};
 
 pub use self::slug::slugify;
 
+/// Normalizes a label or category by replacing spaces with hyphens.
+///
+/// Labels and categories cannot contain spaces - they are silently replaced.
+#[must_use]
+pub fn normalize_identifier(s: &str) -> String {
+    s.replace(' ', "-")
+}
+
 /// Item status
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Default)]
 #[serde(rename_all = "lowercase")]
@@ -162,9 +170,10 @@ impl Item {
         self.frontmatter.title = title;
     }
 
-    /// Adds a label
-    pub fn add_label(&mut self, label: String) {
-        if !self.frontmatter.labels.contains(&label) {
+    /// Adds a label (normalizes spaces to hyphens)
+    pub fn add_label(&mut self, label: &str) {
+        let label = normalize_identifier(label);
+        if !label.is_empty() && !self.frontmatter.labels.contains(&label) {
             self.frontmatter.labels.push(label);
         }
     }
