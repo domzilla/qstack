@@ -89,7 +89,8 @@ qstack/
 │   ├── categories.rs
 │   ├── attach.rs
 │   ├── config.rs
-│   └── edge_cases.rs
+│   ├── edge_cases.rs
+│   └── output_format.rs    # Non-interactive output format tests
 ├── Cargo.toml
 ├── Cargo.lock
 ├── rustfmt.toml
@@ -141,6 +142,26 @@ qstack attachments remove --id 260109 1        # Remove by index
 qstack setup                                   # One-time setup
 qstack completions zsh                         # Generate completions
 ```
+
+## Non-Interactive Output Format
+All non-interactive outputs (`--no-interactive` flag) must be **plain, scriptable, line-separated lists**:
+
+- **No ANSI color codes** - Output must be plain text without escape sequences
+- **No headers or labels** - Just the data, one item per line
+- **No explanatory messages** - Except for empty results ("No items found.")
+- **Newline-terminated** - Every output ends with a newline for proper piping
+
+### Output Formats by Command
+
+| Command | Output Format |
+|---------|--------------|
+| `list --no-interactive` | File paths, one per line |
+| `list --labels --no-interactive` | `label (count)` per line |
+| `list --categories --no-interactive` | `category (count)` per line |
+| `list --attachments --id <ID>` | Attachment names/URLs, one per line |
+| `list --meta --id <ID>` | `key: value` per line (YAML-like) |
+
+Tests for output format compliance are in `tests/output_format.rs`.
 
 ## Shell Completions
 Shell completion scripts are generated statically by `clap_complete`. When adding, removing, or modifying CLI commands or arguments, users must regenerate completions by running `qstack setup` again. This should be noted in release notes when CLI changes occur.

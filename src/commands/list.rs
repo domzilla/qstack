@@ -9,7 +9,6 @@
 use std::cmp::Reverse;
 
 use anyhow::Result;
-use owo_colors::OwoColorize;
 
 use crate::{config::Config, item::Item, storage, ui, ui::InteractiveArgs};
 
@@ -164,7 +163,7 @@ fn execute_items(filter: &ListFilter, config: &Config) -> Result<()> {
 
     // Display
     if items.is_empty() {
-        println!("{}", "No items found.".dimmed());
+        println!("No items found.");
         return Ok(());
     }
 
@@ -201,7 +200,7 @@ fn execute_labels(filter: &ListFilter, config: &Config) -> Result<()> {
     let all_label_counts = ui::count_by_many(&all_items, |item: &Item| item.labels().to_vec());
 
     if all_label_counts.is_empty() {
-        println!("{}", "No labels found.".dimmed());
+        println!("No labels found.");
         return Ok(());
     }
 
@@ -262,7 +261,7 @@ fn execute_labels(filter: &ListFilter, config: &Config) -> Result<()> {
         .collect();
 
     if filtered.is_empty() {
-        println!("{}", "No items found.".dimmed());
+        println!("No items found.");
         return Ok(());
     }
 
@@ -289,7 +288,7 @@ fn execute_categories(filter: &ListFilter, config: &Config) -> Result<()> {
         ui::count_by(&all_items, |item: &Item| item.category().map(String::from));
 
     if all_category_counts.is_empty() {
-        println!("{}", "No items found.".dimmed());
+        println!("No items found.");
         return Ok(());
     }
 
@@ -362,7 +361,7 @@ fn execute_categories(filter: &ListFilter, config: &Config) -> Result<()> {
         .collect();
 
     if filtered.is_empty() {
-        println!("{}", "No items found.".dimmed());
+        println!("No items found.");
         return Ok(());
     }
 
@@ -389,7 +388,7 @@ fn execute_attachments(filter: &ListFilter, config: &Config) -> Result<()> {
     let attachments = item.attachments();
 
     if attachments.is_empty() {
-        println!("{}", "No attachments.".dimmed());
+        println!("No attachments.");
         return Ok(());
     }
 
@@ -412,26 +411,26 @@ fn execute_meta(filter: &ListFilter, config: &Config) -> Result<()> {
     let storage::LoadedItem { item, .. } = storage::find_and_load(config, id)?;
 
     // Print frontmatter fields
-    println!("{}: {}", "id".bold(), item.id());
-    println!("{}: {}", "title".bold(), item.title());
-    println!("{}: {}", "author".bold(), item.author());
-    println!("{}: {}", "created_at".bold(), item.created_at());
-    println!("{}: {}", "status".bold(), item.status());
+    println!("id: {}", item.id());
+    println!("title: {}", item.title());
+    println!("author: {}", item.author());
+    println!("created_at: {}", item.created_at());
+    println!("status: {}", item.status());
 
     let labels = item.labels();
     if labels.is_empty() {
-        println!("{}: []", "labels".bold());
+        println!("labels: []");
     } else {
-        println!("{}: {}", "labels".bold(), labels.join(", "));
+        println!("labels: {}", labels.join(", "));
     }
 
     if let Some(category) = item.category() {
-        println!("{}: {}", "category".bold(), category);
+        println!("category: {category}");
     }
 
     let attachments = item.attachments();
     if !attachments.is_empty() {
-        println!("{}:", "attachments".bold());
+        println!("attachments:");
         for attachment in attachments {
             println!("  - {attachment}");
         }
