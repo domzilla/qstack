@@ -338,8 +338,7 @@ impl Drop for TerminalGuard {
 Shared UI utilities:
 
 - **InteractiveArgs** — Resolves `--interactive` / `--no-interactive` flags
-- **Table building** — `create_table()`, `print_items_table()`
-- **Selection dialogs** — `select_from_list()`, `select_item()`
+- **Selection dialogs** — `select_from_list()`, `select_item()` (formats items with columns for TUI)
 - **Aggregation** — `count_by()`, `count_by_many()` for labels/categories
 - **Output formatting** — `print_success()`, `print_warnings()`, `truncate()`
 
@@ -353,10 +352,13 @@ pub fn execute(filter: ListFilter, interactive: InteractiveArgs) -> Result<()> {
     let config = Config::load()?;
     let items = load_and_filter(&config, &filter);
 
-    if interactive.should_run(&config) && !items.is_empty() {
-        // TUI selection
+    if !interactive.should_run(&config) {
+        // Non-interactive: print file paths
+        for item in &items {
+            println!("{}", item.path.display());
+        }
     } else {
-        // Print table
+        // Interactive: TUI selection
     }
     Ok(())
 }

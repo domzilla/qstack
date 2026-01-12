@@ -116,7 +116,6 @@ qstack/
 - `walkdir` - Directory traversal
 - `dirs` - Home directory lookup
 - `rand` - Random ID generation
-- `comfy-table` - Table output
 - `owo-colors` - Colored terminal output
 - `ratatui` + `crossterm` - Terminal UI (interactive selection, wizard)
 
