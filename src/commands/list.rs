@@ -191,8 +191,22 @@ fn execute_items(filter: &ListFilter, config: &Config) -> Result<()> {
 
 /// Lists all unique labels across items.
 fn execute_labels(filter: &ListFilter, config: &Config) -> Result<()> {
-    // Collect all items and count labels
-    let items = storage::load_all_items(config);
+    // Collect items based on status filter (respects --closed flag)
+    let item_filter = ItemFilter {
+        label: None,
+        author: None,
+    };
+    let items = match filter.status {
+        StatusFilter::Open => collect_items(config, false, &item_filter),
+        StatusFilter::Closed => collect_items(config, true, &item_filter),
+        StatusFilter::All => {
+            let mut open = collect_items(config, false, &item_filter);
+            let closed = collect_items(config, true, &item_filter);
+            open.extend(closed);
+            open
+        }
+    };
+
     let label_counts = ui::count_by_many(&items, |item: &Item| item.labels().to_vec());
 
     if label_counts.is_empty() {
@@ -247,8 +261,22 @@ fn execute_labels(filter: &ListFilter, config: &Config) -> Result<()> {
 
 /// Lists all unique categories across items.
 fn execute_categories(filter: &ListFilter, config: &Config) -> Result<()> {
-    // Collect all items and count categories
-    let items = storage::load_all_items(config);
+    // Collect items based on status filter (respects --closed flag)
+    let item_filter = ItemFilter {
+        label: None,
+        author: None,
+    };
+    let items = match filter.status {
+        StatusFilter::Open => collect_items(config, false, &item_filter),
+        StatusFilter::Closed => collect_items(config, true, &item_filter),
+        StatusFilter::All => {
+            let mut open = collect_items(config, false, &item_filter);
+            let closed = collect_items(config, true, &item_filter);
+            open.extend(closed);
+            open
+        }
+    };
+
     let category_counts = ui::count_by(&items, |item: &Item| item.category().map(String::from));
 
     if category_counts.is_empty() {
