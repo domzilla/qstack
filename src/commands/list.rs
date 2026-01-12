@@ -238,21 +238,13 @@ fn execute_labels(filter: &ListFilter, config: &Config) -> Result<()> {
         .map(|(i, _)| i)
         .collect();
 
-    // Build display options with visual distinction for non-selectable items
+    // Build display options
     let options: Vec<String> = labels
         .iter()
         .map(|(label, count)| format!("{label} ({count})"))
         .collect();
 
-    // If no labels have open items, show the list but inform user
-    if selectable_indices.is_empty() {
-        println!("{}", "Labels (no open items):".dimmed());
-        for option in &options {
-            println!("  {}", option.dimmed());
-        }
-        return Ok(());
-    }
-
+    // Show TUI even if all items are disabled (user can view and ESC to exit)
     let Some(selection) = ui::select_from_list_filtered(
         "Select a label to filter by",
         &options,
@@ -352,15 +344,7 @@ fn execute_categories(filter: &ListFilter, config: &Config) -> Result<()> {
         })
         .collect();
 
-    // If no categories have open items, show the list but inform user
-    if selectable_indices.is_empty() {
-        println!("{}", "Categories (no open items):".dimmed());
-        for option in &options {
-            println!("  {}", option.dimmed());
-        }
-        return Ok(());
-    }
-
+    // Show TUI even if all items are disabled (user can view and ESC to exit)
     let Some(selection) = ui::select_from_list_filtered(
         "Select a category to filter by",
         &options,
