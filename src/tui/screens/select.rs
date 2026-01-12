@@ -132,8 +132,8 @@ impl TuiApp for SelectScreen {
 
 /// Select from a list of options.
 ///
-/// Returns the index of the selected item, or an error if cancelled.
-pub fn select_from_list<T: ToString>(prompt: &str, options: &[T]) -> Result<usize> {
+/// Returns `Some(index)` if an item was selected, `None` if cancelled.
+pub fn select_from_list<T: ToString>(prompt: &str, options: &[T]) -> Result<Option<usize>> {
     let items: Vec<String> = options.iter().map(ToString::to_string).collect();
 
     if items.is_empty() {
@@ -141,22 +141,18 @@ pub fn select_from_list<T: ToString>(prompt: &str, options: &[T]) -> Result<usiz
     }
 
     let app = SelectScreen::new(prompt, items);
-
-    match run(app)? {
-        Some(index) => Ok(index),
-        None => anyhow::bail!("Selection cancelled"),
-    }
+    run(app)
 }
 
 /// Select from a list of options with a header row.
 ///
 /// The header is displayed above the list items to label columns.
-/// Returns the index of the selected item, or an error if cancelled.
+/// Returns `Some(index)` if an item was selected, `None` if cancelled.
 pub fn select_from_list_with_header<T: ToString>(
     prompt: &str,
     header: &str,
     options: &[T],
-) -> Result<usize> {
+) -> Result<Option<usize>> {
     let items: Vec<String> = options.iter().map(ToString::to_string).collect();
 
     if items.is_empty() {
@@ -164,9 +160,5 @@ pub fn select_from_list_with_header<T: ToString>(
     }
 
     let app = SelectScreen::new(prompt, items).with_header(header);
-
-    match run(app)? {
-        Some(index) => Ok(index),
-        None => anyhow::bail!("Selection cancelled"),
-    }
+    run(app)
 }

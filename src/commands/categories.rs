@@ -58,7 +58,9 @@ pub fn execute(args: &CategoriesArgs) -> Result<()> {
         })
         .collect();
 
-    let selection = ui::select_from_list("Select a category to filter by", &options)?;
+    let Some(selection) = ui::select_from_list("Select a category to filter by", &options)? else {
+        return Ok(()); // User cancelled
+    };
     let selected_category = &categories[selection].0;
 
     // Filter items in selected category
@@ -73,7 +75,9 @@ pub fn execute(args: &CategoriesArgs) -> Result<()> {
     }
 
     // Interactive: TUI selection for items
-    let item_selection = ui::select_item("Select an item to open", &filtered)?;
+    let Some(item_selection) = ui::select_item("Select an item to open", &filtered)? else {
+        return Ok(()); // User cancelled
+    };
     let item = filtered[item_selection];
     ui::open_item_in_editor(item, &config)?;
 

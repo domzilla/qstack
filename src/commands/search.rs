@@ -69,7 +69,9 @@ pub fn execute(args: &SearchArgs) -> Result<()> {
         );
     }
 
-    let selection = ui::select_item("Select an item", &items)?;
+    let Some(selection) = ui::select_item("Select an item", &items)? else {
+        return Ok(()); // User cancelled
+    };
     ui::open_item_in_editor(&items[selection], &config)?;
 
     Ok(())

@@ -104,8 +104,8 @@ impl InteractiveArgs {
 
 /// Generic interactive selection dialog.
 ///
-/// Displays a list of options and returns the index of the selected item.
-pub fn select_from_list<T: ToString>(prompt: &str, options: &[T]) -> Result<usize> {
+/// Returns `Some(index)` if an item was selected, `None` if cancelled.
+pub fn select_from_list<T: ToString>(prompt: &str, options: &[T]) -> Result<Option<usize>> {
     tui_select(prompt, options)
 }
 
@@ -113,7 +113,8 @@ pub fn select_from_list<T: ToString>(prompt: &str, options: &[T]) -> Result<usiz
 ///
 /// Formats items as columns: ID | Status | Title | Labels | Category
 /// Works with both `&[Item]` and `&[&Item]` via `AsRef<Item>`.
-pub fn select_item<T: AsRef<Item>>(prompt: &str, items: &[T]) -> Result<usize> {
+/// Returns `Some(index)` if an item was selected, `None` if cancelled.
+pub fn select_item<T: AsRef<Item>>(prompt: &str, items: &[T]) -> Result<Option<usize>> {
     let header = format!(
         "{:<15} {:>6}  {:<40}  {:<20}  {}",
         "ID", "Status", "Title", "Labels", "Category"

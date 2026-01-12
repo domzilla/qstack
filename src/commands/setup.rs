@@ -72,7 +72,8 @@ fn setup_global_config() -> Result<()> {
 ///
 /// Detection uses `$SHELL` (the user's configured login shell). If detection
 /// fails or the shell is unrecognized, prompts the user interactively.
-fn detect_or_prompt_shell() -> Result<Shell> {
+/// Returns `None` if the user cancels the selection.
+fn detect_or_prompt_shell() -> Result<Option<Shell>> {
     // Try $SHELL environment variable (user's configured login shell)
     if let Ok(shell_path) = env::var("SHELL") {
         let name = shell_path.rsplit('/').next().unwrap_or(&shell_path);
@@ -87,7 +88,7 @@ fn detect_or_prompt_shell() -> Result<Shell> {
             "powershell" | "pwsh" => Some(Shell::PowerShell),
             _ => None,
         } {
-            return Ok(shell);
+            return Ok(Some(shell));
         }
     }
 
@@ -96,19 +97,22 @@ fn detect_or_prompt_shell() -> Result<Shell> {
 }
 
 /// Prompts the user to select their shell interactively.
-fn prompt_shell_selection() -> Result<Shell> {
+/// Returns `None` if the user cancels the selection.
+fn prompt_shell_selection() -> Result<Option<Shell>> {
     let shells = ["zsh", "bash", "fish", "elvish", "powershell"];
 
-    let selection = select_from_list("Which shell do you use?", &shells)?;
+    let Some(selection) = select_from_list("Which shell do you use?", &shells)? else {
+        return Ok(None); // User cancelled
+    };
 
-    Ok(match selection {
+    Ok(Some(match selection {
         0 => Shell::Zsh,
         1 => Shell::Bash,
         2 => Shell::Fish,
         3 => Shell::Elvish,
         4 => Shell::PowerShell,
         _ => unreachable!(),
-    })
+    }))
 }
 
 /// Returns the completion file path for each shell
@@ -162,9 +166,13 @@ fn get_rc_file_path(shell: Shell) -> Option<PathBuf> {
 
 /// Sets up shell completions for the specified or detected shell.
 fn setup_completions(cmd: &mut Command, shell_override: Option<Shell>) -> Result<()> {
-    let shell = match shell_override {
-        Some(s) => s,
-        None => detect_or_prompt_shell()?,
+    let shell = if let Some(s) = shell_override {
+        s
+    } else {
+        let Some(s) = detect_or_prompt_shell()? else {
+            return Ok(()); // User cancelled
+        };
+        s
     };
 
     // Generate completions

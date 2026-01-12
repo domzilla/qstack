@@ -147,7 +147,9 @@ pub fn execute(filter: &ListFilter) -> Result<()> {
     }
 
     // Interactive: TUI selection
-    let selection = ui::select_item("Select an item to open", &items)?;
+    let Some(selection) = ui::select_item("Select an item to open", &items)? else {
+        return Ok(()); // User cancelled
+    };
     let item = &items[selection];
     ui::open_item_in_editor(item, &config)?;
 

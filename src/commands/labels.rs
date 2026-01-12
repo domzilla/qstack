@@ -47,7 +47,9 @@ pub fn execute(args: &LabelsArgs) -> Result<()> {
         .map(|(label, count)| format!("{label} ({count})"))
         .collect();
 
-    let selection = ui::select_from_list("Select a label to filter by", &options)?;
+    let Some(selection) = ui::select_from_list("Select a label to filter by", &options)? else {
+        return Ok(()); // User cancelled
+    };
     let selected_label = &labels[selection].0;
 
     // Filter items with selected label
@@ -62,7 +64,9 @@ pub fn execute(args: &LabelsArgs) -> Result<()> {
     }
 
     // Interactive: TUI selection for items
-    let item_selection = ui::select_item("Select an item to open", &filtered)?;
+    let Some(item_selection) = ui::select_item("Select an item to open", &filtered)? else {
+        return Ok(()); // User cancelled
+    };
     let item = filtered[item_selection];
     ui::open_item_in_editor(item, &config)?;
 
