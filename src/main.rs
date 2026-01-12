@@ -243,7 +243,7 @@ Use --full-text to also search within the markdown body content.",
         after_help = concat!(
             h!("Examples:"), "\n  ",
             c!("qstack search "), a!("\"login bug\""), "             Search and select interactively\n  ",
-            c!("qstack search "), a!("\"260109\""), "                Search by ID\n  ",
+            c!("qstack search "), a!("\"260109-0A2B3C4\""), "        Search by ID\n  ",
             c!("qstack search "), a!("\"auth\""), c!(" --full-text"), "      Include body content in search\n  ",
             c!("qstack search "), a!("\"bug\""), c!(" --no-interactive"), "  Just list matching items\n  ",
             c!("qstack search "), a!("\"old task\""), c!(" --closed"), "     Search in archived items\n\n",
@@ -286,11 +286,11 @@ Labels are additive - new labels are added without removing existing ones. \
 To modify labels directly, edit the Markdown file.",
         after_help = concat!(
             h!("Examples:"), "\n  ",
-            c!("qstack update --id "), a!("260109"), c!(" --title "), a!("\"New title\""), "\n  ",
-            c!("qstack update --id "), a!("2601"), c!(" --label "), a!("urgent"), c!(" --label "), a!("p1"), "\n  ",
-            c!("qstack update --id "), a!("260109"), c!(" --category "), a!("bugs"), "\n  ",
-            c!("qstack update --id "), a!("260109"), c!(" --no-category"), "          Move to stack root\n  ",
-            c!("qstack update --id "), a!("26"), c!(" --title "), a!("\"Fix\""), c!(" --label "), a!("done"), "  Multiple updates\n\n",
+            c!("qstack update --id "), a!("260109-0A2B3C4"), c!(" --title "), a!("\"New title\""), "\n  ",
+            c!("qstack update --id "), a!("2601"), c!(" --label "), a!("urgent"), c!(" --label "), a!("p1"), "  Partial ID\n  ",
+            c!("qstack update --id "), a!("260109-0A2B3C4"), c!(" --category "), a!("bugs"), "\n  ",
+            c!("qstack update --id "), a!("260109-0A2B3C4"), c!(" --no-category"), "  Move to stack root\n  ",
+            c!("qstack update --id "), a!("26"), c!(" --title "), a!("\"Fix\""), c!(" --label "), a!("done"), "  Partial ID\n\n",
             h!("Note:"), " The --id flag supports partial matching for convenience."
         )
     )]
@@ -328,10 +328,10 @@ archive subdirectory. In Git repositories, uses 'git mv' to preserve history.\n\
 Closed items are excluded from 'qstack list' by default (use --closed to see them).",
         after_help = concat!(
             h!("Examples:"), "\n  ",
-            c!("qstack close --id "), a!("260109"), "              Close by full ID\n  ",
+            c!("qstack close --id "), a!("260109-0A2B3C4"), "      Close by full ID\n  ",
             c!("qstack close --id "), a!("2601"), "                Close by partial ID\n  ",
             c!("qstack list --closed"), "                  View closed items\n  ",
-            c!("qstack reopen --id "), a!("260109"), "             Reopen if needed"
+            c!("qstack reopen --id "), a!("260109-0A2B3C4"), "     Reopen if needed"
         )
     )]
     Close {
@@ -352,7 +352,7 @@ to the stack (or its original category). In Git repositories, uses 'git mv' to \
 preserve history.",
         after_help = concat!(
             h!("Examples:"), "\n  ",
-            c!("qstack reopen --id "), a!("260109"), "             Reopen by full ID\n  ",
+            c!("qstack reopen --id "), a!("260109-0A2B3C4"), "     Reopen by full ID\n  ",
             c!("qstack reopen --id "), a!("2601"), "               Reopen by partial ID\n  ",
             c!("qstack list"), "                           Verify item is back in open list"
         )
@@ -431,10 +431,10 @@ Attachments can be files (copied to item directory) or URLs (stored as reference
 File attachments are renamed to follow the pattern: {ID}-Attachment-{N}-{name}.{ext}",
         after_help = concat!(
             h!("Examples:"), "\n  ",
-            c!("qstack attachments list --id "), a!("260109"), "\n  ",
-            c!("qstack attachments add --id "), a!("260109"), " ", a!("screenshot.png"), "\n  ",
-            c!("qstack attachments add --id "), a!("260109"), " ", a!("https://github.com/issue/42"), "\n  ",
-            c!("qstack attachments remove --id "), a!("260109"), " ", a!("1"), " ", a!("2")
+            c!("qstack attachments list --id "), a!("260109-0A2B3C4"), "\n  ",
+            c!("qstack attachments add --id "), a!("260109-0A2B3C4"), " ", a!("screenshot.png"), "\n  ",
+            c!("qstack attachments add --id "), a!("260109-0A2B3C4"), " ", a!("https://github.com/issue/42"), "\n  ",
+            c!("qstack attachments remove --id "), a!("260109-0A2B3C4"), " ", a!("1"), " ", a!("2")
         )
     )]
     Attachments {
@@ -500,7 +500,7 @@ enum AttachmentsAction {
     #[command(
         after_help = concat!(
             h!("Example:"), "\n  ",
-            c!("qstack attachments list --id "), a!("260109"), "\n\n",
+            c!("qstack attachments list --id "), a!("260109-0A2B3C4"), "\n\n",
             h!("Output:"), " Table with index, type (file/url), and attachment path or URL."
         )
     )]
@@ -514,9 +514,9 @@ enum AttachmentsAction {
     #[command(
         after_help = concat!(
             h!("Examples:"), "\n  ",
-            c!("qstack attachments add --id "), a!("260109"), " ", a!("screenshot.png"), "\n  ",
-            c!("qstack attachments add --id "), a!("260109"), " ", a!("file1.txt file2.txt"), "\n  ",
-            c!("qstack attachments add --id "), a!("260109"), " ", a!("https://github.com/issue/42"), "\n\n",
+            c!("qstack attachments add --id "), a!("260109-0A2B3C4"), " ", a!("screenshot.png"), "\n  ",
+            c!("qstack attachments add --id "), a!("260109-0A2B3C4"), " ", a!("file1.txt file2.txt"), "\n  ",
+            c!("qstack attachments add --id "), a!("260109-0A2B3C4"), " ", a!("https://github.com/issue/42"), "\n\n",
             h!("Note:"), " Files are copied to the item directory. URLs are stored as references."
         )
     )]
@@ -534,8 +534,8 @@ enum AttachmentsAction {
     #[command(
         after_help = concat!(
             h!("Examples:"), "\n  ",
-            c!("qstack attachments remove --id "), a!("260109"), " ", a!("1"), "\n  ",
-            c!("qstack attachments remove --id "), a!("260109"), " ", a!("1 2 3"), "    Remove multiple\n\n",
+            c!("qstack attachments remove --id "), a!("260109-0A2B3C4"), " ", a!("1"), "\n  ",
+            c!("qstack attachments remove --id "), a!("260109-0A2B3C4"), " ", a!("1 2 3"), "    Remove multiple\n\n",
             h!("Note:"), " Use ", c!("qstack attachments list --id <ID>"), " to see indices."
         )
     )]
