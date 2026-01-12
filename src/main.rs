@@ -126,7 +126,7 @@ qstack/archive/      Archive directory for closed items",
 Generates a unique ID, creates a Markdown file with YAML frontmatter, and opens \
 your editor based on the 'interactive' config setting (default: true). Use -i to \
 force the editor to open, or --no-interactive to skip it.\n\n\
-The filename is derived from the ID and a slugified title (e.g., '260109-0A2B-fix-login-bug.md').\n\n\
+The filename is derived from the ID and a slugified title (e.g., '260109-0A2B3C4-fix-login-bug.md').\n\n\
 The author is determined from (in order):\n  \
 1. user_name in ~/.qstack\n  \
 2. git config user.name (if use_git_user is true)\n  \

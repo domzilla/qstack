@@ -45,13 +45,6 @@ pub fn extract_from_filename(filename: &str) -> Option<&str> {
     Some(&stem[..id_end])
 }
 
-/// Returns the short form of an ID (date portion only).
-///
-/// Given `260109-02F7K9M`, returns `260109`.
-pub fn short_form(id: &str) -> &str {
-    id.split('-').next().unwrap_or(id)
-}
-
 /// Generates a unique ID based on the given pattern.
 ///
 /// # Arguments
@@ -191,12 +184,5 @@ mod tests {
         assert_eq!(extract_from_filename("invalid.md"), None);
         assert_eq!(extract_from_filename("26010-02F7K9M.md"), None); // 5 digits
         assert_eq!(extract_from_filename("abcdef-02F7K9M.md"), None); // non-numeric
-    }
-
-    #[test]
-    fn test_short_form() {
-        assert_eq!(short_form("260109-02F7K9M"), "260109");
-        assert_eq!(short_form("260109"), "260109");
-        assert_eq!(short_form(""), "");
     }
 }

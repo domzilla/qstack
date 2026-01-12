@@ -18,7 +18,7 @@ use owo_colors::OwoColorize;
 use crate::{
     config::Config,
     constants::{UI_LABELS_TRUNCATE_LEN, UI_TITLE_TRUNCATE_LEN},
-    editor, id,
+    editor,
     item::{Item, Status},
     storage::AttachmentResult,
     tui::screens::select_from_list as tui_select,
@@ -249,10 +249,9 @@ pub fn print_items_table_ref(items: &[&Item]) {
         let status_cell = status_cell(item.status());
         let labels = item.labels().join(", ");
         let category = item.category().unwrap_or("-");
-        let short_id = id::short_form(item.id());
 
         table.add_row(vec![
-            Cell::new(short_id),
+            Cell::new(item.id()),
             status_cell,
             Cell::new(truncate(item.title(), UI_TITLE_TRUNCATE_LEN)),
             Cell::new(truncate(&labels, UI_LABELS_TRUNCATE_LEN)),
@@ -271,10 +270,9 @@ pub fn print_items_table_compact(items: &[&Item]) {
     for item in items {
         let status_cell = status_cell(item.status());
         let labels = item.labels().join(", ");
-        let short_id = id::short_form(item.id());
 
         table.add_row(vec![
-            Cell::new(short_id),
+            Cell::new(item.id()),
             status_cell,
             Cell::new(truncate(item.title(), UI_TITLE_TRUNCATE_LEN)),
             Cell::new(truncate(&labels, UI_LABELS_TRUNCATE_LEN)),
@@ -290,11 +288,4 @@ fn status_cell(status: Status) -> Cell {
         Status::Open => Cell::new("open").fg(Color::Green),
         Status::Closed => Cell::new("closed").fg(Color::Red),
     }
-}
-
-/// Extracts the short ID for display.
-///
-/// Re-export of `id::short_form` for convenience.
-pub fn short_id(id: &str) -> &str {
-    id::short_form(id)
 }
