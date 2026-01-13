@@ -20,7 +20,8 @@ use serde::{Deserialize, Serialize};
 
 pub use self::slug::slugify;
 
-/// Normalizes a label or category by replacing invalid characters with hyphens.
+/// Normalizes a label or category by replacing invalid characters with hyphens
+/// and converting to lowercase.
 ///
 /// Only alphanumeric characters, hyphens, and underscores are allowed.
 /// All other characters are silently replaced with hyphens.
@@ -34,7 +35,8 @@ pub fn normalize_identifier(s: &str) -> String {
                 '-'
             }
         })
-        .collect()
+        .collect::<String>()
+        .to_lowercase()
 }
 
 /// Item status
