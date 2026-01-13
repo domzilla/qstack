@@ -1,4 +1,6 @@
 //! Single-line text input widget.
+//!
+//! Fully supports UTF-8 input including multi-byte characters.
 
 use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
 use ratatui::{
@@ -10,9 +12,13 @@ use ratatui::{
 };
 
 /// Single-line text input with cursor.
+///
+/// The cursor position is tracked as a character index (not byte index)
+/// to properly handle UTF-8 multi-byte characters.
 #[derive(Debug, Clone)]
 pub struct TextInput {
     content: String,
+    /// Cursor position as character index (0 = before first char)
     cursor: usize,
     label: String,
 }
@@ -31,7 +37,7 @@ impl TextInput {
     #[must_use]
     pub fn with_initial(mut self, value: impl Into<String>) -> Self {
         self.content = value.into();
-        self.cursor = self.content.len();
+        self.cursor = self.content.chars().count();
         self
     }
 
@@ -43,6 +49,19 @@ impl TextInput {
     /// Check if the input is empty.
     pub fn is_empty(&self) -> bool {
         self.content.is_empty()
+    }
+
+    /// Returns the byte index for the current character cursor position.
+    fn cursor_byte_index(&self) -> usize {
+        self.content
+            .char_indices()
+            .nth(self.cursor)
+            .map_or(self.content.len(), |(i, _)| i)
+    }
+
+    /// Returns the character count of the content.
+    fn char_count(&self) -> usize {
+        self.content.chars().count()
     }
 
     /// Handle a key event.
@@ -62,17 +81,11 @@ impl TextInput {
                         }
                         'w' => {
                             // Ctrl+W: Delete word backward
-                            while self.cursor > 0
-                                && self.content.chars().nth(self.cursor - 1) == Some(' ')
-                            {
-                                self.cursor -= 1;
-                                self.content.remove(self.cursor);
+                            while self.cursor > 0 && self.char_at(self.cursor - 1) == Some(' ') {
+                                self.delete_char_before_cursor();
                             }
-                            while self.cursor > 0
-                                && self.content.chars().nth(self.cursor - 1) != Some(' ')
-                            {
-                                self.cursor -= 1;
-                                self.content.remove(self.cursor);
+                            while self.cursor > 0 && self.char_at(self.cursor - 1) != Some(' ') {
+                                self.delete_char_before_cursor();
                             }
                             return true;
                         }
@@ -80,20 +93,21 @@ impl TextInput {
                     }
                 }
                 // Regular character input
-                self.content.insert(self.cursor, c);
+                let byte_idx = self.cursor_byte_index();
+                self.content.insert(byte_idx, c);
                 self.cursor += 1;
                 true
             }
             KeyCode::Backspace => {
                 if self.cursor > 0 {
-                    self.cursor -= 1;
-                    self.content.remove(self.cursor);
+                    self.delete_char_before_cursor();
                 }
                 true
             }
             KeyCode::Delete => {
-                if self.cursor < self.content.len() {
-                    self.content.remove(self.cursor);
+                if self.cursor < self.char_count() {
+                    let byte_idx = self.cursor_byte_index();
+                    self.content.remove(byte_idx);
                 }
                 true
             }
@@ -104,7 +118,7 @@ impl TextInput {
                 true
             }
             KeyCode::Right => {
-                if self.cursor < self.content.len() {
+                if self.cursor < self.char_count() {
                     self.cursor += 1;
                 }
                 true
@@ -114,10 +128,24 @@ impl TextInput {
                 true
             }
             KeyCode::End => {
-                self.cursor = self.content.len();
+                self.cursor = self.char_count();
                 true
             }
             _ => false,
+        }
+    }
+
+    /// Returns the character at the given character index.
+    fn char_at(&self, char_idx: usize) -> Option<char> {
+        self.content.chars().nth(char_idx)
+    }
+
+    /// Deletes the character before the cursor and moves cursor back.
+    fn delete_char_before_cursor(&mut self) {
+        if self.cursor > 0 {
+            self.cursor -= 1;
+            let byte_idx = self.cursor_byte_index();
+            self.content.remove(byte_idx);
         }
     }
 
@@ -139,13 +167,10 @@ impl TextInput {
 
         // Render content with cursor
         if focused {
-            let (before, after) = self.content.split_at(self.cursor);
+            let byte_idx = self.cursor_byte_index();
+            let (before, after) = self.content.split_at(byte_idx);
             let cursor_char = after.chars().next().unwrap_or(' ');
-            let after_cursor = if after.is_empty() {
-                String::new()
-            } else {
-                after.chars().skip(1).collect()
-            };
+            let after_cursor: String = after.chars().skip(1).collect();
 
             let line = Line::from(vec![
                 Span::raw(before),
@@ -163,5 +188,79 @@ impl TextInput {
         } else {
             Paragraph::new(self.content.as_str()).render(inner, buf);
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crossterm::event::KeyModifiers;
+
+    fn key(code: KeyCode) -> KeyEvent {
+        KeyEvent::new(code, KeyModifiers::NONE)
+    }
+
+    #[test]
+    fn test_utf8_initial_content() {
+        let input = TextInput::new("Test").with_initial("日本語");
+        assert_eq!(input.content(), "日本語");
+        assert_eq!(input.cursor, 3); // 3 characters, not 9 bytes
+    }
+
+    #[test]
+    fn test_utf8_cursor_movement() {
+        let mut input = TextInput::new("Test").with_initial("über");
+        assert_eq!(input.cursor, 4); // 4 characters
+
+        // Move left
+        input.handle_key(key(KeyCode::Left));
+        assert_eq!(input.cursor, 3);
+
+        // Move to start
+        input.handle_key(key(KeyCode::Home));
+        assert_eq!(input.cursor, 0);
+
+        // Move right through multi-byte char 'ü'
+        input.handle_key(key(KeyCode::Right));
+        assert_eq!(input.cursor, 1);
+        assert_eq!(input.content(), "über"); // Content unchanged
+    }
+
+    #[test]
+    fn test_utf8_insert() {
+        let mut input = TextInput::new("Test").with_initial("ab");
+        input.handle_key(key(KeyCode::Home));
+        input.handle_key(key(KeyCode::Right)); // After 'a'
+        input.handle_key(key(KeyCode::Char('ü')));
+        assert_eq!(input.content(), "aüb");
+    }
+
+    #[test]
+    fn test_utf8_backspace() {
+        let mut input = TextInput::new("Test").with_initial("日本語");
+        // Cursor at end (position 3)
+        input.handle_key(key(KeyCode::Backspace));
+        assert_eq!(input.content(), "日本"); // Removed '語'
+        assert_eq!(input.cursor, 2);
+    }
+
+    #[test]
+    fn test_utf8_delete() {
+        let mut input = TextInput::new("Test").with_initial("日本語");
+        input.handle_key(key(KeyCode::Home)); // Move to start
+        input.handle_key(key(KeyCode::Delete));
+        assert_eq!(input.content(), "本語"); // Removed '日'
+        assert_eq!(input.cursor, 0);
+    }
+
+    #[test]
+    fn test_mixed_ascii_utf8() {
+        let mut input = TextInput::new("Test").with_initial("a日b");
+        assert_eq!(input.cursor, 3); // 3 characters
+
+        input.handle_key(key(KeyCode::Home));
+        input.handle_key(key(KeyCode::Right)); // After 'a'
+        input.handle_key(key(KeyCode::Delete)); // Delete '日'
+        assert_eq!(input.content(), "ab");
     }
 }

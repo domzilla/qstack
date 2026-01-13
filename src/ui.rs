@@ -256,11 +256,61 @@ pub fn process_and_save_attachments(
 // String Utilities
 // =============================================================================
 
-/// Truncates a string to the specified maximum length, adding ellipsis if truncated.
+/// Truncates a string to the specified maximum character count, adding ellipsis if truncated.
 pub fn truncate(s: &str, max: usize) -> String {
-    if s.len() <= max {
+    let char_count = s.chars().count();
+    if char_count <= max {
         s.to_string()
     } else {
-        format!("{}…", &s[..max - 1])
+        // Find the byte index at the (max-1)th character boundary
+        let byte_index = s.char_indices().nth(max - 1).map_or(s.len(), |(i, _)| i);
+        format!("{}…", &s[..byte_index])
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_truncate_ascii() {
+        assert_eq!(truncate("hello", 10), "hello");
+        assert_eq!(truncate("hello world", 5), "hell…");
+        assert_eq!(truncate("abc", 3), "abc");
+        assert_eq!(truncate("abcd", 3), "ab…");
+    }
+
+    #[test]
+    fn test_truncate_utf8_no_truncation() {
+        // No truncation needed - should return as-is
+        assert_eq!(truncate("日本語", 5), "日本語");
+        assert_eq!(truncate("über", 10), "über");
+        assert_eq!(truncate("한글", 3), "한글");
+    }
+
+    #[test]
+    fn test_truncate_utf8_with_truncation() {
+        // Truncate at character boundaries, not byte boundaries
+        // Result is (max-1) chars + ellipsis = max chars total
+        assert_eq!(truncate("日本語中文", 3), "日本…"); // 2 chars + …
+        assert_eq!(truncate("über änderung", 5), "über…"); // 4 chars + …
+        assert_eq!(truncate("한글 제목입니다", 4), "한글 …"); // 3 chars + …
+        assert_eq!(truncate("العربية", 4), "الع…"); // 3 chars + …
+    }
+
+    #[test]
+    fn test_truncate_mixed_ascii_utf8() {
+        // Mixed content should count characters correctly
+        // "Test UTF-8: 日本語" is 15 chars (T,e,s,t, ,U,T,F,-,8,:, ,日,本,語)
+        assert_eq!(truncate("Test UTF-8: 日本語", 15), "Test UTF-8: 日本語");
+        assert_eq!(truncate("Test UTF-8: 日本語", 14), "Test UTF-8: 日…"); // 13 chars + …
+        assert_eq!(truncate("café résumé", 6), "café …"); // 5 chars + …
+    }
+
+    #[test]
+    fn test_truncate_empty_and_edge_cases() {
+        assert_eq!(truncate("", 5), "");
+        assert_eq!(truncate("a", 1), "a");
+        assert_eq!(truncate("日", 1), "日");
     }
 }
