@@ -8,7 +8,7 @@ Items are stored as plain Markdown files—human-readable, grep-friendly, and ea
 
 - **Plain text storage** — Items are Markdown files you can read, edit, and search with standard tools
 - **Scriptable** — Every command works non-interactively for automation and CI/CD pipelines
-- **Interactive TUI** — Arrow-key navigation, fuzzy selection, and a wizard for creating items
+- **Interactive TUI** — Arrow-key navigation, filter overlay, action menu, and a wizard for creating items
 - **Attachments** — Attach files or URLs to any item
 - **Categories & Labels** — Organize items in subdirectories and tag them
 - **Git-aware** — Uses `git mv` when renaming to preserve history
@@ -81,6 +81,22 @@ qstack reopen --id 260109
 | `completions <shell>` | Generate shell completion script |
 
 Run `qstack <command> --help` for detailed options.
+
+## TUI Keybindings
+
+When running `qstack list` interactively:
+
+| Key | Action |
+|-----|--------|
+| `↑`/`↓` or `j`/`k` | Navigate items |
+| `Enter` | Open action menu for selected item |
+| `f` | Open filter overlay |
+| `c` | Clear active filter |
+| `Esc` | Cancel / close overlay |
+
+**Filter overlay** (`f`): Filter items by search text, labels, or category in real-time.
+
+**Action menu** (`Enter`): Quick actions on the selected item — view, edit, close/reopen, delete.
 
 ## Non-Interactive Mode
 

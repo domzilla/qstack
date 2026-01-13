@@ -55,9 +55,11 @@ qstack/
 │   │   ├── event.rs        # Input event handling
 │   │   ├── screens/
 │   │   │   ├── mod.rs
-│   │   │   ├── select.rs   # Item selection screen
-│   │   │   ├── prompt.rs   # Text input prompt
-│   │   │   └── wizard.rs   # New item wizard
+│   │   │   ├── select.rs       # Item selection screen
+│   │   │   ├── item_actions.rs # Interactive list with filter overlay & action menu
+│   │   │   ├── prompt.rs       # Text input prompt
+│   │   │   ├── confirm.rs      # Yes/no confirmation dialog
+│   │   │   └── wizard.rs       # New item wizard
 │   │   └── widgets/
 │   │       ├── mod.rs
 │   │       ├── select_list.rs

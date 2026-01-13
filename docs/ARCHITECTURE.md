@@ -342,15 +342,25 @@ tui/
 ├── terminal.rs     # Terminal setup/teardown (TerminalGuard)
 ├── event.rs        # Input event handling
 ├── screens/
-│   ├── select.rs   # Item selection screen
-│   ├── prompt.rs   # Text input prompt
-│   └── wizard.rs   # Multi-step new item wizard
+│   ├── select.rs       # Item selection screen
+│   ├── item_actions.rs # Interactive list with filter overlay & action menu
+│   ├── prompt.rs       # Text input prompt
+│   ├── confirm.rs      # Yes/no confirmation dialog
+│   └── wizard.rs       # Multi-step new item wizard
 └── widgets/
     ├── text_input.rs   # Single-line text input
     ├── text_area.rs    # Multi-line text editor
     ├── select_list.rs  # Single-select list
     └── multi_select.rs # Multi-select list
 ```
+
+#### Item Actions Screen (`item_actions.rs`)
+
+Full-featured interactive list for `qstack list` with:
+
+- **Filter overlay** (`f` key) — Real-time filtering by search text, labels, category
+- **Action menu** (`Enter` key) — Quick actions: view, edit, close/reopen, delete
+- Uses shared filter predicates from `item/search.rs` for consistency with CLI
 
 #### TuiApp Trait
 
