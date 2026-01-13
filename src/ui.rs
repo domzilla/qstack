@@ -154,7 +154,7 @@ pub fn select_item<T: AsRef<Item>>(
                 .path
                 .as_ref()
                 .and_then(|p| storage::derive_category(config, p));
-            let category = category_opt.as_deref().unwrap_or("-");
+            let category = category_opt.as_deref().unwrap_or("");
             let title = truncate(item.title(), UI_TITLE_TRUNCATE_LEN);
             // Use display-width-aware padding for proper alignment with CJK/emoji
             format!(
