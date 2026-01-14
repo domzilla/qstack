@@ -18,3 +18,4 @@ Cargo.lock
 #qstack
 /.qstack
 /qstack/
+/qstack-testdata
