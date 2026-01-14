@@ -80,6 +80,28 @@ impl TextAreaWidget {
             return false;
         }
 
+        // Custom line-wrapping arrow navigation (standard editor behavior)
+        match key.code {
+            KeyCode::Left if self.state.cursor.col == 0 && self.state.cursor.row > 0 => {
+                // Move to end of previous line
+                self.state.cursor.row -= 1;
+                self.state.cursor.col =
+                    self.state.lines.len_col(self.state.cursor.row).unwrap_or(0);
+                return true;
+            }
+            KeyCode::Right => {
+                let line_len = self.state.lines.len_col(self.state.cursor.row).unwrap_or(0);
+                let last_row = self.state.lines.len().saturating_sub(1);
+                if self.state.cursor.col >= line_len && self.state.cursor.row < last_row {
+                    // Move to start of next line
+                    self.state.cursor.row += 1;
+                    self.state.cursor.col = 0;
+                    return true;
+                }
+            }
+            _ => {}
+        }
+
         self.event_handler.on_key_event(key, &mut self.state);
         // Force insert mode - prevent vim-style mode switching
         self.state.mode = EditorMode::Insert;
@@ -100,7 +122,9 @@ impl TextAreaWidget {
             .title(format!(" {} ", self.label));
 
         let theme = EditorTheme::default()
+            .base(Style::default()) // Transparent background
             .block(block)
+            .hide_status_line() // No vim mode indicator
             .cursor_style(if focused {
                 Style::default().bg(Color::White).fg(Color::Black)
             } else {
