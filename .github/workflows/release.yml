@@ -68,18 +68,18 @@ jobs:
           VERSION=${{ steps.version.outputs.version }}
           BOTTLE_TAG=${{ matrix.bottle_tag }}
 
-          tar -czf "qstack--${VERSION}.${BOTTLE_TAG}.bottle.tar.gz" qstack
+          tar -czf "qstack-${VERSION}.${BOTTLE_TAG}.bottle.tar.gz" qstack
 
           # Calculate SHA256
-          shasum -a 256 "qstack--${VERSION}.${BOTTLE_TAG}.bottle.tar.gz" > "qstack--${VERSION}.${BOTTLE_TAG}.bottle.tar.gz.sha256"
+          shasum -a 256 "qstack-${VERSION}.${BOTTLE_TAG}.bottle.tar.gz" > "qstack-${VERSION}.${BOTTLE_TAG}.bottle.tar.gz.sha256"
 
       - name: Upload bottle artifact
         uses: actions/upload-artifact@v4
         with:
           name: bottle-${{ matrix.bottle_tag }}
           path: |
-            qstack--*.bottle.tar.gz
-            qstack--*.bottle.tar.gz.sha256
+            qstack-*.bottle.tar.gz
+            qstack-*.bottle.tar.gz.sha256
 
   release:
     name: Create Release
@@ -110,8 +110,8 @@ jobs:
         id: bottles
         run: |
           cd bottles
-          echo "arm64_sha=$(cat qstack--${{ steps.version.outputs.version }}.arm64_sonoma.bottle.tar.gz.sha256 | cut -d' ' -f1)" >> $GITHUB_OUTPUT
-          echo "x86_64_sha=$(cat qstack--${{ steps.version.outputs.version }}.sonoma.bottle.tar.gz.sha256 | cut -d' ' -f1)" >> $GITHUB_OUTPUT
+          echo "arm64_sha=$(cat qstack-${{ steps.version.outputs.version }}.arm64_sonoma.bottle.tar.gz.sha256 | cut -d' ' -f1)" >> $GITHUB_OUTPUT
+          echo "x86_64_sha=$(cat qstack-${{ steps.version.outputs.version }}.sonoma.bottle.tar.gz.sha256 | cut -d' ' -f1)" >> $GITHUB_OUTPUT
 
       - name: Output bottle info
         run: |
@@ -155,8 +155,8 @@ jobs:
         id: bottles
         run: |
           cd bottles
-          echo "arm64_sha=$(cat qstack--${{ steps.version.outputs.version }}.arm64_sonoma.bottle.tar.gz.sha256 | cut -d' ' -f1)" >> $GITHUB_OUTPUT
-          echo "x86_64_sha=$(cat qstack--${{ steps.version.outputs.version }}.sonoma.bottle.tar.gz.sha256 | cut -d' ' -f1)" >> $GITHUB_OUTPUT
+          echo "arm64_sha=$(cat qstack-${{ steps.version.outputs.version }}.arm64_sonoma.bottle.tar.gz.sha256 | cut -d' ' -f1)" >> $GITHUB_OUTPUT
+          echo "x86_64_sha=$(cat qstack-${{ steps.version.outputs.version }}.sonoma.bottle.tar.gz.sha256 | cut -d' ' -f1)" >> $GITHUB_OUTPUT
 
       - name: Checkout homebrew-tap
         uses: actions/checkout@v4
