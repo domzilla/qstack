@@ -3,7 +3,7 @@
 //! Wraps edtui for multi-line editing with line wrapping support.
 
 use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
-use edtui::{EditorEventHandler, EditorState, EditorTheme, EditorView, Lines};
+use edtui::{EditorEventHandler, EditorMode, EditorState, EditorTheme, EditorView, Lines};
 use ratatui::{
     layout::Rect,
     style::{Color, Style},
@@ -21,8 +21,11 @@ pub struct TextAreaWidget {
 impl TextAreaWidget {
     /// Create a new text area with the given label.
     pub fn new(label: impl Into<String>) -> Self {
+        let mut state = EditorState::default();
+        // Always use insert mode - disable vim-style modal editing
+        state.mode = EditorMode::Insert;
         Self {
-            state: EditorState::default(),
+            state,
             event_handler: EditorEventHandler::default(),
             label: label.into(),
         }
@@ -32,6 +35,8 @@ impl TextAreaWidget {
     #[must_use]
     pub fn with_initial(mut self, content: &str) -> Self {
         self.state = EditorState::new(Lines::from(content));
+        // Always use insert mode - disable vim-style modal editing
+        self.state.mode = EditorMode::Insert;
         self
     }
 
@@ -76,6 +81,8 @@ impl TextAreaWidget {
         }
 
         self.event_handler.on_key_event(key, &mut self.state);
+        // Force insert mode - prevent vim-style mode switching
+        self.state.mode = EditorMode::Insert;
         true
     }
 
