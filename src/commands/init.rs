@@ -28,10 +28,11 @@ pub fn execute() -> Result<()> {
     // Get directory names from global config (with defaults)
     let stack_dir = config.stack_dir();
     let archive_dir = config.archive_dir();
+    let template_dir = config.template_dir();
 
     // Create project config with comments
-    // stack_dir and archive_dir are set explicitly, other options are commented out
-    ProjectConfig::save_with_comments(config.project_root(), stack_dir, archive_dir)?;
+    // stack_dir, archive_dir, and template_dir are set explicitly, other options are commented out
+    ProjectConfig::save_with_comments(config.project_root(), stack_dir, archive_dir, template_dir)?;
 
     // Create qstack directory
     let stack_path = config.project_root().join(stack_dir);
@@ -48,6 +49,15 @@ pub fn execute() -> Result<()> {
         format!(
             "Failed to create archive directory: {}",
             archive_path.display()
+        )
+    })?;
+
+    // Create template directory
+    let template_path = stack_path.join(template_dir);
+    fs::create_dir_all(&template_path).with_context(|| {
+        format!(
+            "Failed to create template directory: {}",
+            template_path.display()
         )
     })?;
 

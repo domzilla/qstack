@@ -47,6 +47,9 @@ pub const DEFAULT_STACK_DIR: &str = "qstack";
 /// Default subdirectory name for archived items (inside `stack_dir`).
 pub const DEFAULT_ARCHIVE_DIR: &str = ".archive";
 
+/// Default subdirectory name for templates (inside `stack_dir`).
+pub const DEFAULT_TEMPLATE_DIR: &str = ".templates";
+
 /// Global configuration file name.
 pub const GLOBAL_CONFIG_FILE: &str = ".qstack";
 

@@ -17,7 +17,7 @@ use owo_colors::OwoColorize;
 use serde::{Deserialize, Serialize};
 
 use crate::{
-    constants::{DEFAULT_ARCHIVE_DIR, DEFAULT_STACK_DIR, GLOBAL_CONFIG_FILE},
+    constants::{DEFAULT_ARCHIVE_DIR, DEFAULT_STACK_DIR, DEFAULT_TEMPLATE_DIR, GLOBAL_CONFIG_FILE},
     id::DEFAULT_PATTERN,
 };
 
@@ -71,6 +71,10 @@ pub struct GlobalConfig {
     /// Directory name for archived items (default: "archive")
     #[serde(default)]
     pub archive_dir: Option<String>,
+
+    /// Directory name for templates (default: ".templates")
+    #[serde(default)]
+    pub template_dir: Option<String>,
 }
 
 impl Default for GlobalConfig {
@@ -83,6 +87,7 @@ impl Default for GlobalConfig {
             id_pattern: DEFAULT_PATTERN.to_string(),
             stack_dir: None,
             archive_dir: None,
+            template_dir: None,
         }
     }
 }
@@ -214,6 +219,11 @@ interactive = {interactive}
 # Used when initializing new projects. Can be overridden per-project.
 # Default: ".archive"
 # archive_dir = ".archive"
+
+# Default subdirectory name for templates within the qstack directory.
+# Used when initializing new projects. Can be overridden per-project.
+# Default: ".templates"
+# template_dir = ".templates"
 "#,
             use_git_user = config.use_git_user,
             interactive = config.interactive,
@@ -232,6 +242,11 @@ interactive = {interactive}
     /// Returns the effective archive directory name
     pub fn archive_dir(&self) -> &str {
         self.archive_dir.as_deref().unwrap_or(DEFAULT_ARCHIVE_DIR)
+    }
+
+    /// Returns the effective template directory name
+    pub fn template_dir(&self) -> &str {
+        self.template_dir.as_deref().unwrap_or(DEFAULT_TEMPLATE_DIR)
     }
 
     /// Prompts the user for their name and saves it to the config.
@@ -279,6 +294,7 @@ mod tests {
         assert_eq!(config.id_pattern, DEFAULT_PATTERN);
         assert_eq!(config.stack_dir(), "qstack");
         assert_eq!(config.archive_dir(), ".archive");
+        assert_eq!(config.template_dir(), ".templates");
     }
 
     #[test]

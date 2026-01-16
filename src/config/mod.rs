@@ -91,6 +91,14 @@ impl Config {
             .unwrap_or_else(|| self.global.archive_dir())
     }
 
+    /// Returns the effective template directory name (project overrides global)
+    pub fn template_dir(&self) -> &str {
+        self.project
+            .template_dir
+            .as_deref()
+            .unwrap_or_else(|| self.global.template_dir())
+    }
+
     /// Returns the effective `use_git_user` setting (project overrides global)
     pub fn use_git_user(&self) -> bool {
         self.project
@@ -168,6 +176,11 @@ impl Config {
     /// Returns the archive directory path
     pub fn archive_path(&self) -> PathBuf {
         self.stack_path().join(self.archive_dir())
+    }
+
+    /// Returns the template directory path
+    pub fn template_path(&self) -> PathBuf {
+        self.stack_path().join(self.template_dir())
     }
 
     /// Returns path to a category subdirectory within qstack

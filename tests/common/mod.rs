@@ -88,6 +88,11 @@ impl TestEnv {
         self.stack_path().join(".archive")
     }
 
+    /// Returns the path to the template directory.
+    pub fn template_path(&self) -> PathBuf {
+        self.stack_path().join(".templates")
+    }
+
     /// Creates a global config file with the given content.
     pub fn write_global_config(&self, content: &str) {
         fs::write(self.global_config_path(), content).expect("Failed to write global config");
@@ -111,6 +116,11 @@ impl TestEnv {
     /// Lists all files in the archive directory (recursive, including categories).
     pub fn list_archive_files(&self) -> Vec<PathBuf> {
         self.list_files_recursive(&self.archive_path())
+    }
+
+    /// Lists all files in the template directory (recursive, including categories).
+    pub fn list_template_files(&self) -> Vec<PathBuf> {
+        self.list_files_recursive(&self.template_path())
     }
 
     /// Lists all .md files in a directory recursively.

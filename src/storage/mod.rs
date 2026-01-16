@@ -40,15 +40,24 @@ fn walk_markdown_files(
 }
 
 /// Walks all item files in the qstack directory.
+///
+/// Excludes items in the archive and template directories.
 pub fn walk_items(config: &Config) -> impl Iterator<Item = PathBuf> {
     let archive_path = config.archive_path();
+    let template_path = config.template_path();
 
-    walk_markdown_files(config.stack_path(), 1, 3).filter(move |p| !p.starts_with(&archive_path))
+    walk_markdown_files(config.stack_path(), 1, 3)
+        .filter(move |p| !p.starts_with(&archive_path) && !p.starts_with(&template_path))
 }
 
 /// Walks all archived item files.
 pub fn walk_archived(config: &Config) -> impl Iterator<Item = PathBuf> {
     walk_markdown_files(config.archive_path(), 1, 2)
+}
+
+/// Walks all template files.
+pub fn walk_templates(config: &Config) -> impl Iterator<Item = PathBuf> {
+    walk_markdown_files(config.template_path(), 1, 2)
 }
 
 /// Walks all items (both active and archived).
@@ -164,6 +173,69 @@ pub fn find_by_id(config: &Config, partial_id: &str) -> Result<PathBuf> {
     }
 }
 
+/// Finds a template by reference (ID or title substring match).
+///
+/// First tries to match by ID (partial match), then by title (case-insensitive substring).
+/// Returns the full path to the template file.
+pub fn find_template(config: &Config, reference: &str) -> Result<PathBuf> {
+    let ref_upper = reference.to_uppercase();
+
+    // Collect all templates
+    let templates: Vec<PathBuf> = walk_templates(config).collect();
+
+    // First, try to match by ID
+    let id_matches: Vec<_> = templates
+        .iter()
+        .filter(|path| {
+            path.file_stem()
+                .and_then(|s| s.to_str())
+                .and_then(crate::id::extract_from_filename)
+                .is_some_and(|id| id.to_uppercase().contains(&ref_upper))
+        })
+        .cloned()
+        .collect();
+
+    if id_matches.len() == 1 {
+        return Ok(id_matches.into_iter().next().unwrap());
+    }
+
+    if id_matches.len() > 1 {
+        let ids: Vec<_> = id_matches
+            .iter()
+            .filter_map(|p| p.file_stem().and_then(|s| s.to_str()))
+            .collect();
+        bail!(
+            "Multiple templates match ID '{reference}':\n  {}",
+            ids.join("\n  ")
+        );
+    }
+
+    // No ID match - try title match
+    let title_matches: Vec<_> = templates
+        .into_iter()
+        .filter(|path| {
+            Item::load(path)
+                .ok()
+                .is_some_and(|item| item.title().to_uppercase().contains(&ref_upper))
+        })
+        .collect();
+
+    match title_matches.len() {
+        0 => bail!("No template found matching '{reference}'"),
+        1 => Ok(title_matches.into_iter().next().unwrap()),
+        _ => {
+            let titles: Vec<_> = title_matches
+                .iter()
+                .filter_map(|p| Item::load(p).ok().map(|item| item.title().to_string()))
+                .collect();
+            bail!(
+                "Multiple templates match title '{reference}':\n  {}",
+                titles.join("\n  ")
+            );
+        }
+    }
+}
+
 /// Determines the target directory for an item based on its category.
 pub fn target_directory(config: &Config, category: Option<&str>) -> PathBuf {
     category.map_or_else(|| config.stack_path(), |cat| config.category_path(cat))
@@ -172,20 +244,25 @@ pub fn target_directory(config: &Config, category: Option<&str>) -> PathBuf {
 /// Derives the category from an item's file path.
 ///
 /// Returns `Some(category)` if the item is in a category subdirectory,
-/// or `None` if it's in the root of qstack/archive.
+/// or `None` if it's in the root of qstack/archive/templates.
 ///
-/// Works for both active items (in `stack_path`) and archived items (in `archive_path`).
+/// Works for active items (in `stack_path`), archived items (in `archive_path`),
+/// and templates (in `template_path`).
 pub fn derive_category(config: &Config, path: &Path) -> Option<String> {
     let stack_path = config.stack_path();
     let archive_path = config.archive_path();
+    let template_path = config.template_path();
 
     // Canonicalize paths to handle symlinks (e.g., /var -> /private/var on macOS)
     let path = path.canonicalize().ok()?;
     let stack_path = stack_path.canonicalize().ok()?;
     let archive_path = archive_path.canonicalize().unwrap_or(archive_path);
+    let template_path = template_path.canonicalize().unwrap_or(template_path);
 
-    // Determine base path (archive or qstack)
-    let relative = if path.starts_with(&archive_path) {
+    // Determine base path (template, archive, or qstack)
+    let relative = if path.starts_with(&template_path) {
+        path.strip_prefix(&template_path).ok()?
+    } else if path.starts_with(&archive_path) {
         path.strip_prefix(&archive_path).ok()?
     } else if path.starts_with(&stack_path) {
         path.strip_prefix(&stack_path).ok()?
@@ -204,8 +281,8 @@ pub fn derive_category(config: &Config, path: &Path) -> Option<String> {
     // First component is the category
     let category = parent.iter().next()?.to_str()?;
 
-    // Don't treat archive dir as category (shouldn't happen with new structure)
-    if category == config.archive_dir() {
+    // Don't treat archive or template dir as category (shouldn't happen with new structure)
+    if category == config.archive_dir() || category == config.template_dir() {
         return None;
     }
 
@@ -218,6 +295,23 @@ pub fn create_item(config: &Config, item: &Item, category: Option<&str>) -> Resu
 
     std::fs::create_dir_all(&dir)
         .with_context(|| format!("Failed to create directory: {}", dir.display()))?;
+
+    let path = dir.join(item.filename());
+
+    item.save(&path)?;
+
+    Ok(path)
+}
+
+/// Creates a new template file and returns its path.
+///
+/// Templates are stored in the `.templates/` directory (or category subdirectory).
+pub fn create_template(config: &Config, item: &Item, category: Option<&str>) -> Result<PathBuf> {
+    let base = config.template_path();
+    let dir = category.map_or_else(|| base.clone(), |cat| base.join(cat));
+
+    std::fs::create_dir_all(&dir)
+        .with_context(|| format!("Failed to create template directory: {}", dir.display()))?;
 
     let path = dir.join(item.filename());
 

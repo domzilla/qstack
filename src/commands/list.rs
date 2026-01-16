@@ -58,6 +58,8 @@ pub enum ListMode {
     Attachments,
     /// Show metadata/frontmatter for a specific item
     Meta,
+    /// List templates
+    Templates,
 }
 
 /// Filter options for listing
@@ -166,6 +168,7 @@ pub fn execute(filter: &ListOptions) -> Result<()> {
         ListMode::Categories => execute_categories(filter, &config),
         ListMode::Attachments => execute_attachments(filter, &config),
         ListMode::Meta => execute_meta(filter, &config),
+        ListMode::Templates => execute_templates(filter, &config),
     }
 }
 
@@ -607,6 +610,56 @@ fn execute_meta(filter: &ListOptions, config: &Config) -> Result<()> {
             println!("  - {attachment}");
         }
     }
+
+    Ok(())
+}
+
+/// Lists all templates.
+fn execute_templates(filter: &ListOptions, config: &Config) -> Result<()> {
+    // Collect all templates
+    let mut templates: Vec<Item> = storage::walk_templates(config)
+        .filter_map(|path| Item::load(&path).ok())
+        .collect();
+
+    if templates.is_empty() {
+        println!("No templates found.");
+        return Ok(());
+    }
+
+    // Sort templates by ID (default)
+    sort_items(&mut templates, filter.sort);
+
+    // Check interactive mode
+    if !filter.interactive.should_run(config) {
+        // Non-interactive: print file paths
+        for template in &templates {
+            if let Some(ref path) = template.path {
+                println!("{}", config.relative_path(path).display());
+            }
+        }
+        return Ok(());
+    }
+
+    // Interactive: show selection with labels
+    let options: Vec<String> = templates
+        .iter()
+        .map(|t| {
+            let labels = t.labels();
+            if labels.is_empty() {
+                t.title().to_string()
+            } else {
+                format!("{} [{}]", t.title(), labels.join(", "))
+            }
+        })
+        .collect();
+
+    let Some(selection) = ui::select_from_list("Select a template", &options)? else {
+        return Ok(()); // User cancelled
+    };
+
+    // Open selected template in editor
+    let template = &templates[selection];
+    ui::open_item_in_editor(template, config)?;
 
     Ok(())
 }

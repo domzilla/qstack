@@ -48,6 +48,10 @@ pub struct ProjectConfig {
     /// Directory name for archived items (overrides global)
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub archive_dir: Option<String>,
+
+    /// Directory name for templates (overrides global)
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub template_dir: Option<String>,
 }
 
 impl ProjectConfig {
@@ -97,12 +101,13 @@ impl ProjectConfig {
 
     /// Saves project config with detailed comments for all options.
     ///
-    /// The `stack_dir` and `archive_dir` parameters are written as explicit values,
+    /// The `stack_dir`, `archive_dir`, and `template_dir` parameters are written as explicit values,
     /// while all other options are commented out (falling back to global config).
     pub fn save_with_comments(
         project_root: &Path,
         stack_dir: &str,
         archive_dir: &str,
+        template_dir: &str,
     ) -> Result<()> {
         let path = Self::path(project_root);
 
@@ -147,6 +152,9 @@ stack_dir = "{stack_dir}"
 
 # Subdirectory name for archived (closed) items within the qstack directory.
 archive_dir = "{archive_dir}"
+
+# Subdirectory name for templates within the qstack directory.
+template_dir = "{template_dir}"
 "#
         );
 
@@ -169,6 +177,7 @@ mod tests {
         assert!(config.id_pattern.is_none());
         assert!(config.stack_dir.is_none());
         assert!(config.archive_dir.is_none());
+        assert!(config.template_dir.is_none());
     }
 
     #[test]

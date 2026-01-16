@@ -33,6 +33,8 @@ fn test_config_interactive_true_no_interactive_false() {
             interactive: false,
             no_interactive: false,
         }, // Would open editor if in terminal
+        as_template: false,
+        from_template: None,
     };
 
     let result = commands::new(args);
@@ -57,6 +59,8 @@ fn test_config_interactive_true_no_interactive_true() {
             interactive: false,
             no_interactive: true,
         }, // Overrides interactive
+        as_template: false,
+        from_template: None,
     };
 
     let result = commands::new(args);
@@ -81,6 +85,8 @@ fn test_config_interactive_false_no_interactive_false() {
             interactive: false,
             no_interactive: false,
         }, // Doesn't matter since interactive is false
+        as_template: false,
+        from_template: None,
     };
 
     let result = commands::new(args);
@@ -104,6 +110,8 @@ fn test_config_interactive_false_no_interactive_true() {
             interactive: false,
             no_interactive: true,
         },
+        as_template: false,
+        from_template: None,
     };
 
     let result = commands::new(args);
@@ -137,6 +145,8 @@ fn test_use_git_user_disabled() {
             interactive: false,
             no_interactive: true,
         },
+        as_template: false,
+        from_template: None,
     };
 
     commands::new(args).expect("new should succeed");
@@ -173,6 +183,8 @@ fn test_use_git_user_enabled_with_explicit_name() {
             interactive: false,
             no_interactive: true,
         },
+        as_template: false,
+        from_template: None,
     };
 
     commands::new(args).expect("new should succeed");
@@ -279,6 +291,8 @@ fn test_custom_stack_directory() {
             interactive: false,
             no_interactive: true,
         },
+        as_template: false,
+        from_template: None,
     };
 
     commands::new(args).expect("new should succeed");
@@ -350,6 +364,8 @@ fn test_different_users_in_parallel() {
                 interactive: false,
                 no_interactive: true,
             },
+            as_template: false,
+            from_template: None,
         };
 
         commands::new(args).expect("new should succeed");
@@ -373,6 +389,8 @@ fn test_different_users_in_parallel() {
                 interactive: false,
                 no_interactive: true,
             },
+            as_template: false,
+            from_template: None,
         };
 
         commands::new(args).expect("new should succeed");

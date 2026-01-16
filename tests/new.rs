@@ -25,6 +25,8 @@ fn test_new_creates_item() {
             interactive: false,
             no_interactive: true,
         },
+        as_template: false,
+        from_template: None,
     };
 
     commands::new(args).expect("new should succeed");
@@ -56,6 +58,8 @@ fn test_new_with_labels() {
             interactive: false,
             no_interactive: true,
         },
+        as_template: false,
+        from_template: None,
     };
 
     commands::new(args).expect("new should succeed");
@@ -81,6 +85,8 @@ fn test_new_with_category() {
             interactive: false,
             no_interactive: true,
         },
+        as_template: false,
+        from_template: None,
     };
 
     commands::new(args).expect("new should succeed");
@@ -104,6 +110,8 @@ fn test_new_uses_custom_id_pattern() {
             interactive: false,
             no_interactive: true,
         },
+        as_template: false,
+        from_template: None,
     };
 
     commands::new(args).expect("new should succeed");
@@ -135,6 +143,8 @@ fn test_new_project_id_pattern_overrides_global() {
             interactive: false,
             no_interactive: true,
         },
+        as_template: false,
+        from_template: None,
     };
 
     commands::new(args).expect("new should succeed");
@@ -162,6 +172,8 @@ fn test_new_with_labels_and_category() {
             interactive: false,
             no_interactive: true,
         },
+        as_template: false,
+        from_template: None,
     };
 
     commands::new(args).expect("new should succeed");
@@ -199,6 +211,8 @@ fn test_new_with_attachments() {
             interactive: false,
             no_interactive: true,
         },
+        as_template: false,
+        from_template: None,
     };
 
     commands::new(args).expect("new should succeed");
@@ -260,6 +274,8 @@ fn test_new_with_empty_labels() {
             interactive: false,
             no_interactive: true,
         },
+        as_template: false,
+        from_template: None,
     };
 
     commands::new(args).expect("new should succeed");
@@ -297,6 +313,8 @@ fn test_new_multiple_items_unique_ids() {
                 interactive: false,
                 no_interactive: true,
             },
+            as_template: false,
+            from_template: None,
         };
         commands::new(args).expect("new should succeed");
     }
@@ -338,6 +356,8 @@ fn test_new_category_with_slash_normalized() {
             interactive: false,
             no_interactive: true,
         },
+        as_template: false,
+        from_template: None,
     };
 
     commands::new(args).expect("new should succeed");
@@ -365,6 +385,8 @@ fn test_new_normalizes_spaces_in_labels_and_category() {
             interactive: false,
             no_interactive: true,
         },
+        as_template: false,
+        from_template: None,
     };
 
     commands::new(args).expect("new should succeed");
@@ -410,6 +432,8 @@ fn test_new_without_init() {
             interactive: false,
             no_interactive: true,
         },
+        as_template: false,
+        from_template: None,
     };
 
     let result = commands::new(args);

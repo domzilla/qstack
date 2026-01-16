@@ -130,7 +130,10 @@ The filename is derived from the ID and a slugified title (e.g., '260109-0A2B3C4
 The author is determined from (in order):\n  \
 1. user_name in ~/.qstack\n  \
 2. git config user.name (if use_git_user is true)\n  \
-3. Interactive prompt (saved to ~/.qstack for future use)",
+3. Interactive prompt (saved to ~/.qstack for future use)\n\n\
+Templates:\n  \
+--as-template     Create a template instead of an item\n  \
+--from-template   Create an item from an existing template",
         after_help = concat!(
             h!("Examples:"), "\n  ",
             c!("qstack new "), a!("\"Fix login bug\""), "\n  ",
@@ -138,6 +141,10 @@ The author is determined from (in order):\n  \
             c!("qstack new "), a!("\"Memory leak\""), c!(" --label "), a!("bug urgent"), c!(" --category "), a!("bugs"), "\n  ",
             c!("qstack new "), a!("\"Bug report\""), c!(" --attachment "), a!("screenshot.png debug.log"), "\n  ",
             c!("qstack new "), a!("\"Quick note\""), c!(" --no-interactive"), "       Skip editor\n\n",
+            h!("Templates:"), "\n  ",
+            c!("qstack new --as-template "), a!("\"Bug Report\""), "  Create a template\n  ",
+            c!("qstack new --from-template "), a!("bug-report"), " ", a!("\"Fix login\""), "  From template\n  ",
+            c!("qstack new --from-template"), "                   Select template interactively\n\n",
             h!("Output:"), " Prints the relative path to the created file."
         )
     )]
@@ -169,6 +176,24 @@ The author is determined from (in order):\n  \
         /// Force non-interactive mode (don't open editor)
         #[arg(long, help = "Skip opening editor")]
         no_interactive: bool,
+
+        /// Create a template instead of an item
+        #[arg(
+            long,
+            conflicts_with = "from_template",
+            help = "Create a reusable template"
+        )]
+        as_template: bool,
+
+        /// Create item from a template (by ID or title)
+        #[arg(
+            long,
+            num_args = 0..=1,
+            conflicts_with = "as_template",
+            help = "Create from template (omit value for selection)"
+        )]
+        #[allow(clippy::option_option)]
+        from_template: Option<Option<String>>,
     },
 
     /// List items, labels, categories, attachments, or metadata
@@ -182,7 +207,8 @@ Special modes:\n  \
 --labels        List unique labels across all items\n  \
 --categories    List unique categories across all items\n  \
 --attachments   List attachments for a specific item (requires --id)\n  \
---meta          Show metadata/frontmatter for a specific item (requires --id)",
+--meta          Show metadata/frontmatter for a specific item (requires --id)\n  \
+--templates     List all templates",
         after_help = concat!(
             h!("Examples:"), "\n  ",
             c!("qstack list"), "                        List items, select one to open\n  ",
@@ -194,7 +220,8 @@ Special modes:\n  \
             c!("qstack list --labels"), "               List all unique labels\n  ",
             c!("qstack list --categories"), "           List all unique categories\n  ",
             c!("qstack list --attachments --id "), a!("260109"), "  List attachments for item\n  ",
-            c!("qstack list --meta --id "), a!("260109"), "         Show item metadata\n\n",
+            c!("qstack list --meta --id "), a!("260109"), "         Show item metadata\n  ",
+            c!("qstack list --templates"), "            List all templates\n\n",
             h!("Interactive mode:"), " Use arrow keys to navigate, Enter to select, Esc to cancel."
         )
     )]
@@ -252,7 +279,7 @@ Special modes:\n  \
         /// List all unique labels
         #[arg(
             long,
-            conflicts_with_all = ["categories", "attachments", "meta"],
+            conflicts_with_all = ["categories", "attachments", "meta", "templates"],
             help = "List unique labels across all items"
         )]
         labels: bool,
@@ -260,7 +287,7 @@ Special modes:\n  \
         /// List all unique categories
         #[arg(
             long,
-            conflicts_with_all = ["labels", "attachments", "meta"],
+            conflicts_with_all = ["labels", "attachments", "meta", "templates"],
             help = "List unique categories across all items"
         )]
         categories: bool,
@@ -268,7 +295,7 @@ Special modes:\n  \
         /// List attachments for an item (requires --id or --file)
         #[arg(
             long,
-            conflicts_with_all = ["labels", "categories", "meta"],
+            conflicts_with_all = ["labels", "categories", "meta", "templates"],
             requires = "item_ref",
             help = "List attachments for a specific item"
         )]
@@ -277,11 +304,19 @@ Special modes:\n  \
         /// Show metadata/frontmatter for an item (requires --id or --file)
         #[arg(
             long,
-            conflicts_with_all = ["labels", "categories", "attachments"],
+            conflicts_with_all = ["labels", "categories", "attachments", "templates"],
             requires = "item_ref",
             help = "Show metadata for a specific item"
         )]
         meta: bool,
+
+        /// List all templates
+        #[arg(
+            long,
+            conflicts_with_all = ["labels", "categories", "attachments", "meta"],
+            help = "List all templates"
+        )]
+        templates: bool,
 
         /// Item ID (partial match supported)
         #[arg(
@@ -649,6 +684,8 @@ fn run() -> Result<()> {
             attachment,
             interactive,
             no_interactive,
+            as_template,
+            from_template,
         } => commands::new(NewArgs {
             title,
             labels: label,
@@ -658,6 +695,8 @@ fn run() -> Result<()> {
                 interactive,
                 no_interactive,
             },
+            as_template,
+            from_template,
         }),
 
         Commands::List {
@@ -673,6 +712,7 @@ fn run() -> Result<()> {
             categories,
             attachments,
             meta,
+            templates,
             id,
             file,
         } => {
@@ -684,6 +724,8 @@ fn run() -> Result<()> {
                 ListMode::Attachments
             } else if meta {
                 ListMode::Meta
+            } else if templates {
+                ListMode::Templates
             } else {
                 ListMode::Items
             };

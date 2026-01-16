@@ -52,6 +52,7 @@ pub enum Status {
     #[default]
     Open,
     Closed,
+    Template,
 }
 
 impl fmt::Display for Status {
@@ -59,6 +60,7 @@ impl fmt::Display for Status {
         match self {
             Self::Open => write!(f, "open"),
             Self::Closed => write!(f, "closed"),
+            Self::Template => write!(f, "template"),
         }
     }
 }
@@ -293,6 +295,7 @@ mod tests {
     fn test_status_display() {
         assert_eq!(Status::Open.to_string(), "open");
         assert_eq!(Status::Closed.to_string(), "closed");
+        assert_eq!(Status::Template.to_string(), "template");
     }
 
     // ==========================================================================

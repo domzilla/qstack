@@ -124,6 +124,7 @@ impl ItemActionScreen {
                 let status_str = match item.status() {
                     Status::Open => "open",
                     Status::Closed => "closed",
+                    Status::Template => "template",
                 };
                 let labels_str = truncate(&item.labels().join(", "), UI_LABELS_TRUNCATE_LEN);
                 let category_opt = item

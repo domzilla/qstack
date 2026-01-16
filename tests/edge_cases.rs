@@ -30,6 +30,8 @@ fn test_special_characters_in_title() {
             interactive: false,
             no_interactive: true,
         },
+        as_template: false,
+        from_template: None,
     };
 
     commands::new(args).expect("new should succeed with special characters");
@@ -51,6 +53,8 @@ fn test_unicode_in_title() {
             interactive: false,
             no_interactive: true,
         },
+        as_template: false,
+        from_template: None,
     };
 
     commands::new(args).expect("new should succeed with unicode");
@@ -73,6 +77,8 @@ fn test_empty_title() {
             interactive: false,
             no_interactive: true,
         },
+        as_template: false,
+        from_template: None,
     };
 
     let result = commands::new(args);
@@ -96,6 +102,8 @@ fn test_very_long_title() {
             interactive: false,
             no_interactive: true,
         },
+        as_template: false,
+        from_template: None,
     };
 
     commands::new(args).expect("new should succeed with long title");
@@ -122,6 +130,8 @@ fn test_whitespace_only_title() {
             interactive: false,
             no_interactive: true,
         },
+        as_template: false,
+        from_template: None,
     };
 
     // Whitespace-only title should be rejected (trimmed to empty)
@@ -145,6 +155,8 @@ fn test_category_with_special_characters() {
             interactive: false,
             no_interactive: true,
         },
+        as_template: false,
+        from_template: None,
     };
 
     let result = commands::new(args);
@@ -173,6 +185,8 @@ fn test_label_with_special_characters() {
             interactive: false,
             no_interactive: true,
         },
+        as_template: false,
+        from_template: None,
     };
 
     commands::new(args).expect("new should succeed");
@@ -202,6 +216,8 @@ fn test_duplicate_labels_ignored() {
             interactive: false,
             no_interactive: true,
         },
+        as_template: false,
+        from_template: None,
     };
 
     commands::new(args).expect("new should succeed");
