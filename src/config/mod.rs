@@ -14,7 +14,7 @@ use std::path::{Path, PathBuf};
 use anyhow::Result;
 
 pub use self::{
-    global::{set_home_override, GlobalConfig},
+    global::{set_home_override, ConfigValidation, GlobalConfig},
     project::ProjectConfig,
 };
 use crate::{id::DEFAULT_PATTERN, storage::git};

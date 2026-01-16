@@ -10,6 +10,7 @@ mod common;
 
 use common::{create_test_item, GlobalConfigBuilder, ProjectConfigBuilder, TestEnv};
 use qstack::commands::{self, execute_close, InteractiveArgs, NewArgs};
+use qstack::config::GlobalConfig;
 
 // =============================================================================
 // Config Combination Tests (interactive + no_interactive)
@@ -399,4 +400,199 @@ fn test_different_users_in_parallel() {
         let content = env.read_item(&files[0]);
         assert!(content.contains("author: Bob"), "Should be Bob's item");
     }
+}
+
+// =============================================================================
+// Config Validation Tests (setup command updates)
+// =============================================================================
+
+/// Tests that setup adds missing options to existing config.
+#[test]
+fn test_setup_adds_missing_options() {
+    let env = TestEnv::new();
+
+    // Write minimal config - missing most fields
+    env.write_global_config(r#"user_name = "Test User""#);
+
+    // Validate should detect missing fields
+    let validation = GlobalConfig::validate().expect("validate should succeed");
+    assert!(validation.has_changes(), "Should detect missing fields");
+    assert!(
+        validation.missing.contains(&"use_git_user".to_string()),
+        "Should report use_git_user as missing"
+    );
+    assert!(
+        validation.missing.contains(&"interactive".to_string()),
+        "Should report interactive as missing"
+    );
+
+    // Update should add the fields
+    let validation = GlobalConfig::update_if_needed().expect("update should succeed");
+    assert!(validation.has_changes(), "Should have made changes");
+
+    // Re-validate should show no changes needed
+    let validation = GlobalConfig::validate().expect("validate should succeed");
+    assert!(
+        !validation.has_changes(),
+        "After update, config should be complete"
+    );
+
+    // Verify the config is parseable
+    let config = GlobalConfig::load().expect("load should succeed");
+    assert_eq!(config.user_name, Some("Test User".to_string()));
+    assert!(config.use_git_user); // default
+    assert!(config.interactive); // default
+}
+
+/// Tests that setup removes unrecognized/invalid options.
+#[test]
+fn test_setup_removes_invalid_options() {
+    let env = TestEnv::new();
+
+    // Write config with unknown field
+    env.write_global_config(
+        r#"
+user_name = "Test User"
+use_git_user = true
+interactive = true
+id_pattern = "%y%m%d-%T%RRR"
+unknown_field = "should be removed"
+another_typo = 42
+"#,
+    );
+
+    // Validate should detect invalid fields
+    let validation = GlobalConfig::validate().expect("validate should succeed");
+    assert!(validation.has_changes(), "Should detect invalid fields");
+    assert!(
+        validation.invalid.contains(&"unknown_field".to_string()),
+        "Should report unknown_field as invalid"
+    );
+    assert!(
+        validation.invalid.contains(&"another_typo".to_string()),
+        "Should report another_typo as invalid"
+    );
+
+    // Update should remove them
+    GlobalConfig::update_if_needed().expect("update should succeed");
+
+    // Re-validate should show no changes needed
+    let validation = GlobalConfig::validate().expect("validate should succeed");
+    assert!(
+        !validation.has_changes(),
+        "After update, no invalid fields should remain"
+    );
+
+    // Verify unknown fields are gone from the file content
+    let content = env.read_global_config();
+    assert!(
+        !content.contains("unknown_field"),
+        "unknown_field should be removed"
+    );
+    assert!(
+        !content.contains("another_typo"),
+        "another_typo should be removed"
+    );
+}
+
+/// Tests that setup preserves user-set values during update.
+#[test]
+fn test_setup_preserves_user_values() {
+    let env = TestEnv::new();
+
+    // Write config with custom values
+    env.write_global_config(
+        r#"
+user_name = "Custom Name"
+use_git_user = false
+editor = "nvim"
+interactive = false
+id_pattern = "%y%j-%RRR"
+stack_dir = "tasks"
+archive_dir = "done"
+template_dir = "blueprints"
+"#,
+    );
+
+    // This config is complete, no changes should be needed
+    let validation = GlobalConfig::validate().expect("validate should succeed");
+    assert!(
+        !validation.has_changes(),
+        "Complete config should not need changes"
+    );
+
+    // Now add an invalid field and update
+    env.write_global_config(
+        r#"
+user_name = "Custom Name"
+use_git_user = false
+editor = "nvim"
+interactive = false
+id_pattern = "%y%j-%RRR"
+stack_dir = "tasks"
+archive_dir = "done"
+template_dir = "blueprints"
+invalid_option = true
+"#,
+    );
+
+    GlobalConfig::update_if_needed().expect("update should succeed");
+
+    // Verify custom values are preserved
+    let config = GlobalConfig::load().expect("load should succeed");
+    assert_eq!(config.user_name, Some("Custom Name".to_string()));
+    assert!(!config.use_git_user);
+    assert_eq!(config.editor, Some("nvim".to_string()));
+    assert!(!config.interactive);
+    assert_eq!(config.id_pattern, "%y%j-%RRR");
+    assert_eq!(config.stack_dir, Some("tasks".to_string()));
+    assert_eq!(config.archive_dir, Some("done".to_string()));
+    assert_eq!(config.template_dir, Some("blueprints".to_string()));
+}
+
+/// Tests that setup migrates legacy field names (default_id_pattern -> id_pattern).
+#[test]
+fn test_setup_migrates_legacy_fields() {
+    let env = TestEnv::new();
+
+    // Write config with legacy field name
+    env.write_global_config(
+        r#"
+user_name = "Test User"
+use_git_user = true
+interactive = true
+default_id_pattern = "%y%j-%RRR"
+"#,
+    );
+
+    // Validate should detect the legacy field
+    let validation = GlobalConfig::validate().expect("validate should succeed");
+    assert!(validation.has_changes(), "Should detect legacy field");
+    assert!(
+        validation
+            .migrated
+            .iter()
+            .any(|(old, new)| old == "default_id_pattern" && new == "id_pattern"),
+        "Should report default_id_pattern -> id_pattern migration"
+    );
+
+    // Update should migrate it
+    GlobalConfig::update_if_needed().expect("update should succeed");
+
+    // Verify the config uses new field name and preserves the value
+    let content = env.read_global_config();
+    assert!(
+        !content.contains("default_id_pattern"),
+        "Legacy field name should be removed"
+    );
+    assert!(
+        content.contains("id_pattern"),
+        "New field name should be present"
+    );
+
+    let config = GlobalConfig::load().expect("load should succeed");
+    assert_eq!(
+        config.id_pattern, "%y%j-%RRR",
+        "ID pattern value should be preserved"
+    );
 }

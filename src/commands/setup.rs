@@ -50,19 +50,34 @@ pub fn execute(cmd: &mut Command, shell_override: Option<Shell>) -> Result<()> {
     Ok(())
 }
 
-/// Creates the global config file if it doesn't exist
+/// Creates or updates the global config file
 fn setup_global_config() -> Result<()> {
     let path = GlobalConfig::path()
         .ok_or_else(|| anyhow::anyhow!("Could not determine home directory"))?;
 
-    if GlobalConfig::create_default_if_missing()? {
+    if !path.exists() {
+        GlobalConfig::create_default_if_missing()?;
         eprintln!("{} Created global config: {}", "✓".green(), path.display());
+        return Ok(());
+    }
+
+    // Config exists - validate and update if needed
+    eprintln!("Checking global config: {}", path.display());
+    let validation = GlobalConfig::update_if_needed()?;
+
+    if validation.has_changes() {
+        for field in &validation.missing {
+            eprintln!("  {} Added: {}", "✓".green(), field);
+        }
+        for field in &validation.invalid {
+            eprintln!("  {} Removed unknown: {}", "✓".green(), field);
+        }
+        for (old, new) in &validation.migrated {
+            eprintln!("  {} Migrated: {} → {}", "✓".green(), old, new);
+        }
+        eprintln!("  {} Config updated", "↳".cyan());
     } else {
-        eprintln!(
-            "{} Global config already exists: {}",
-            "✓".green(),
-            path.display()
-        );
+        eprintln!("  {} Config is up-to-date", "✓".green());
     }
 
     Ok(())

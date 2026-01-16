@@ -21,6 +21,53 @@ use crate::{
     id::DEFAULT_PATTERN,
 };
 
+/// Valid field names in the global config file.
+/// Used for validation to detect unknown/invalid fields.
+const VALID_FIELDS: &[&str] = &[
+    "user_name",
+    "use_git_user",
+    "editor",
+    "interactive",
+    "id_pattern",
+    "stack_dir",
+    "archive_dir",
+    "template_dir",
+];
+
+/// Fields that should be present with actual values (have meaningful defaults).
+/// Other valid fields are optional personalization (`user_name`, `editor`) that
+/// remain commented when not set.
+const REQUIRED_FIELDS: &[&str] = &[
+    "use_git_user",
+    "interactive",
+    "id_pattern",
+    "stack_dir",
+    "archive_dir",
+    "template_dir",
+];
+
+/// Legacy field names that should be migrated to their new names.
+/// Format: (`old_name`, `new_name`)
+const LEGACY_ALIASES: &[(&str, &str)] = &[("default_id_pattern", "id_pattern")];
+
+/// Result of validating a config file.
+#[derive(Debug, Default)]
+pub struct ConfigValidation {
+    /// Fields that were missing and have been added with defaults
+    pub missing: Vec<String>,
+    /// Fields that were unrecognized and have been removed
+    pub invalid: Vec<String>,
+    /// Fields that were migrated from old names (`old_name`, `new_name`)
+    pub migrated: Vec<(String, String)>,
+}
+
+impl ConfigValidation {
+    /// Returns true if any changes were made to the config.
+    pub fn has_changes(&self) -> bool {
+        !self.missing.is_empty() || !self.invalid.is_empty() || !self.migrated.is_empty()
+    }
+}
+
 thread_local! {
     /// Thread-local override for the home directory path.
     /// Used by integration tests to redirect config to a temp directory
@@ -164,8 +211,33 @@ impl GlobalConfig {
             .with_context(|| format!("Failed to write global config: {}", path.display()))
     }
 
-    /// Saves config with detailed comments for all options
+    /// Saves config with detailed comments for all options.
+    ///
+    /// Required fields are always written with actual values.
+    /// Optional personalization fields (`user_name`, `editor`) are shown as
+    /// commented examples when not set.
     fn save_with_comments(path: &PathBuf, config: &Self) -> Result<()> {
+        // Helper to format optional personalization fields (commented when not set)
+        let format_personalization = |value: &Option<String>, key: &str, example: &str| {
+            value.as_ref().map_or_else(
+                || format!("# {key} = \"{example}\""),
+                |v| format!("{key} = \"{v}\""),
+            )
+        };
+
+        // Personalization fields: commented when not set
+        let user_name_line = format_personalization(&config.user_name, "user_name", "Your Name");
+        let editor_line = format_personalization(&config.editor, "editor", "nvim");
+
+        // Required fields: always written with effective values
+        let stack_dir_line = format!("stack_dir = \"{}\"", config.stack_dir());
+        let archive_dir_line = format!("archive_dir = \"{}\"", config.archive_dir());
+        let template_dir_line = format!("template_dir = \"{}\"", config.template_dir());
+
+        // id_pattern always has a value (has default), so we always write it
+        // but check if it's the default to decide on commenting
+        let id_pattern_line = format!("id_pattern = \"{}\"", config.id_pattern);
+
         let content = format!(
             r#"# qstack Global Configuration
 # This file configures qstack behavior across all projects.
@@ -173,7 +245,7 @@ impl GlobalConfig {
 
 # Your display name used as the author when creating new items.
 # If not set, falls back to git user.name (if use_git_user is true).
-# user_name = "Your Name"
+{user_name_line}
 
 # Whether to use `git config user.name` as a fallback when user_name is not set.
 # Default: true
@@ -182,7 +254,7 @@ use_git_user = {use_git_user}
 # Editor command to open when creating new items.
 # Supports commands with arguments (e.g., "code --wait", "nvim").
 # If not set, falls back to $VISUAL, then $EDITOR, then "vi".
-# editor = "nvim"
+{editor_line}
 
 # Whether to enable interactive mode (opens editor, shows selection dialogs).
 # Set to false for scripting or if you prefer to edit files manually.
@@ -208,26 +280,31 @@ interactive = {interactive}
 #   "%y%m%d-%T%RRR"  -> "260109-0A2BK4M" (default, 14 chars)
 #   "%y%j-%T%RR"     -> "26009-0A2BK4"   (day-of-year variant, 12 chars)
 #   "%T%RRRR"        -> "0A2BK4MN"       (compact, 8 chars)
-# id_pattern = "{id_pattern}"
+{id_pattern_line}
 
 # Default directory name for storing items (relative to project root).
 # Used when initializing new projects. Can be overridden per-project.
 # Default: "qstack"
-# stack_dir = "qstack"
+{stack_dir_line}
 
 # Default subdirectory name for archived (closed) items within the qstack directory.
 # Used when initializing new projects. Can be overridden per-project.
 # Default: ".archive"
-# archive_dir = ".archive"
+{archive_dir_line}
 
 # Default subdirectory name for templates within the qstack directory.
 # Used when initializing new projects. Can be overridden per-project.
 # Default: ".templates"
-# template_dir = ".templates"
+{template_dir_line}
 "#,
+            user_name_line = user_name_line,
             use_git_user = config.use_git_user,
+            editor_line = editor_line,
             interactive = config.interactive,
-            id_pattern = config.id_pattern,
+            id_pattern_line = id_pattern_line,
+            stack_dir_line = stack_dir_line,
+            archive_dir_line = archive_dir_line,
+            template_dir_line = template_dir_line,
         );
 
         fs::write(path, content)
@@ -247,6 +324,90 @@ interactive = {interactive}
     /// Returns the effective template directory name
     pub fn template_dir(&self) -> &str {
         self.template_dir.as_deref().unwrap_or(DEFAULT_TEMPLATE_DIR)
+    }
+
+    /// Validates the global config file and returns any issues found.
+    ///
+    /// This parses the raw TOML to detect:
+    /// - Unknown fields that should be removed
+    /// - Legacy field names that should be migrated
+    /// - Missing fields (by comparing against what serde would produce)
+    pub fn validate() -> Result<ConfigValidation> {
+        let Some(path) = Self::path() else {
+            anyhow::bail!("Could not determine home directory");
+        };
+
+        if !path.exists() {
+            anyhow::bail!("Global config not found");
+        }
+
+        let content = fs::read_to_string(&path)
+            .with_context(|| format!("Failed to read global config: {}", path.display()))?;
+
+        let table: toml::Table = toml::from_str(&content)
+            .with_context(|| format!("Failed to parse global config: {}", path.display()))?;
+
+        let mut validation = ConfigValidation::default();
+
+        // Check for invalid/unknown fields
+        for key in table.keys() {
+            // Check if it's a legacy alias
+            if let Some((old, new)) = LEGACY_ALIASES.iter().find(|(old, _)| old == key) {
+                validation
+                    .migrated
+                    .push(((*old).to_string(), (*new).to_string()));
+            } else if !VALID_FIELDS.contains(&key.as_str()) {
+                validation.invalid.push(key.clone());
+            }
+        }
+
+        // Check for missing required fields (fields that should always be present)
+        // Optional personalization fields (user_name, editor) are not reported as missing
+        for &field in REQUIRED_FIELDS {
+            if !table.contains_key(field) {
+                // Check if it's covered by a legacy alias
+                let covered_by_alias = LEGACY_ALIASES
+                    .iter()
+                    .any(|(old, new)| *new == field && table.contains_key(*old));
+                if !covered_by_alias {
+                    validation.missing.push(field.to_string());
+                }
+            }
+        }
+
+        Ok(validation)
+    }
+
+    /// Validates and updates the global config file if needed.
+    ///
+    /// This will:
+    /// 1. Check for missing, invalid, or legacy fields
+    /// 2. If changes are needed, load the config (serde fills defaults), then re-save
+    /// 3. Return a validation report of what changed
+    pub fn update_if_needed() -> Result<ConfigValidation> {
+        let validation = Self::validate()?;
+
+        if !validation.has_changes() {
+            return Ok(validation);
+        }
+
+        let Some(path) = Self::path() else {
+            anyhow::bail!("Could not determine home directory");
+        };
+
+        // Load the config - serde will:
+        // - Use defaults for missing fields
+        // - Use alias values for legacy fields (default_id_pattern -> id_pattern)
+        // - Ignore unknown fields (they won't be in the struct)
+        let config = Self::load()?;
+
+        // Re-save with comments - this will:
+        // - Write all valid fields with proper values
+        // - Exclude unknown/invalid fields (they're not in the struct)
+        // - Use the canonical field names (not legacy aliases)
+        Self::save_with_comments(&path, &config)?;
+
+        Ok(validation)
     }
 
     /// Prompts the user for their name and saves it to the config.
