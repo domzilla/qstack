@@ -206,7 +206,7 @@ Project settings override global settings.
 |--------|---------|-------------|
 | `user_name` | — | Author name for new items |
 | `use_git_user` | `true` | Fall back to `git config user.name` |
-| `editor` | `$EDITOR` | Editor for item creation |
+| `editor` | `$EDITOR` | Editor command (supports args, e.g., `nvim -c ":normal G"`) |
 | `interactive` | `true` | Enable TUI by default |
 | `id_pattern` | `%y%m%d-%T%RRR` | ID format pattern |
 | `stack_dir` | `qstack` | Directory for items |

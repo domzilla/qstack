@@ -127,6 +127,7 @@ qstack/
 - `owo-colors` - Colored terminal output
 - `ratatui` + `crossterm` - Terminal UI (interactive selection, wizard)
 - `unicode-width` - Display width calculation for CJK/emoji alignment
+- `shlex` - Shell-style argument parsing for editor command
 
 ## CLI Commands
 ```bash
@@ -294,7 +295,7 @@ Project values override global values when set.
 |--------|------|---------|
 | `user_name` | `Option<String>` | None |
 | `use_git_user` | `bool` | `true` |
-| `editor` | `Option<String>` | None |
+| `editor` | `Option<String>` | None (supports shell quoting, e.g., `nvim -c ":normal G"`) |
 | `interactive` | `bool` | `true` |
 | `id_pattern` | `String` | `"%y%m%d-%T%RRR"` |
 | `stack_dir` | `String` | `"qstack"` |

@@ -28,13 +28,12 @@ pub fn open(path: &Path, config: &Config) -> Result<()> {
 
     let editor = config.editor().unwrap_or_else(|| "vi".to_string());
 
-    // Split editor command in case it has arguments (e.g., "code --wait")
-    let mut parts = editor.split_whitespace();
-    let program = parts.next().context("Empty editor command")?;
-    let args: Vec<&str> = parts.collect();
+    // Parse editor command with proper shell quoting (e.g., `nvim -c ":normal G"`)
+    let parts = shlex::split(&editor).context("Invalid editor command syntax")?;
+    let (program, args) = parts.split_first().context("Empty editor command")?;
 
     let mut cmd = Command::new(program);
-    cmd.args(&args).arg(path);
+    cmd.args(args).arg(path);
 
     let status = cmd
         .status()
