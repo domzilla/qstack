@@ -104,7 +104,7 @@ Run `qstack <command> --help` for detailed options.
 
 ## TUI Keybindings
 
-When running `qstack list` interactively:
+### Item List (`qstack list`)
 
 | Key | Action |
 |-----|--------|
@@ -117,6 +117,20 @@ When running `qstack list` interactively:
 **Filter overlay** (`f`): Filter items by search text, labels, or category in real-time.
 
 **Action menu** (`Enter`): Quick actions on the selected item — view, edit, close/reopen, delete.
+
+### New Item Wizard (`qstack new`)
+
+| Key | Action |
+|-----|--------|
+| `Tab` | Next field |
+| `Shift+Tab` | Previous field |
+| `Ctrl+S` | Save and open editor |
+| `Ctrl+Alt+S` | Save without opening editor |
+| `Enter` | Confirm selection / add item |
+| `Space` | Toggle label selection |
+| `Esc` | Cancel |
+
+The wizard has two panels: **Meta** (title, category, labels) and **Attachments**.
 
 ## Non-Interactive Mode
 

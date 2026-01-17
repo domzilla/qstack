@@ -79,6 +79,8 @@ pub struct WizardOutput {
     pub attachments: Vec<String>,
     pub category: Option<String>,
     pub labels: Vec<String>,
+    /// If true, skip opening the editor after creating the item.
+    pub skip_editor: bool,
 }
 
 /// New item wizard application.
@@ -207,7 +209,7 @@ impl NewItemWizard {
         self.category_input_mode || self.label_input_mode
     }
 
-    fn complete(&self) -> WizardOutput {
+    fn complete(&self, skip_editor: bool) -> WizardOutput {
         // Collect selected labels (action item is automatically excluded by MultiSelect)
         let labels: Vec<String> = self
             .labels_list
@@ -221,6 +223,7 @@ impl NewItemWizard {
             attachments: self.attachments.clone(),
             category: self.category.clone(),
             labels,
+            skip_editor,
         }
     }
 
@@ -237,9 +240,21 @@ impl NewItemWizard {
                 self.focused = self.focused.prev();
                 None
             }
-            KeyCode::Char('s') if key.modifiers.contains(KeyModifiers::CONTROL) => {
+            KeyCode::Char('s')
+                if key.modifiers.contains(KeyModifiers::CONTROL)
+                    && key.modifiers.contains(KeyModifiers::ALT) =>
+            {
+                // Ctrl+Alt+S: save without opening editor
                 if self.can_save() {
-                    Some(AppResult::Done(self.complete()))
+                    Some(AppResult::Done(self.complete(true)))
+                } else {
+                    None
+                }
+            }
+            KeyCode::Char('s') if key.modifiers.contains(KeyModifiers::CONTROL) => {
+                // Ctrl+S: save and open editor
+                if self.can_save() {
+                    Some(AppResult::Done(self.complete(false)))
                 } else {
                     None
                 }
@@ -268,9 +283,21 @@ impl NewItemWizard {
                 self.focused = self.focused.prev();
                 None
             }
-            KeyCode::Char('s') if key.modifiers.contains(KeyModifiers::CONTROL) => {
+            KeyCode::Char('s')
+                if key.modifiers.contains(KeyModifiers::CONTROL)
+                    && key.modifiers.contains(KeyModifiers::ALT) =>
+            {
+                // Ctrl+Alt+S: save without opening editor
                 if self.can_save() {
-                    Some(AppResult::Done(self.complete()))
+                    Some(AppResult::Done(self.complete(true)))
+                } else {
+                    None
+                }
+            }
+            KeyCode::Char('s') if key.modifiers.contains(KeyModifiers::CONTROL) => {
+                // Ctrl+S: save and open editor
+                if self.can_save() {
+                    Some(AppResult::Done(self.complete(false)))
                 } else {
                     None
                 }
@@ -335,9 +362,21 @@ impl NewItemWizard {
                     self.focused = self.focused.prev();
                     None
                 }
-                KeyCode::Char('s') if key.modifiers.contains(KeyModifiers::CONTROL) => {
+                KeyCode::Char('s')
+                    if key.modifiers.contains(KeyModifiers::CONTROL)
+                        && key.modifiers.contains(KeyModifiers::ALT) =>
+                {
+                    // Ctrl+Alt+S: save without opening editor
                     if self.can_save() {
-                        Some(AppResult::Done(self.complete()))
+                        Some(AppResult::Done(self.complete(true)))
+                    } else {
+                        None
+                    }
+                }
+                KeyCode::Char('s') if key.modifiers.contains(KeyModifiers::CONTROL) => {
+                    // Ctrl+S: save and open editor
+                    if self.can_save() {
+                        Some(AppResult::Done(self.complete(false)))
                     } else {
                         None
                     }
@@ -421,9 +460,21 @@ impl NewItemWizard {
                     self.focused = self.focused.prev();
                     None
                 }
-                KeyCode::Char('s') if key.modifiers.contains(KeyModifiers::CONTROL) => {
+                KeyCode::Char('s')
+                    if key.modifiers.contains(KeyModifiers::CONTROL)
+                        && key.modifiers.contains(KeyModifiers::ALT) =>
+                {
+                    // Ctrl+Alt+S: save without opening editor
                     if self.can_save() {
-                        Some(AppResult::Done(self.complete()))
+                        Some(AppResult::Done(self.complete(true)))
+                    } else {
+                        None
+                    }
+                }
+                KeyCode::Char('s') if key.modifiers.contains(KeyModifiers::CONTROL) => {
+                    // Ctrl+S: save and open editor
+                    if self.can_save() {
+                        Some(AppResult::Done(self.complete(false)))
                     } else {
                         None
                     }

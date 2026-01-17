@@ -60,8 +60,8 @@ This document describes the internal architecture of qstack, a minimal task and 
 │  ┌──────────────────┐  ┌──────────────────────────────────────┐ │
 │  │     Screens      │  │              Widgets                 │ │
 │  │ • select         │  │ • TextInput    • SelectList          │ │
-│  │ • prompt         │  │ • TextArea     • MultiSelect         │ │
-│  │ • wizard         │  │                                      │ │
+│  │ • prompt         │  │ • MultiSelect  • ActionMenu          │ │
+│  │ • wizard         │  │ • FilterOverlay                      │ │
 │  └──────────────────┘  └──────────────────────────────────────┘ │
 └─────────────────────────────────────────────────────────────────┘
 ```
@@ -360,10 +360,9 @@ tui/
 │   ├── item_actions.rs # Interactive list with filter overlay & action menu
 │   ├── prompt.rs       # Text input prompt
 │   ├── confirm.rs      # Yes/no confirmation dialog
-│   └── wizard.rs       # Multi-step new item wizard
+│   └── wizard.rs       # Two-panel new item wizard
 └── widgets/
     ├── text_input.rs    # Single-line text input
-    ├── text_area.rs     # Multi-line text editor
     ├── select_list.rs   # Single-select list
     ├── multi_select.rs  # Multi-select list
     ├── action_menu.rs   # Action menu overlay
@@ -377,6 +376,19 @@ Full-featured interactive list for `qstack list` with:
 - **Filter overlay** (`f` key) — Real-time filtering by search text, labels, category
 - **Action menu** (`Enter` key) — Quick actions: view, edit, close/reopen, delete
 - Uses shared filter predicates from `item/search.rs` for consistency with CLI
+
+#### New Item Wizard (`wizard.rs`)
+
+Two-panel wizard for creating new items:
+
+- **Meta panel** — Title input, category selection, labels multi-select
+- **Attachments panel** — File/URL attachment input
+
+Key features:
+- `Tab`/`Shift+Tab` navigation between fields
+- `Ctrl+S` saves and opens editor for content
+- `Ctrl+Alt+S` saves without opening editor
+- Dynamic category/label creation inline
 
 #### TuiApp Trait
 

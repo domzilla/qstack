@@ -219,8 +219,10 @@ fn execute_wizard(config: &Config, as_template: bool) -> Result<()> {
         ui::process_and_save_attachments(&mut item, &path, &output.attachments)?;
     }
 
-    // Open editor for content
-    editor::open(&path, &config).context("Failed to open editor")?;
+    // Open editor for content (unless skip_editor was set via Ctrl+Shift+S)
+    if !output.skip_editor {
+        editor::open(&path, &config).context("Failed to open editor")?;
+    }
 
     // Output the path
     println!("{}", config.relative_path(&path).display());
@@ -396,8 +398,10 @@ fn execute_wizard_from_template(
         ui::process_and_save_attachments(&mut item, &path, &output.attachments)?;
     }
 
-    // Open editor for content
-    editor::open(&path, &config).context("Failed to open editor")?;
+    // Open editor for content (unless skip_editor was set via Ctrl+Shift+S)
+    if !output.skip_editor {
+        editor::open(&path, &config).context("Failed to open editor")?;
+    }
 
     // Output the path
     println!("{}", config.relative_path(&path).display());

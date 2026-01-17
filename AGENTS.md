@@ -59,13 +59,12 @@ qstack/
 │   │   │   ├── item_actions.rs # Interactive list with filter overlay & action menu
 │   │   │   ├── prompt.rs       # Text input prompt
 │   │   │   ├── confirm.rs      # Yes/no confirmation dialog
-│   │   │   └── wizard.rs       # New item wizard
+│   │   │   └── wizard.rs       # Two-panel new item wizard (Meta + Attachments)
 │   │   └── widgets/
 │   │       ├── mod.rs
 │   │       ├── select_list.rs
 │   │       ├── multi_select.rs
 │   │       ├── text_input.rs
-│   │       ├── text_area.rs
 │   │       ├── action_menu.rs
 │   │       └── filter_overlay.rs
 │   └── commands/
