@@ -1,6 +1,6 @@
 //! New item wizard screen.
 //!
-//! Multi-step wizard for creating new items.
+//! Two-panel wizard for creating new items with Tab navigation.
 
 use crossterm::event::{KeyCode, KeyModifiers};
 use ratatui::{
@@ -17,53 +17,57 @@ use crate::tui::{
     AppResult, TuiApp,
 };
 
-/// Wizard steps.
+/// Wizard panels for breadcrumb display.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum WizardStep {
-    Title,
+pub enum WizardPanel {
+    Meta,
     Attachments,
-    Category,
-    Labels,
 }
 
-impl WizardStep {
-    const ALL: [Self; 4] = [Self::Title, Self::Attachments, Self::Category, Self::Labels];
-
-    const fn index(self) -> usize {
-        match self {
-            Self::Title => 0,
-            Self::Attachments => 1,
-            Self::Category => 2,
-            Self::Labels => 3,
-        }
-    }
-
-    fn from_index(index: usize) -> Self {
-        Self::ALL[index.min(Self::ALL.len() - 1)]
-    }
-
-    fn next(self) -> Self {
-        Self::from_index(self.index() + 1)
-    }
-
-    fn prev(self) -> Self {
-        if self.index() == 0 {
-            self
-        } else {
-            Self::from_index(self.index() - 1)
-        }
-    }
-
-    const fn is_last(self) -> bool {
-        self.index() == Self::ALL.len() - 1
-    }
-
+impl WizardPanel {
     const fn name(self) -> &'static str {
         match self {
-            Self::Title => "Title",
+            Self::Meta => "Meta",
             Self::Attachments => "Attachments",
-            Self::Category => "Category",
-            Self::Labels => "Labels",
+        }
+    }
+}
+
+/// Currently focused widget for Tab navigation.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum FocusedWidget {
+    Title,
+    Category,
+    Labels,
+    Attachments,
+}
+
+impl FocusedWidget {
+    /// Cycle to next widget (Tab).
+    const fn next(self) -> Self {
+        match self {
+            Self::Title => Self::Category,
+            Self::Category => Self::Labels,
+            Self::Labels => Self::Attachments,
+            Self::Attachments => Self::Title,
+        }
+    }
+
+    /// Cycle to previous widget (Shift+Tab).
+    const fn prev(self) -> Self {
+        match self {
+            Self::Title => Self::Attachments,
+            Self::Category => Self::Title,
+            Self::Labels => Self::Category,
+            Self::Attachments => Self::Labels,
+        }
+    }
+
+    /// Get the panel this widget belongs to.
+    const fn panel(self) -> WizardPanel {
+        match self {
+            Self::Title | Self::Category | Self::Labels => WizardPanel::Meta,
+            Self::Attachments => WizardPanel::Attachments,
         }
     }
 }
@@ -79,7 +83,7 @@ pub struct WizardOutput {
 
 /// New item wizard application.
 pub struct NewItemWizard {
-    step: WizardStep,
+    focused: FocusedWidget,
     title_input: TextInput,
     attachments: Vec<String>,
     attachment_input: TextInput,
@@ -110,7 +114,7 @@ impl NewItemWizard {
         label_items.push("Create new...".to_string());
 
         Self {
-            step: WizardStep::Title,
+            focused: FocusedWidget::Title,
             title_input: TextInput::new("Title"),
             attachments: Vec::new(),
             attachment_input: TextInput::new("Add attachments (Space or Newline separated)"),
@@ -193,21 +197,14 @@ impl NewItemWizard {
         self
     }
 
-    fn can_advance(&self) -> bool {
-        match self.step {
-            WizardStep::Title => !self.title_input.content().trim().is_empty(),
-            _ => true,
-        }
+    /// Check if saving is allowed (title must not be empty).
+    fn can_save(&self) -> bool {
+        !self.title_input.content().trim().is_empty()
     }
 
-    fn try_advance(&mut self) {
-        if self.can_advance() && !self.step.is_last() {
-            self.step = self.step.next();
-        }
-    }
-
-    fn go_back(&mut self) {
-        self.step = self.step.prev();
+    /// Check if we're in any input mode (category or label creation).
+    const fn is_input_mode(&self) -> bool {
+        self.category_input_mode || self.label_input_mode
     }
 
     fn complete(&self) -> WizardOutput {
@@ -232,18 +229,20 @@ impl NewItemWizard {
         key: crossterm::event::KeyEvent,
     ) -> Option<AppResult<WizardOutput>> {
         match key.code {
-            KeyCode::Char('n') if key.modifiers.contains(KeyModifiers::CONTROL) => {
-                self.try_advance();
+            KeyCode::Tab => {
+                self.focused = self.focused.next();
                 None
             }
-            KeyCode::Char('p') if key.modifiers.contains(KeyModifiers::CONTROL) => {
-                self.go_back();
+            KeyCode::BackTab => {
+                self.focused = self.focused.prev();
                 None
             }
-            KeyCode::Enter => {
-                // Enter also advances to next step
-                self.try_advance();
-                None
+            KeyCode::Char('s') if key.modifiers.contains(KeyModifiers::CONTROL) => {
+                if self.can_save() {
+                    Some(AppResult::Done(self.complete()))
+                } else {
+                    None
+                }
             }
             KeyCode::Esc => Some(AppResult::Cancelled),
             KeyCode::Char('c') if key.modifiers.contains(KeyModifiers::CONTROL) => {
@@ -261,13 +260,20 @@ impl NewItemWizard {
         key: crossterm::event::KeyEvent,
     ) -> Option<AppResult<WizardOutput>> {
         match key.code {
-            KeyCode::Char('n') if key.modifiers.contains(KeyModifiers::CONTROL) => {
-                self.try_advance();
+            KeyCode::Tab => {
+                self.focused = self.focused.next();
                 None
             }
-            KeyCode::Char('p') if key.modifiers.contains(KeyModifiers::CONTROL) => {
-                self.go_back();
+            KeyCode::BackTab => {
+                self.focused = self.focused.prev();
                 None
+            }
+            KeyCode::Char('s') if key.modifiers.contains(KeyModifiers::CONTROL) => {
+                if self.can_save() {
+                    Some(AppResult::Done(self.complete()))
+                } else {
+                    None
+                }
             }
             KeyCode::Esc => Some(AppResult::Cancelled),
             KeyCode::Char('c') if key.modifiers.contains(KeyModifiers::CONTROL) => {
@@ -275,10 +281,7 @@ impl NewItemWizard {
             }
             KeyCode::Enter => {
                 let content = self.attachment_input.content().trim().to_string();
-                if content.is_empty() {
-                    // Empty input: Enter acts as Next
-                    self.try_advance();
-                } else {
+                if !content.is_empty() {
                     let paths = parse_shell_escaped_paths(&content);
                     self.attachments.extend(paths);
                     self.attachment_input =
@@ -324,13 +327,20 @@ impl NewItemWizard {
             }
         } else {
             match key.code {
-                KeyCode::Char('n') if key.modifiers.contains(KeyModifiers::CONTROL) => {
-                    self.try_advance();
+                KeyCode::Tab => {
+                    self.focused = self.focused.next();
                     None
                 }
-                KeyCode::Char('p') if key.modifiers.contains(KeyModifiers::CONTROL) => {
-                    self.go_back();
+                KeyCode::BackTab => {
+                    self.focused = self.focused.prev();
                     None
+                }
+                KeyCode::Char('s') if key.modifiers.contains(KeyModifiers::CONTROL) => {
+                    if self.can_save() {
+                        Some(AppResult::Done(self.complete()))
+                    } else {
+                        None
+                    }
                 }
                 KeyCode::Esc => Some(AppResult::Cancelled),
                 KeyCode::Char('c') if key.modifiers.contains(KeyModifiers::CONTROL) => {
@@ -342,9 +352,8 @@ impl NewItemWizard {
                             // Create new...
                             self.category_input_mode = true;
                         } else {
-                            // (none) or existing category - select and advance
+                            // (none) or existing category - just select it
                             self.category = self.get_category_at_index(idx);
-                            self.try_advance();
                         }
                     }
                     None
@@ -404,13 +413,20 @@ impl NewItemWizard {
             }
         } else {
             match key.code {
-                KeyCode::Char('n') if key.modifiers.contains(KeyModifiers::CONTROL) => {
-                    // Ctrl+N on last step completes the wizard
-                    Some(AppResult::Done(self.complete()))
-                }
-                KeyCode::Char('p') if key.modifiers.contains(KeyModifiers::CONTROL) => {
-                    self.go_back();
+                KeyCode::Tab => {
+                    self.focused = self.focused.next();
                     None
+                }
+                KeyCode::BackTab => {
+                    self.focused = self.focused.prev();
+                    None
+                }
+                KeyCode::Char('s') if key.modifiers.contains(KeyModifiers::CONTROL) => {
+                    if self.can_save() {
+                        Some(AppResult::Done(self.complete()))
+                    } else {
+                        None
+                    }
                 }
                 KeyCode::Esc => Some(AppResult::Cancelled),
                 KeyCode::Char('c') if key.modifiers.contains(KeyModifiers::CONTROL) => {
@@ -440,31 +456,31 @@ impl TuiApp for NewItemWizard {
     fn handle_event(&mut self, event: &TuiEvent) -> Option<AppResult<Self::Output>> {
         match event {
             TuiEvent::Paste(content) => {
-                // Handle paste based on current step/context
-                match self.step {
-                    WizardStep::Title => {
+                // Handle paste based on current focus/context
+                match self.focused {
+                    FocusedWidget::Title => {
                         self.title_input.insert_text(content);
                     }
-                    WizardStep::Attachments => {
+                    FocusedWidget::Attachments => {
                         // Parse as file paths
                         let paths = parse_shell_escaped_paths(content);
                         self.attachments.extend(paths);
                     }
-                    WizardStep::Category if self.category_input_mode => {
+                    FocusedWidget::Category if self.category_input_mode => {
                         self.category_input.insert_text(content);
                     }
-                    WizardStep::Labels if self.label_input_mode => {
+                    FocusedWidget::Labels if self.label_input_mode => {
                         self.label_input.insert_text(content);
                     }
                     _ => {}
                 }
                 None
             }
-            TuiEvent::Key(key) => match self.step {
-                WizardStep::Title => self.handle_title_key(*key),
-                WizardStep::Attachments => self.handle_attachments_key(*key),
-                WizardStep::Category => self.handle_category_key(*key),
-                WizardStep::Labels => self.handle_labels_key(*key),
+            TuiEvent::Key(key) => match self.focused {
+                FocusedWidget::Title => self.handle_title_key(*key),
+                FocusedWidget::Attachments => self.handle_attachments_key(*key),
+                FocusedWidget::Category => self.handle_category_key(*key),
+                FocusedWidget::Labels => self.handle_labels_key(*key),
             },
             _ => None,
         }
@@ -473,10 +489,10 @@ impl TuiApp for NewItemWizard {
     fn render(&mut self, frame: &mut Frame) {
         let area = frame.area();
 
-        // Main layout
+        // Main layout: Header, Content, Help
         let chunks = Layout::vertical([
             Constraint::Length(3), // Header
-            Constraint::Min(10),   // Content
+            Constraint::Min(10),   // Content (one panel at a time)
             Constraint::Length(3), // Help
         ])
         .split(area);
@@ -484,8 +500,11 @@ impl TuiApp for NewItemWizard {
         // Header
         self.render_header(frame, chunks[0]);
 
-        // Content area
-        self.render_step(frame, chunks[1]);
+        // Content area - show panel based on current focus
+        match self.focused.panel() {
+            WizardPanel::Meta => self.render_meta_panel(frame, chunks[1]),
+            WizardPanel::Attachments => self.render_attachments_panel(frame, chunks[1]),
+        }
 
         // Help bar
         self.render_help(frame, chunks[2]);
@@ -494,27 +513,23 @@ impl TuiApp for NewItemWizard {
 
 impl NewItemWizard {
     fn render_header(&self, frame: &mut Frame, area: Rect) {
-        let step_num = self.step.index() + 1;
-        let total = WizardStep::ALL.len();
+        let current_panel = self.focused.panel();
 
-        // Step indicators
-        let indicators: Vec<Span> = WizardStep::ALL
+        // Panel indicators: Meta > Attachments
+        let panels = [WizardPanel::Meta, WizardPanel::Attachments];
+        let indicators: Vec<Span> = panels
             .iter()
             .enumerate()
-            .flat_map(|(i, step)| {
-                let style = match i.cmp(&self.step.index()) {
-                    std::cmp::Ordering::Equal => Style::default()
+            .flat_map(|(i, panel)| {
+                let style = if *panel == current_panel {
+                    Style::default()
                         .fg(Color::Cyan)
-                        .add_modifier(Modifier::BOLD),
-                    std::cmp::Ordering::Less => Style::default().fg(Color::Green),
-                    std::cmp::Ordering::Greater => Style::default().fg(Color::DarkGray),
-                };
-                let sep = if i < WizardStep::ALL.len() - 1 {
-                    " > "
+                        .add_modifier(Modifier::BOLD)
                 } else {
-                    ""
+                    Style::default().fg(Color::DarkGray)
                 };
-                vec![Span::styled(step.name(), style), Span::raw(sep)]
+                let sep = if i < panels.len() - 1 { " > " } else { "" };
+                vec![Span::styled(panel.name(), style), Span::raw(sep)]
             })
             .collect();
 
@@ -529,65 +544,59 @@ impl NewItemWizard {
             Block::default()
                 .borders(Borders::ALL)
                 .border_style(Style::default().fg(Color::Cyan))
-                .title(format!(" {mode} - Step {step_num} of {total} ")),
+                .title(format!(" {mode} ")),
         );
 
         frame.render_widget(header, area);
     }
 
-    fn render_step(&self, frame: &mut Frame, area: Rect) {
-        match self.step {
-            WizardStep::Title => self.render_title_step(frame, area),
-            WizardStep::Attachments => self.render_attachments_step(frame, area),
-            WizardStep::Category => self.render_category_step(frame, area),
-            WizardStep::Labels => self.render_labels_step(frame, area),
-        }
-    }
+    fn render_meta_panel(&self, frame: &mut Frame, area: Rect) {
+        // Meta panel layout:
+        // - Title input (full width, 3 rows)
+        // - Validation message if needed (1 row)
+        // - Category (left 50%) | Labels (right 50%)
+        let has_validation_msg = self.title_input.content().trim().is_empty();
+        let validation_height = u16::from(has_validation_msg);
 
-    fn render_title_step(&self, frame: &mut Frame, area: Rect) {
-        let chunks = Layout::vertical([Constraint::Length(3), Constraint::Min(1)]).split(area);
-
-        self.title_input.render(chunks[0], frame.buffer_mut(), true);
-
-        // Validation message
-        if self.title_input.content().trim().is_empty() {
-            let msg = Paragraph::new("Title is required").style(Style::default().fg(Color::Yellow));
-            frame.render_widget(msg, chunks[1]);
-        }
-    }
-
-    fn render_attachments_step(&self, frame: &mut Frame, area: Rect) {
         let chunks = Layout::vertical([
-            Constraint::Min(5),    // List
-            Constraint::Length(3), // Input
+            Constraint::Length(3),                 // Title input
+            Constraint::Length(validation_height), // Validation message
+            Constraint::Min(4),                    // Category/Labels split
         ])
         .split(area);
 
-        // Attachments list
-        let items: Vec<ListItem> = self
-            .attachments
-            .iter()
-            .enumerate()
-            .map(|(i, a)| ListItem::new(format!("{}. {}", i + 1, a)))
-            .collect();
+        // Title input
+        let title_focused = self.focused == FocusedWidget::Title;
+        self.render_title_widget(frame, chunks[0], title_focused);
 
-        let list = List::new(items).block(
-            Block::default()
-                .borders(Borders::ALL)
-                .border_style(Style::default().fg(Color::Cyan))
-                .title(" Attachments "),
-        );
-        frame.render_widget(list, chunks[0]);
+        // Validation message
+        if has_validation_msg {
+            let msg = Paragraph::new("Title is required").style(Style::default().fg(Color::Yellow));
+            frame.render_widget(msg, chunks[1]);
+        }
 
-        // Input
-        self.attachment_input
-            .render(chunks[1], frame.buffer_mut(), true);
+        // Category/Labels horizontal split (50/50)
+        let split_chunks =
+            Layout::horizontal([Constraint::Percentage(50), Constraint::Percentage(50)])
+                .split(chunks[2]);
+
+        // Category (left)
+        let category_focused = self.focused == FocusedWidget::Category;
+        self.render_category_widget(frame, split_chunks[0], category_focused);
+
+        // Labels (right)
+        let labels_focused = self.focused == FocusedWidget::Labels;
+        self.render_labels_widget(frame, split_chunks[1], labels_focused);
     }
 
-    fn render_category_step(&self, frame: &mut Frame, area: Rect) {
+    fn render_title_widget(&self, frame: &mut Frame, area: Rect, focused: bool) {
+        self.title_input.render(area, frame.buffer_mut(), focused);
+    }
+
+    fn render_category_widget(&self, frame: &mut Frame, area: Rect, focused: bool) {
         if self.category_input_mode {
-            // Show input overlay
-            let chunks = Layout::vertical([Constraint::Min(5), Constraint::Length(3)]).split(area);
+            // Show input overlay for creating new category
+            let chunks = Layout::vertical([Constraint::Min(3), Constraint::Length(3)]).split(area);
 
             let mut list = self.category_list.clone();
             list.render(chunks[0], frame.buffer_mut(), false);
@@ -595,156 +604,196 @@ impl NewItemWizard {
             self.category_input
                 .render(chunks[1], frame.buffer_mut(), true);
         } else {
-            // Current selection display
+            // Current selection display + list
             let current = self.category.as_deref().unwrap_or("(none)");
 
             let chunks = Layout::vertical([
-                Constraint::Length(3), // Current
-                Constraint::Min(5),    // List
+                Constraint::Length(1), // Current selection
+                Constraint::Min(3),    // List
             ])
             .split(area);
 
-            let current_display = Paragraph::new(format!("Current: {current}"))
-                .block(Block::default().borders(Borders::ALL));
+            // Current selection with muted text if not focused
+            let text_style = if focused {
+                Style::default()
+            } else {
+                Style::default().fg(Color::DarkGray)
+            };
+            let current_display = Paragraph::new(format!(" Current: {current}")).style(text_style);
             frame.render_widget(current_display, chunks[0]);
 
+            // Category list (SelectList renders its own border)
             let mut list = self.category_list.clone();
-            list.render(chunks[1], frame.buffer_mut(), true);
+            list.render(chunks[1], frame.buffer_mut(), focused);
         }
     }
 
-    fn render_labels_step(&self, frame: &mut Frame, area: Rect) {
+    fn render_labels_widget(&self, frame: &mut Frame, area: Rect, focused: bool) {
         if self.label_input_mode {
-            let chunks = Layout::vertical([Constraint::Min(5), Constraint::Length(3)]).split(area);
+            // Show input overlay for creating new label
+            let chunks = Layout::vertical([Constraint::Min(3), Constraint::Length(3)]).split(area);
 
             let mut list = self.labels_list.clone();
             list.render(chunks[0], frame.buffer_mut(), false);
 
             self.label_input.render(chunks[1], frame.buffer_mut(), true);
         } else {
-            // Show selected labels (action item is auto-excluded by MultiSelect)
+            // Selected labels display + list
             let selected: Vec<&str> = self.labels_list.selected_items();
-
-            let chunks = Layout::vertical([
-                Constraint::Length(3), // Current
-                Constraint::Min(5),    // List
-            ])
-            .split(area);
-
             let current = if selected.is_empty() {
                 "(none)".to_string()
             } else {
                 selected.join(", ")
             };
 
-            let current_display = Paragraph::new(format!("Selected: {current}"))
-                .block(Block::default().borders(Borders::ALL));
+            let chunks = Layout::vertical([
+                Constraint::Length(1), // Selected labels
+                Constraint::Min(3),    // List
+            ])
+            .split(area);
+
+            // Selected labels with muted text if not focused
+            let text_style = if focused {
+                Style::default()
+            } else {
+                Style::default().fg(Color::DarkGray)
+            };
+            let current_display = Paragraph::new(format!(" Selected: {current}")).style(text_style);
             frame.render_widget(current_display, chunks[0]);
 
+            // Labels list (MultiSelect renders its own border)
             let mut list = self.labels_list.clone();
-            list.render(chunks[1], frame.buffer_mut(), true);
+            list.render(chunks[1], frame.buffer_mut(), focused);
         }
     }
 
-    fn help_panel_spans(&self) -> Vec<Span<'static>> {
-        let key = Style::default().fg(Color::Cyan);
-        let text = Style::default();
+    fn render_attachments_panel(&self, frame: &mut Frame, area: Rect) {
+        let focused = self.focused == FocusedWidget::Attachments;
+        let border_color = if focused {
+            Color::Cyan
+        } else {
+            Color::DarkGray
+        };
+        let text_style = if focused {
+            Style::default()
+        } else {
+            Style::default().fg(Color::DarkGray)
+        };
 
-        match self.step {
-            WizardStep::Title => vec![Span::styled("Enter", key), Span::styled(" Confirm", text)],
-            WizardStep::Attachments => vec![
-                Span::styled("Enter", key),
-                Span::styled(" Add/Next  ", text),
-                Span::styled("Backspace", key),
-                Span::styled(" Remove  ", text),
-                Span::styled("Drop", key),
-                Span::styled(" Add", text),
-            ],
-            WizardStep::Category => {
-                if self.category_input_mode {
-                    vec![
-                        Span::styled("Enter", key),
-                        Span::styled(" Confirm  ", text),
-                        Span::styled("Esc", key),
-                        Span::styled(" Cancel", text),
-                    ]
-                } else {
-                    vec![
-                        Span::styled("Enter", key),
-                        Span::styled(" Select/Next", text),
-                    ]
-                }
-            }
-            WizardStep::Labels => {
-                if self.label_input_mode {
-                    vec![
-                        Span::styled("Enter", key),
-                        Span::styled(" Add  ", text),
-                        Span::styled("Esc", key),
-                        Span::styled(" Cancel", text),
-                    ]
-                } else {
-                    vec![Span::styled("Enter", key), Span::styled(" Toggle", text)]
-                }
-            }
-        }
+        let block = Block::default()
+            .borders(Borders::ALL)
+            .border_style(Style::default().fg(border_color))
+            .title(" Attachments ");
+
+        let inner = block.inner(area);
+        frame.render_widget(block, area);
+
+        // Split inner area: list + input
+        let chunks = Layout::vertical([
+            Constraint::Min(2),    // List
+            Constraint::Length(3), // Input
+        ])
+        .split(inner);
+
+        // Attachments list
+        let items: Vec<ListItem> = self
+            .attachments
+            .iter()
+            .enumerate()
+            .map(|(i, a)| ListItem::new(format!("{}. {}", i + 1, a)).style(text_style))
+            .collect();
+
+        let list = List::new(items);
+        frame.render_widget(list, chunks[0]);
+
+        // Input
+        self.attachment_input
+            .render(chunks[1], frame.buffer_mut(), focused);
     }
 
     fn render_help(&self, frame: &mut Frame, area: Rect) {
-        let is_input_mode = self.category_input_mode || self.label_input_mode;
-
-        // Navigation: Ctrl+P (Back), Ctrl+N (Next/Finish), Esc (Cancel)
-        let can_go_back = self.step.index() > 0 && !is_input_mode;
-        let can_go_next = !is_input_mode;
-        let next_label = if self.step.is_last() {
-            "Finish"
-        } else {
-            "Next"
-        };
-
         let key_on = Style::default().fg(Color::Cyan);
         let key_off = Style::default().fg(Color::DarkGray);
         let txt_on = Style::default();
         let txt_off = Style::default().fg(Color::DarkGray);
 
-        let nav_spans = vec![
-            Span::styled("Ctrl+P", if can_go_back { key_on } else { key_off }),
-            Span::styled(" Back  ", if can_go_back { txt_on } else { txt_off }),
-            Span::styled("Ctrl+N", if can_go_next { key_on } else { key_off }),
+        let can_save = self.can_save();
+        let is_input = self.is_input_mode();
+
+        // Build context-specific hints
+        let context_spans: Vec<Span> = if is_input {
+            vec![
+                Span::styled("Enter", key_on),
+                Span::styled(" Confirm  ", txt_on),
+                Span::styled("Esc", key_on),
+                Span::styled(" Cancel", txt_on),
+            ]
+        } else {
+            match self.focused {
+                FocusedWidget::Title => vec![],
+                FocusedWidget::Category => vec![
+                    Span::styled("Enter", key_on),
+                    Span::styled(" Select", txt_on),
+                ],
+                FocusedWidget::Labels => vec![
+                    Span::styled("Enter", key_on),
+                    Span::styled(" Toggle", txt_on),
+                ],
+                FocusedWidget::Attachments => vec![
+                    Span::styled("Enter", key_on),
+                    Span::styled(" Add  ", txt_on),
+                    Span::styled("Backspace", key_on),
+                    Span::styled(" Remove", txt_on),
+                ],
+            }
+        };
+
+        // Navigation hints (disabled during input mode)
+        let nav_spans: Vec<Span> = vec![
+            Span::styled("Tab", if is_input { key_off } else { key_on }),
+            Span::styled(" Next  ", if is_input { txt_off } else { txt_on }),
             Span::styled(
-                format!(" {next_label}  "),
-                if can_go_next { txt_on } else { txt_off },
+                "Ctrl+S",
+                if can_save && !is_input {
+                    key_on
+                } else {
+                    key_off
+                },
+            ),
+            Span::styled(
+                " Save  ",
+                if can_save && !is_input {
+                    txt_on
+                } else {
+                    txt_off
+                },
             ),
             Span::styled("Esc", key_on),
             Span::styled(" Cancel", txt_on),
         ];
 
-        let panel_spans = self.help_panel_spans();
-
         // Calculate widths
         let nav_width: usize = nav_spans.iter().map(|s| s.content.len()).sum();
-        let panel_width: usize = panel_spans.iter().map(|s| s.content.len()).sum();
-        let inner_width = area.width.saturating_sub(2) as usize; // Account for borders
-
-        // Check if we need to stack vertically
-        let needs_stacking = nav_width + panel_width + 2 > inner_width;
+        let context_width: usize = context_spans.iter().map(|s| s.content.len()).sum();
+        let inner_width = area.width.saturating_sub(2) as usize;
 
         let block = Block::default()
             .borders(Borders::ALL)
             .border_style(Style::default().fg(Color::DarkGray));
 
-        if needs_stacking && !panel_spans.is_empty() {
-            // Vertical layout: nav on top, panel below
-            let lines = vec![Line::from(nav_spans), Line::from(panel_spans)];
+        // Check if we need to stack vertically
+        let needs_stacking = nav_width + context_width + 2 > inner_width;
+
+        if needs_stacking && !context_spans.is_empty() {
+            let lines = vec![Line::from(nav_spans), Line::from(context_spans)];
             let help = Paragraph::new(lines).block(block);
             frame.render_widget(help, area);
         } else {
-            // Horizontal layout: nav left, panel right
             let mut spans = nav_spans;
-            if !panel_spans.is_empty() {
-                let padding = inner_width.saturating_sub(nav_width + panel_width);
+            if !context_spans.is_empty() {
+                let padding = inner_width.saturating_sub(nav_width + context_width);
                 spans.push(Span::raw(" ".repeat(padding)));
-                spans.extend(panel_spans);
+                spans.extend(context_spans);
             }
             let help = Paragraph::new(Line::from(spans)).block(block);
             frame.render_widget(help, area);
@@ -872,5 +921,26 @@ mod tests {
             result,
             vec!["/path/one.png", "/path/two.png", "/path/three.png"]
         );
+    }
+
+    #[test]
+    fn test_focused_widget_navigation() {
+        assert_eq!(FocusedWidget::Title.next(), FocusedWidget::Category);
+        assert_eq!(FocusedWidget::Category.next(), FocusedWidget::Labels);
+        assert_eq!(FocusedWidget::Labels.next(), FocusedWidget::Attachments);
+        assert_eq!(FocusedWidget::Attachments.next(), FocusedWidget::Title);
+
+        assert_eq!(FocusedWidget::Title.prev(), FocusedWidget::Attachments);
+        assert_eq!(FocusedWidget::Category.prev(), FocusedWidget::Title);
+        assert_eq!(FocusedWidget::Labels.prev(), FocusedWidget::Category);
+        assert_eq!(FocusedWidget::Attachments.prev(), FocusedWidget::Labels);
+    }
+
+    #[test]
+    fn test_focused_widget_panel() {
+        assert_eq!(FocusedWidget::Title.panel(), WizardPanel::Meta);
+        assert_eq!(FocusedWidget::Category.panel(), WizardPanel::Meta);
+        assert_eq!(FocusedWidget::Labels.panel(), WizardPanel::Meta);
+        assert_eq!(FocusedWidget::Attachments.panel(), WizardPanel::Attachments);
     }
 }
