@@ -13,7 +13,7 @@ use ratatui::{
 
 use crate::tui::{
     event::TuiEvent,
-    widgets::{MultiSelect, SelectList, TextAreaWidget, TextInput},
+    widgets::{MultiSelect, SelectList, TextInput},
     AppResult, TuiApp,
 };
 
@@ -21,28 +21,20 @@ use crate::tui::{
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum WizardStep {
     Title,
-    Content,
     Attachments,
     Category,
     Labels,
 }
 
 impl WizardStep {
-    const ALL: [Self; 5] = [
-        Self::Title,
-        Self::Content,
-        Self::Attachments,
-        Self::Category,
-        Self::Labels,
-    ];
+    const ALL: [Self; 4] = [Self::Title, Self::Attachments, Self::Category, Self::Labels];
 
     const fn index(self) -> usize {
         match self {
             Self::Title => 0,
-            Self::Content => 1,
-            Self::Attachments => 2,
-            Self::Category => 3,
-            Self::Labels => 4,
+            Self::Attachments => 1,
+            Self::Category => 2,
+            Self::Labels => 3,
         }
     }
 
@@ -69,7 +61,6 @@ impl WizardStep {
     const fn name(self) -> &'static str {
         match self {
             Self::Title => "Title",
-            Self::Content => "Content",
             Self::Attachments => "Attachments",
             Self::Category => "Category",
             Self::Labels => "Labels",
@@ -81,7 +72,6 @@ impl WizardStep {
 #[derive(Debug, Clone)]
 pub struct WizardOutput {
     pub title: String,
-    pub content: String,
     pub attachments: Vec<String>,
     pub category: Option<String>,
     pub labels: Vec<String>,
@@ -91,7 +81,6 @@ pub struct WizardOutput {
 pub struct NewItemWizard {
     step: WizardStep,
     title_input: TextInput,
-    content_area: TextAreaWidget,
     attachments: Vec<String>,
     attachment_input: TextInput,
     category: Option<String>,
@@ -123,7 +112,6 @@ impl NewItemWizard {
         Self {
             step: WizardStep::Title,
             title_input: TextInput::new("Title"),
-            content_area: TextAreaWidget::new("Content"),
             attachments: Vec::new(),
             attachment_input: TextInput::new("Add attachments (Space or Newline separated)"),
             category: None,
@@ -145,13 +133,6 @@ impl NewItemWizard {
     #[must_use]
     pub fn with_title(mut self, title: &str) -> Self {
         self.title_input = self.title_input.with_initial(title);
-        self
-    }
-
-    /// Pre-populate the content field.
-    #[must_use]
-    pub fn with_content(mut self, content: &str) -> Self {
-        self.content_area = self.content_area.with_initial(content);
         self
     }
 
@@ -240,7 +221,6 @@ impl NewItemWizard {
 
         WizardOutput {
             title: self.title_input.content().trim().to_string(),
-            content: self.content_area.content(),
             attachments: self.attachments.clone(),
             category: self.category.clone(),
             labels,
@@ -271,30 +251,6 @@ impl NewItemWizard {
             }
             _ => {
                 self.title_input.handle_key(key);
-                None
-            }
-        }
-    }
-
-    fn handle_content_key(
-        &mut self,
-        key: crossterm::event::KeyEvent,
-    ) -> Option<AppResult<WizardOutput>> {
-        match key.code {
-            KeyCode::Char('n') if key.modifiers.contains(KeyModifiers::CONTROL) => {
-                self.try_advance();
-                None
-            }
-            KeyCode::Char('p') if key.modifiers.contains(KeyModifiers::CONTROL) => {
-                self.go_back();
-                None
-            }
-            KeyCode::Esc => Some(AppResult::Cancelled),
-            KeyCode::Char('c') if key.modifiers.contains(KeyModifiers::CONTROL) => {
-                Some(AppResult::Cancelled)
-            }
-            _ => {
-                self.content_area.handle_key(key);
                 None
             }
         }
@@ -489,9 +445,6 @@ impl TuiApp for NewItemWizard {
                     WizardStep::Title => {
                         self.title_input.insert_text(content);
                     }
-                    WizardStep::Content => {
-                        self.content_area.insert_text(content);
-                    }
                     WizardStep::Attachments => {
                         // Parse as file paths
                         let paths = parse_shell_escaped_paths(content);
@@ -509,7 +462,6 @@ impl TuiApp for NewItemWizard {
             }
             TuiEvent::Key(key) => match self.step {
                 WizardStep::Title => self.handle_title_key(*key),
-                WizardStep::Content => self.handle_content_key(*key),
                 WizardStep::Attachments => self.handle_attachments_key(*key),
                 WizardStep::Category => self.handle_category_key(*key),
                 WizardStep::Labels => self.handle_labels_key(*key),
@@ -583,10 +535,9 @@ impl NewItemWizard {
         frame.render_widget(header, area);
     }
 
-    fn render_step(&mut self, frame: &mut Frame, area: Rect) {
+    fn render_step(&self, frame: &mut Frame, area: Rect) {
         match self.step {
             WizardStep::Title => self.render_title_step(frame, area),
-            WizardStep::Content => self.render_content_step(frame, area),
             WizardStep::Attachments => self.render_attachments_step(frame, area),
             WizardStep::Category => self.render_category_step(frame, area),
             WizardStep::Labels => self.render_labels_step(frame, area),
@@ -603,10 +554,6 @@ impl NewItemWizard {
             let msg = Paragraph::new("Title is required").style(Style::default().fg(Color::Yellow));
             frame.render_widget(msg, chunks[1]);
         }
-    }
-
-    fn render_content_step(&mut self, frame: &mut Frame, area: Rect) {
-        self.content_area.render(area, frame, true);
     }
 
     fn render_attachments_step(&self, frame: &mut Frame, area: Rect) {
@@ -705,7 +652,6 @@ impl NewItemWizard {
 
         match self.step {
             WizardStep::Title => vec![Span::styled("Enter", key), Span::styled(" Confirm", text)],
-            WizardStep::Content => vec![],
             WizardStep::Attachments => vec![
                 Span::styled("Enter", key),
                 Span::styled(" Add/Next  ", text),

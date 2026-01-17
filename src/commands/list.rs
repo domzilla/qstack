@@ -295,7 +295,6 @@ fn execute_edit_wizard(path: &std::path::Path, config: &Config) -> Result<()> {
     // Create pre-populated wizard
     let wizard = NewItemWizard::new(existing_categories, existing_labels)
         .with_title(item.title())
-        .with_content(&item.body)
         .with_attachments(item.attachments().to_vec())
         .with_category(current_category.clone())
         .with_labels(item.labels())
@@ -308,10 +307,9 @@ fn execute_edit_wizard(path: &std::path::Path, config: &Config) -> Result<()> {
         return Ok(());
     };
 
-    // Apply changes
+    // Apply changes (body is edited in external editor, not in wizard)
     let mut updated = item;
     updated.set_title(output.title);
-    updated.body = output.content;
     updated.frontmatter.labels = output.labels;
 
     // Handle new attachments
@@ -351,15 +349,20 @@ fn execute_edit_wizard(path: &std::path::Path, config: &Config) -> Result<()> {
     updated.save(path)?;
 
     // Handle category change - need to move file
-    if output.category == current_category {
+    let final_path = if output.category == current_category {
         ui::print_success("Updated", config, path);
+        path.to_path_buf()
     } else {
         // Move to new category
         let (new_path, warnings) =
             storage::move_to_category(config, path, output.category.as_deref())?;
         ui::print_warnings(&warnings);
         ui::print_success("Updated", config, &new_path);
-    }
+        new_path
+    };
+
+    // Open editor for content editing
+    crate::editor::open(&final_path, config).context("Failed to open editor")?;
 
     Ok(())
 }

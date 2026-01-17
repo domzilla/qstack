@@ -204,9 +204,8 @@ fn execute_wizard(config: &Config, as_template: bool) -> Result<()> {
         attachments: vec![],
     };
 
-    // Create item with content
+    // Create item
     let mut item = Item::new(frontmatter);
-    item.body = output.content;
 
     // Save to disk (category determines folder placement)
     let path = if as_template {
@@ -219,6 +218,9 @@ fn execute_wizard(config: &Config, as_template: bool) -> Result<()> {
     if !output.attachments.is_empty() {
         ui::process_and_save_attachments(&mut item, &path, &output.attachments)?;
     }
+
+    // Open editor for content
+    editor::open(&path, &config).context("Failed to open editor")?;
 
     // Output the path
     println!("{}", config.relative_path(&path).display());
@@ -352,7 +354,6 @@ fn execute_wizard_from_template(
     // Create pre-populated wizard
     let wizard = NewItemWizard::new(existing_categories, existing_labels)
         .with_title(template.title())
-        .with_content(&template.body)
         .with_attachments(template_attachments)
         .with_category(category.map(String::from))
         .with_labels(labels);
@@ -383,9 +384,9 @@ fn execute_wizard_from_template(
         attachments: vec![],
     };
 
-    // Create item
+    // Create item with template's body content
     let mut item = Item::new(frontmatter);
-    item.body = output.content;
+    item.body.clone_from(&template.body);
 
     // Save to disk
     let path = storage::create_item(&config, &item, category.as_deref())?;
@@ -394,6 +395,9 @@ fn execute_wizard_from_template(
     if !output.attachments.is_empty() {
         ui::process_and_save_attachments(&mut item, &path, &output.attachments)?;
     }
+
+    // Open editor for content
+    editor::open(&path, &config).context("Failed to open editor")?;
 
     // Output the path
     println!("{}", config.relative_path(&path).display());
