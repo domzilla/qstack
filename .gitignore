@@ -19,8 +19,3 @@ Cargo.lock
 /.queuestack
 /queuestack/
 /queuestack-testdata
-
-# Legacy (pre-rename)
-/.qstack
-/qstack/
-/qstack-testdata
