@@ -1,6 +1,6 @@
 //! # Close/Reopen Command Tests
 //!
-//! Tests for the `qstack close` and `qstack reopen` commands.
+//! Tests for the `qs close` and `qs reopen` commands.
 //!
 //! Copyright (c) 2025 Dominic Rodemer. All rights reserved.
 //! Licensed under the MIT License.
@@ -8,7 +8,7 @@
 mod common;
 
 use common::{create_test_item, create_test_item_with_attachments, GlobalConfigBuilder, TestEnv};
-use qstack::commands::{self, execute_close, execute_reopen};
+use queuestack::commands::{self, execute_close, execute_reopen};
 
 // =============================================================================
 // Close Command Tests

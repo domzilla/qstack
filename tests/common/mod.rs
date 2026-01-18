@@ -1,6 +1,6 @@
 //! # Test Harness
 //!
-//! Provides utilities for integration testing qstack without affecting user configuration.
+//! Provides utilities for integration testing queuestack without affecting user configuration.
 //! Uses thread-local storage instead of environment variables to avoid any interference
 //! with the user's shell environment.
 //!
@@ -16,7 +16,7 @@ use std::{
 use tempfile::TempDir;
 
 // Re-export from library - this is the mechanism for test isolation
-use qstack::set_home_override;
+use queuestack::set_home_override;
 
 /// Global lock to ensure tests run sequentially.
 /// This prevents races when tests change the current directory.
@@ -25,7 +25,7 @@ static TEST_LOCK: Mutex<()> = Mutex::new(());
 /// Test environment that manages temporary directories for both
 /// the "home" directory (for global config) and the project directory.
 pub struct TestEnv {
-    /// Temporary directory simulating user's home (for ~/.qstack)
+    /// Temporary directory simulating user's home (for ~/.queuestack)
     pub home_dir: TempDir,
     /// Temporary directory for the project
     pub project_dir: TempDir,
@@ -70,17 +70,17 @@ impl TestEnv {
 
     /// Returns the path where global config would be stored.
     pub fn global_config_path(&self) -> PathBuf {
-        self.home_dir.path().join(".qstack")
+        self.home_dir.path().join(".queuestack")
     }
 
     /// Returns the path where project config would be stored.
     pub fn project_config_path(&self) -> PathBuf {
-        self.project_dir.path().join(".qstack")
+        self.project_dir.path().join(".queuestack")
     }
 
     /// Returns the path to the stack directory.
     pub fn stack_path(&self) -> PathBuf {
-        self.project_dir.path().join("qstack")
+        self.project_dir.path().join("queuestack")
     }
 
     /// Returns the path to the archive directory.
@@ -216,12 +216,12 @@ impl Drop for TestEnv {
 /// ```
 /// let env = TestEnv::new();
 /// env.write_global_config(&GlobalConfigBuilder::new().build());
-/// qstack::commands::init().expect("init should succeed");
+/// queuestack::commands::init().expect("init should succeed");
 /// ```
 pub fn setup_test_env() -> TestEnv {
     let env = TestEnv::new();
     env.write_global_config(&GlobalConfigBuilder::new().build());
-    qstack::commands::init().expect("init should succeed");
+    queuestack::commands::init().expect("init should succeed");
     env
 }
 
@@ -231,7 +231,7 @@ pub fn setup_test_env() -> TestEnv {
 pub fn setup_test_env_non_interactive() -> TestEnv {
     let env = TestEnv::new();
     env.write_global_config(&GlobalConfigBuilder::new().interactive(false).build());
-    qstack::commands::init().expect("init should succeed");
+    queuestack::commands::init().expect("init should succeed");
     env
 }
 
@@ -363,7 +363,7 @@ impl Default for ProjectConfigBuilder {
             editor: None,
             interactive: None,
             id_pattern: None,
-            stack_dir: Some("qstack".to_string()),
+            stack_dir: Some("queuestack".to_string()),
             archive_dir: Some("archive".to_string()),
         }
     }

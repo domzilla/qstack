@@ -1,6 +1,6 @@
 //! # Constants
 //!
-//! Centralized constants for magic values used throughout qstack.
+//! Centralized constants for magic values used throughout queuestack.
 //!
 //! Copyright (c) 2025 Dominic Rodemer. All rights reserved.
 //! Licensed under the MIT License.
@@ -42,7 +42,7 @@ pub const ATTACHMENT_INFIX: &str = "-Attachment-";
 pub const ITEM_FILE_EXTENSION: &str = "md";
 
 /// Default directory name for storing items.
-pub const DEFAULT_STACK_DIR: &str = "qstack";
+pub const DEFAULT_STACK_DIR: &str = "queuestack";
 
 /// Default subdirectory name for archived items (inside `stack_dir`).
 pub const DEFAULT_ARCHIVE_DIR: &str = ".archive";
@@ -51,7 +51,7 @@ pub const DEFAULT_ARCHIVE_DIR: &str = ".archive";
 pub const DEFAULT_TEMPLATE_DIR: &str = ".templates";
 
 /// Global configuration file name.
-pub const GLOBAL_CONFIG_FILE: &str = ".qstack";
+pub const GLOBAL_CONFIG_FILE: &str = ".queuestack";
 
 // =============================================================================
 // Shell Completion Paths
@@ -61,25 +61,25 @@ pub const GLOBAL_CONFIG_FILE: &str = ".qstack";
 pub const ZSH_COMPLETIONS_DIR: &str = ".zfunc";
 
 /// Zsh completion file name.
-pub const ZSH_COMPLETION_FILE: &str = "_qstack";
+pub const ZSH_COMPLETION_FILE: &str = "_qs";
 
 /// Bash completions directory (relative to home).
 pub const BASH_COMPLETIONS_DIR: &str = ".local/share/bash-completion/completions";
 
 /// Bash completion file name.
-pub const BASH_COMPLETION_FILE: &str = "qstack";
+pub const BASH_COMPLETION_FILE: &str = "qs";
 
 /// Fish completions directory (relative to home).
 pub const FISH_COMPLETIONS_DIR: &str = ".config/fish/completions";
 
 /// Fish completion file name.
-pub const FISH_COMPLETION_FILE: &str = "qstack.fish";
+pub const FISH_COMPLETION_FILE: &str = "qs.fish";
 
 /// Elvish completions directory (relative to home).
 pub const ELVISH_COMPLETIONS_DIR: &str = ".config/elvish/lib";
 
 /// Elvish completion file name.
-pub const ELVISH_COMPLETION_FILE: &str = "qstack.elv";
+pub const ELVISH_COMPLETION_FILE: &str = "qs.elv";
 
 // =============================================================================
 // Shell RC Files

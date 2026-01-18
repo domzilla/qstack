@@ -1,6 +1,6 @@
 //! # Update Command Tests
 //!
-//! Tests for the `qstack update` command.
+//! Tests for the `qs update` command.
 //!
 //! Copyright (c) 2025 Dominic Rodemer. All rights reserved.
 //! Licensed under the MIT License.
@@ -8,7 +8,7 @@
 mod common;
 
 use common::{create_test_item, GlobalConfigBuilder, TestEnv};
-use qstack::commands::{self, UpdateArgs};
+use queuestack::commands::{self, UpdateArgs};
 
 #[test]
 fn test_update_title() {

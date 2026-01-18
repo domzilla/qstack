@@ -44,42 +44,42 @@ jobs:
       - name: Create bottle structure
         run: |
           VERSION=${{ steps.version.outputs.version }}
-          BOTTLE_DIR="qstack/$VERSION"
+          BOTTLE_DIR="queuestack/$VERSION"
 
           # Create Homebrew-style directory structure
           mkdir -p "$BOTTLE_DIR/bin"
-          cp target/release/qstack "$BOTTLE_DIR/bin/"
+          cp target/release/qs "$BOTTLE_DIR/bin/"
 
           # Generate shell completions
-          "$BOTTLE_DIR/bin/qstack" completions bash > "$BOTTLE_DIR/qstack.bash"
-          "$BOTTLE_DIR/bin/qstack" completions zsh > "$BOTTLE_DIR/_qstack"
-          "$BOTTLE_DIR/bin/qstack" completions fish > "$BOTTLE_DIR/qstack.fish"
+          "$BOTTLE_DIR/bin/qs" completions bash > "$BOTTLE_DIR/qs.bash"
+          "$BOTTLE_DIR/bin/qs" completions zsh > "$BOTTLE_DIR/_qs"
+          "$BOTTLE_DIR/bin/qs" completions fish > "$BOTTLE_DIR/qs.fish"
 
           mkdir -p "$BOTTLE_DIR/share/bash-completion/completions"
           mkdir -p "$BOTTLE_DIR/share/zsh/site-functions"
           mkdir -p "$BOTTLE_DIR/share/fish/vendor_completions.d"
 
-          mv "$BOTTLE_DIR/qstack.bash" "$BOTTLE_DIR/share/bash-completion/completions/qstack"
-          mv "$BOTTLE_DIR/_qstack" "$BOTTLE_DIR/share/zsh/site-functions/_qstack"
-          mv "$BOTTLE_DIR/qstack.fish" "$BOTTLE_DIR/share/fish/vendor_completions.d/qstack.fish"
+          mv "$BOTTLE_DIR/qs.bash" "$BOTTLE_DIR/share/bash-completion/completions/qs"
+          mv "$BOTTLE_DIR/_qs" "$BOTTLE_DIR/share/zsh/site-functions/_qs"
+          mv "$BOTTLE_DIR/qs.fish" "$BOTTLE_DIR/share/fish/vendor_completions.d/qs.fish"
 
       - name: Create bottle tarball
         run: |
           VERSION=${{ steps.version.outputs.version }}
           BOTTLE_TAG=${{ matrix.bottle_tag }}
 
-          tar -czf "qstack-${VERSION}.${BOTTLE_TAG}.bottle.tar.gz" qstack
+          tar -czf "queuestack-${VERSION}.${BOTTLE_TAG}.bottle.tar.gz" queuestack
 
           # Calculate SHA256
-          shasum -a 256 "qstack-${VERSION}.${BOTTLE_TAG}.bottle.tar.gz" > "qstack-${VERSION}.${BOTTLE_TAG}.bottle.tar.gz.sha256"
+          shasum -a 256 "queuestack-${VERSION}.${BOTTLE_TAG}.bottle.tar.gz" > "queuestack-${VERSION}.${BOTTLE_TAG}.bottle.tar.gz.sha256"
 
       - name: Upload bottle artifact
         uses: actions/upload-artifact@v4
         with:
           name: bottle-${{ matrix.bottle_tag }}
           path: |
-            qstack-*.bottle.tar.gz
-            qstack-*.bottle.tar.gz.sha256
+            queuestack-*.bottle.tar.gz
+            queuestack-*.bottle.tar.gz.sha256
 
   release:
     name: Create Release
@@ -110,8 +110,8 @@ jobs:
         id: bottles
         run: |
           cd bottles
-          echo "arm64_sha=$(cat qstack-${{ steps.version.outputs.version }}.arm64_sonoma.bottle.tar.gz.sha256 | cut -d' ' -f1)" >> $GITHUB_OUTPUT
-          echo "x86_64_sha=$(cat qstack-${{ steps.version.outputs.version }}.sonoma.bottle.tar.gz.sha256 | cut -d' ' -f1)" >> $GITHUB_OUTPUT
+          echo "arm64_sha=$(cat queuestack-${{ steps.version.outputs.version }}.arm64_sonoma.bottle.tar.gz.sha256 | cut -d' ' -f1)" >> $GITHUB_OUTPUT
+          echo "x86_64_sha=$(cat queuestack-${{ steps.version.outputs.version }}.sonoma.bottle.tar.gz.sha256 | cut -d' ' -f1)" >> $GITHUB_OUTPUT
 
       - name: Output bottle info
         run: |
@@ -121,7 +121,7 @@ jobs:
           echo "" >> $GITHUB_STEP_SUMMARY
           echo '```ruby' >> $GITHUB_STEP_SUMMARY
           echo "bottle do" >> $GITHUB_STEP_SUMMARY
-          echo '  root_url "https://github.com/domzilla/qstack/releases/download/${{ github.ref_name }}"' >> $GITHUB_STEP_SUMMARY
+          echo '  root_url "https://github.com/domzilla/queuestack/releases/download/${{ github.ref_name }}"' >> $GITHUB_STEP_SUMMARY
           echo '  sha256 cellar: :any_skip_relocation, arm64_sonoma: "${{ steps.bottles.outputs.arm64_sha }}"' >> $GITHUB_STEP_SUMMARY
           echo '  sha256 cellar: :any_skip_relocation, sonoma: "${{ steps.bottles.outputs.x86_64_sha }}"' >> $GITHUB_STEP_SUMMARY
           echo "end" >> $GITHUB_STEP_SUMMARY
@@ -148,15 +148,15 @@ jobs:
       - name: Calculate source SHA256
         id: source
         run: |
-          curl -sL "https://github.com/domzilla/qstack/archive/refs/tags/${{ github.ref_name }}.tar.gz" -o source.tar.gz
+          curl -sL "https://github.com/domzilla/queuestack/archive/refs/tags/${{ github.ref_name }}.tar.gz" -o source.tar.gz
           echo "sha256=$(shasum -a 256 source.tar.gz | cut -d' ' -f1)" >> $GITHUB_OUTPUT
 
       - name: Get bottle SHA256s
         id: bottles
         run: |
           cd bottles
-          echo "arm64_sha=$(cat qstack-${{ steps.version.outputs.version }}.arm64_sonoma.bottle.tar.gz.sha256 | cut -d' ' -f1)" >> $GITHUB_OUTPUT
-          echo "x86_64_sha=$(cat qstack-${{ steps.version.outputs.version }}.sonoma.bottle.tar.gz.sha256 | cut -d' ' -f1)" >> $GITHUB_OUTPUT
+          echo "arm64_sha=$(cat queuestack-${{ steps.version.outputs.version }}.arm64_sonoma.bottle.tar.gz.sha256 | cut -d' ' -f1)" >> $GITHUB_OUTPUT
+          echo "x86_64_sha=$(cat queuestack-${{ steps.version.outputs.version }}.sonoma.bottle.tar.gz.sha256 | cut -d' ' -f1)" >> $GITHUB_OUTPUT
 
       - name: Checkout homebrew-tap
         uses: actions/checkout@v4
@@ -173,17 +173,17 @@ jobs:
           ARM64_SHA=${{ steps.bottles.outputs.arm64_sha }}
           X86_64_SHA=${{ steps.bottles.outputs.x86_64_sha }}
 
-          cat > homebrew-tap/Formula/qstack.rb << 'FORMULA'
-          class Qstack < Formula
+          cat > homebrew-tap/Formula/queuestack.rb << 'FORMULA'
+          class Queuestack < Formula
             desc "Minimal, scriptable task and issue tracker for agent-driven workflows"
-            homepage "https://github.com/domzilla/qstack"
-            url "https://github.com/domzilla/qstack/archive/refs/tags/TAG_PLACEHOLDER.tar.gz"
+            homepage "https://github.com/domzilla/queuestack"
+            url "https://github.com/domzilla/queuestack/archive/refs/tags/TAG_PLACEHOLDER.tar.gz"
             sha256 "SOURCE_SHA_PLACEHOLDER"
             license "MIT"
-            head "https://github.com/domzilla/qstack.git", branch: "master"
+            head "https://github.com/domzilla/queuestack.git", branch: "master"
 
             bottle do
-              root_url "https://github.com/domzilla/qstack/releases/download/TAG_PLACEHOLDER"
+              root_url "https://github.com/domzilla/queuestack/releases/download/TAG_PLACEHOLDER"
               sha256 cellar: :any_skip_relocation, arm64_sonoma: "ARM64_SHA_PLACEHOLDER"
               sha256 cellar: :any_skip_relocation, sonoma: "X86_64_SHA_PLACEHOLDER"
             end
@@ -193,26 +193,26 @@ jobs:
             def install
               system "cargo", "install", *std_cargo_args
 
-              generate_completions_from_executable(bin/"qstack", "completions")
+              generate_completions_from_executable(bin/"qs", "completions")
             end
 
             test do
-              assert_match version.to_s, shell_output("#{bin}/qstack --version")
+              assert_match version.to_s, shell_output("#{bin}/qs --version")
             end
           end
           FORMULA
 
           # Replace placeholders
-          sed -i "s|TAG_PLACEHOLDER|${TAG}|g" homebrew-tap/Formula/qstack.rb
-          sed -i "s|SOURCE_SHA_PLACEHOLDER|${SOURCE_SHA}|g" homebrew-tap/Formula/qstack.rb
-          sed -i "s|ARM64_SHA_PLACEHOLDER|${ARM64_SHA}|g" homebrew-tap/Formula/qstack.rb
-          sed -i "s|X86_64_SHA_PLACEHOLDER|${X86_64_SHA}|g" homebrew-tap/Formula/qstack.rb
+          sed -i "s|TAG_PLACEHOLDER|${TAG}|g" homebrew-tap/Formula/queuestack.rb
+          sed -i "s|SOURCE_SHA_PLACEHOLDER|${SOURCE_SHA}|g" homebrew-tap/Formula/queuestack.rb
+          sed -i "s|ARM64_SHA_PLACEHOLDER|${ARM64_SHA}|g" homebrew-tap/Formula/queuestack.rb
+          sed -i "s|X86_64_SHA_PLACEHOLDER|${X86_64_SHA}|g" homebrew-tap/Formula/queuestack.rb
 
       - name: Commit and push formula
         run: |
           cd homebrew-tap
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add Formula/qstack.rb
-          git commit -m "Update qstack to ${{ steps.version.outputs.version }}"
+          git add Formula/queuestack.rb
+          git commit -m "Update queuestack to ${{ steps.version.outputs.version }}"
           git push

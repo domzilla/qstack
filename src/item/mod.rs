@@ -1,6 +1,6 @@
 //! # Item
 //!
-//! Represents a qstack item (task/issue) with YAML frontmatter metadata.
+//! Represents a queuestack item (task/issue) with YAML frontmatter metadata.
 //!
 //! Copyright (c) 2025 Dominic Rodemer. All rights reserved.
 //! Licensed under the MIT License.

@@ -1,6 +1,6 @@
 //! # Init Command Tests
 //!
-//! Tests for the `qstack init` command.
+//! Tests for the `qs init` command.
 //!
 //! Copyright (c) 2025 Dominic Rodemer. All rights reserved.
 //! Licensed under the MIT License.
@@ -8,7 +8,7 @@
 mod common;
 
 use common::{GlobalConfigBuilder, TestEnv};
-use qstack::commands;
+use queuestack::commands;
 
 #[test]
 fn test_init_creates_project_structure() {
@@ -44,8 +44,8 @@ fn test_init_fails_without_global_config() {
 
     let err = result.unwrap_err().to_string();
     assert!(
-        err.contains("qstack setup"),
-        "Error should mention running 'qstack setup': {err}"
+        err.contains("qs setup"),
+        "Error should mention running 'qs setup': {err}"
     );
 }
 

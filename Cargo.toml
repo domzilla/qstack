@@ -1,15 +1,19 @@
 [package]
-name = "qstack"
+name = "queuestack"
 version = "0.3.0"
 edition = "2021"
 rust-version = "1.75"
 authors = ["Dominic Rodemer"]
 license = "MIT"
 description = "Minimal, scriptable task and issue tracker for agent-driven workflows"
-repository = "https://github.com/domzilla/qstack"
+repository = "https://github.com/domzilla/queuestack"
 readme = "README.md"
 keywords = ["cli", "task", "issue", "tracker", "markdown"]
 categories = ["command-line-utilities", "development-tools"]
+
+[[bin]]
+name = "qs"
+path = "src/main.rs"
 
 [dependencies]
 clap = { version = "4", features = ["derive", "color"] }

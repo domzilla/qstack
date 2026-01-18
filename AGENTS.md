@@ -1,7 +1,7 @@
-# qstack
+# queuestack
 
 ## Project Overview
-`qstack` is a minimal, scriptable task and issue tracker optimized for agent-driven project management. Items are stored as plain Markdown files, making them human-readable, grep-friendly, and easy to integrate into any workflow.
+`queuestack` is a minimal, scriptable task and issue tracker optimized for agent-driven project management. Items are stored as plain Markdown files, making them human-readable, grep-friendly, and easy to integrate into any workflow.
 
 ## Tech Stack
 - **Language**: Rust (stable, minimum 1.75)
@@ -27,7 +27,7 @@ To bypass temporarily (not recommended): `git commit --no-verify`
 
 ## Project Structure
 ```
-qstack/
+queuestack/
 ├── src/
 │   ├── main.rs             # CLI entry point (clap derive)
 │   ├── lib.rs              # Library root, public API
@@ -44,8 +44,8 @@ qstack/
 │   │   └── slug.rs         # Title slugification
 │   ├── config/
 │   │   ├── mod.rs          # Merged config resolver
-│   │   ├── global.rs       # ~/.qstack handling
-│   │   └── project.rs      # .qstack handling
+│   │   ├── global.rs       # ~/.queuestack handling
+│   │   └── project.rs      # .queuestack handling
 │   ├── storage/
 │   │   ├── mod.rs          # File operations, ID lookup
 │   │   └── git.rs          # git mv integration
@@ -69,15 +69,15 @@ qstack/
 │   │       └── filter_overlay.rs
 │   └── commands/
 │       ├── mod.rs          # Command dispatch & shared types
-│       ├── init.rs         # qstack init
-│       ├── new.rs          # qstack new <title>
-│       ├── list.rs         # qstack list [filters] (also --labels, --categories, --attachments, --meta)
-│       ├── search.rs       # qstack search <query>
-│       ├── update.rs       # qstack update --id <id>
-│       ├── close.rs        # qstack close/reopen
-│       ├── attach.rs       # qstack attachments add/remove
-│       ├── setup.rs        # qstack setup (one-time setup)
-│       └── completions.rs  # qstack completions <shell>
+│       ├── init.rs         # qs init
+│       ├── new.rs          # qs new <title>
+│       ├── list.rs         # qs list [filters] (also --labels, --categories, --attachments, --meta)
+│       ├── search.rs       # qs search <query>
+│       ├── update.rs       # qs update --id <id>
+│       ├── close.rs        # qs close/reopen
+│       ├── attach.rs       # qs attachments add/remove
+│       ├── setup.rs        # qs setup (one-time setup)
+│       └── completions.rs  # qs completions <shell>
 ├── scripts/
 │   └── install-hooks.sh    # Git hooks installer
 ├── tests/
@@ -131,46 +131,46 @@ qstack/
 
 ## CLI Commands
 ```bash
-qstack init                                    # Initialize project
-qstack new "Title" --label bug urgent --category bugs # Create item
-qstack new                                     # Launch wizard
-qstack new "Title" --no-interactive            # Create without editor
-qstack new "Title" -i                          # Force editor open
-qstack list --open --sort date                 # List items
-qstack list --label bug --author "John"        # Filter items
-qstack list --category bugs                    # Filter by category
-qstack list --labels                           # List all unique labels
-qstack list --categories                       # List all unique categories
-qstack list --attachments --id 260109          # List attachments for item
-qstack list --attachments --file qstack/260109-*.md  # Use file path instead of ID
-qstack list --meta --id 260109                 # Show item metadata/frontmatter
-qstack search "query"                          # Search and select
-qstack search "bug" --full-text --no-interactive  # Full-text search
-qstack update --id 260109 --title "New Title"  # Update item
-qstack update --id 26 --label urgent           # Partial ID match
-qstack update --id 26 --remove-label urgent    # Remove label
-qstack update --id 26 --remove-category        # Move to qstack root
-qstack update --file path/to/item.md --title X # Update by file path
-qstack close --id 260109                       # Archive item
-qstack close --file qstack/260109-*.md         # Close by file path
-qstack reopen --id 260109                      # Restore item
-qstack reopen --file qstack/archive/260109-*.md  # Reopen by file path
-qstack attachments add --id 260109 file.png    # Add file attachment
-qstack attachments add --file path/to/item.md file.png  # Add by file path
-qstack attachments add --id 260109 https://... # Add URL attachment
-qstack attachments remove --id 260109 1        # Remove by index
-qstack setup                                   # One-time setup
-qstack completions zsh                         # Generate completions
+qs init                                    # Initialize project
+qs new "Title" --label bug urgent --category bugs # Create item
+qs new                                     # Launch wizard
+qs new "Title" --no-interactive            # Create without editor
+qs new "Title" -i                          # Force editor open
+qs list --open --sort date                 # List items
+qs list --label bug --author "John"        # Filter items
+qs list --category bugs                    # Filter by category
+qs list --labels                           # List all unique labels
+qs list --categories                       # List all unique categories
+qs list --attachments --id 260109          # List attachments for item
+qs list --attachments --file queuestack/260109-*.md  # Use file path instead of ID
+qs list --meta --id 260109                 # Show item metadata/frontmatter
+qs search "query"                          # Search and select
+qs search "bug" --full-text --no-interactive  # Full-text search
+qs update --id 260109 --title "New Title"  # Update item
+qs update --id 26 --label urgent           # Partial ID match
+qs update --id 26 --remove-label urgent    # Remove label
+qs update --id 26 --remove-category        # Move to queuestack root
+qs update --file path/to/item.md --title X # Update by file path
+qs close --id 260109                       # Archive item
+qs close --file queuestack/260109-*.md     # Close by file path
+qs reopen --id 260109                      # Restore item
+qs reopen --file queuestack/archive/260109-*.md  # Reopen by file path
+qs attachments add --id 260109 file.png    # Add file attachment
+qs attachments add --file path/to/item.md file.png  # Add by file path
+qs attachments add --id 260109 https://... # Add URL attachment
+qs attachments remove --id 260109 1        # Remove by index
+qs setup                                   # One-time setup
+qs completions zsh                         # Generate completions
 
 # Templates
-qstack new "Bug Report" --as-template          # Create a template
-qstack new "Bug Report" --as-template --category bugs  # Template in category
-qstack list --templates                        # List all templates (interactive)
-qstack list --templates --no-interactive       # List template file paths
-qstack new "My Bug" --from-template "Bug Report"  # Create from template by title
-qstack new "My Bug" --from-template bug-report # Create from template by slug
-qstack new "My Bug" --from-template 260109     # Create from template by ID
-qstack new --from-template                     # Template selection TUI
+qs new "Bug Report" --as-template          # Create a template
+qs new "Bug Report" --as-template --category bugs  # Template in category
+qs list --templates                        # List all templates (interactive)
+qs list --templates --no-interactive       # List template file paths
+qs new "My Bug" --from-template "Bug Report"  # Create from template by title
+qs new "My Bug" --from-template bug-report # Create from template by slug
+qs new "My Bug" --from-template 260109     # Create from template by ID
+qs new --from-template                     # Template selection TUI
 ```
 
 ### Template System
@@ -200,7 +200,7 @@ Templates are reusable item patterns with `status: template`. They live in the `
 ### --file Option (Scriptability)
 Commands that accept `--id` also accept `--file` as an alternative. This enables:
 - Shell tab completion for file paths
-- Piping file paths from other commands (e.g., `qstack list | xargs -I{} qstack list --meta --file {}`)
+- Piping file paths from other commands (e.g., `qs list | xargs -I{} qs list --meta --file {}`)
 - Working with items without knowing their ID
 
 The `--id` and `--file` options are mutually exclusive.
@@ -226,13 +226,13 @@ All non-interactive outputs (`--no-interactive` flag) must be **plain, scriptabl
 Tests for output format compliance are in `tests/output_format.rs`.
 
 ## Shell Completions
-Shell completion scripts are generated statically by `clap_complete`. When adding, removing, or modifying CLI commands or arguments, users must regenerate completions by running `qstack setup` again. This should be noted in release notes when CLI changes occur.
+Shell completion scripts are generated statically by `clap_complete`. When adding, removing, or modifying CLI commands or arguments, users must regenerate completions by running `qs setup` again. This should be noted in release notes when CLI changes occur.
 
 ## Storage Layout
 ```
 project-root/
-├── .qstack             # Project config (TOML)
-└── qstack/             # Item storage
+├── .queuestack             # Project config (TOML)
+└── queuestack/             # Item storage
     ├── .archive/       # Closed items (hidden, preserves category structure)
     │   ├── bugs/       # Archived items from bugs category
     │   │   └── 260109-02F7K9M-fix-login-styling.md
@@ -288,7 +288,7 @@ Default pattern `%y%m%d-%T%RRR` produces IDs like `260109-0A2B3C4`:
 - Colored error output via `owo-colors`
 
 ## Config System
-Both global (`~/.qstack`) and project (`.qstack`) configs support the same 8 options.
+Both global (`~/.queuestack`) and project (`.queuestack`) configs support the same 8 options.
 Project values override global values when set.
 
 | Option | Type | Default |
@@ -298,7 +298,7 @@ Project values override global values when set.
 | `editor` | `Option<String>` | None (supports shell quoting, e.g., `nvim -c ":normal G"`) |
 | `interactive` | `bool` | `true` |
 | `id_pattern` | `String` | `"%y%m%d-%T%RRR"` |
-| `stack_dir` | `String` | `"qstack"` |
+| `stack_dir` | `String` | `"queuestack"` |
 | `archive_dir` | `String` | `".archive"` |
 | `template_dir` | `String` | `".templates"` |
 
@@ -317,7 +317,7 @@ References:
 
 ## Homebrew Distribution
 
-qstack is distributed via Homebrew tap: `domzilla/tap`
+queuestack is distributed via Homebrew tap: `domzilla/tap`
 
 ### Release Workflow
 
@@ -335,7 +335,7 @@ Releases are automated via GitHub Actions (`.github/workflows/release.yml`):
 
 | Repository | Purpose |
 |------------|---------|
-| `domzilla/homebrew-tap` | Homebrew tap with qstack formula |
+| `domzilla/homebrew-tap` | Homebrew tap with queuestack formula |
 | Local: `/Users/dom/GIT/Homebrew/homebrew-tap` | Local checkout of tap |
 
 ### Configuration Files
@@ -355,5 +355,5 @@ Releases are automated via GitHub Actions (`.github/workflows/release.yml`):
 
 If CI fails, manually update the formula:
 1. Get source SHA256: `curl -sL <tarball_url> | shasum -a 256`
-2. Edit `/Users/dom/GIT/Homebrew/homebrew-tap/Formula/qstack.rb`
+2. Edit `/Users/dom/GIT/Homebrew/homebrew-tap/Formula/queuestack.rb`
 3. Commit and push the tap repo

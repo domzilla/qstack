@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# Install git hooks for qstack development
+# Install git hooks for queuestack development
 #
 
 set -e
@@ -15,7 +15,7 @@ echo "Installing git hooks..."
 cat > "$HOOKS_DIR/pre-commit" << 'EOF'
 #!/bin/sh
 #
-# Pre-commit hook for qstack
+# Pre-commit hook for queuestack
 # Runs the full quality gate before allowing commits
 #
 

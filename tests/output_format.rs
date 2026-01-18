@@ -13,15 +13,15 @@ use std::fs;
 use assert_cmd::Command;
 use common::{create_test_item, create_test_item_with_attachments, GlobalConfigBuilder, TestEnv};
 use predicates::prelude::*;
-use qstack::commands;
+use queuestack::commands;
 
 // =============================================================================
 // Helper Functions
 // =============================================================================
 
-/// Creates a qstack command configured to run in the test environment.
-fn qstack_cmd(env: &TestEnv) -> Command {
-    let mut cmd = Command::cargo_bin("qstack").unwrap();
+/// Creates a qs command configured to run in the test environment.
+fn qs_cmd(env: &TestEnv) -> Command {
+    let mut cmd = Command::cargo_bin("qs").unwrap();
     cmd.current_dir(env.project_dir.path());
     cmd.env("HOME", env.home_dir.path());
     cmd
@@ -40,12 +40,12 @@ fn test_list_items_output_plain_paths() {
     create_test_item(&env, "260101-AAA", "First Task", "open", &[], None);
     create_test_item(&env, "260102-BBB", "Second Task", "open", &[], None);
 
-    qstack_cmd(&env)
+    qs_cmd(&env)
         .args(["list", "--no-interactive"])
         .assert()
         .success()
-        .stdout(predicate::str::contains("qstack/260101-AAA-first-task.md"))
-        .stdout(predicate::str::contains("qstack/260102-BBB-second-task.md"))
+        .stdout(predicate::str::contains("queuestack/260101-AAA-first-task.md"))
+        .stdout(predicate::str::contains("queuestack/260102-BBB-second-task.md"))
         // No headers or explanatory text
         .stdout(predicate::str::contains("ID").not())
         .stdout(predicate::str::contains("Title").not())
@@ -61,7 +61,7 @@ fn test_list_items_empty_no_extra_output() {
     commands::init().expect("init");
 
     // Empty list should just print "No items found." - nothing else
-    qstack_cmd(&env)
+    qs_cmd(&env)
         .args(["list", "--no-interactive"])
         .assert()
         .success()
@@ -78,7 +78,7 @@ fn test_list_items_one_per_line() {
     create_test_item(&env, "260102-BBB", "Task Two", "open", &[], None);
     create_test_item(&env, "260103-CCC", "Task Three", "open", &[], None);
 
-    let output = qstack_cmd(&env)
+    let output = qs_cmd(&env)
         .args(["list", "--no-interactive"])
         .assert()
         .success()
@@ -127,7 +127,7 @@ fn test_list_labels_output_plain_format() {
         None,
     );
 
-    qstack_cmd(&env)
+    qs_cmd(&env)
         .args(["list", "--labels", "--no-interactive"])
         .assert()
         .success()
@@ -151,7 +151,7 @@ fn test_list_labels_empty_no_extra_output() {
     // Item with no labels
     create_test_item(&env, "260101-AAA", "Task", "open", &[], None);
 
-    qstack_cmd(&env)
+    qs_cmd(&env)
         .args(["list", "--labels", "--no-interactive"])
         .assert()
         .success()
@@ -173,7 +173,7 @@ fn test_list_labels_one_per_line() {
         None,
     );
 
-    let output = qstack_cmd(&env)
+    let output = qs_cmd(&env)
         .args(["list", "--labels", "--no-interactive"])
         .assert()
         .success()
@@ -220,7 +220,7 @@ fn test_list_labels_includes_closed_labels_with_zero_count() {
     )
     .expect("move to archive");
 
-    let output = qstack_cmd(&env)
+    let output = qs_cmd(&env)
         .args(["list", "--labels", "--no-interactive"])
         .assert()
         .success()
@@ -254,7 +254,7 @@ fn test_list_categories_output_plain_format() {
     create_test_item(&env, "260101-AAA", "Bug", "open", &[], Some("bugs"));
     create_test_item(&env, "260102-BBB", "Feature", "open", &[], Some("features"));
 
-    qstack_cmd(&env)
+    qs_cmd(&env)
         .args(["list", "--categories", "--no-interactive"])
         .assert()
         .success()
@@ -276,7 +276,7 @@ fn test_list_categories_uncategorized_format() {
     // Item without category
     create_test_item(&env, "260101-AAA", "Task", "open", &[], None);
 
-    qstack_cmd(&env)
+    qs_cmd(&env)
         .args(["list", "--categories", "--no-interactive"])
         .assert()
         .success()
@@ -292,7 +292,7 @@ fn test_list_categories_empty_no_extra_output() {
     commands::init().expect("init");
 
     // No items at all
-    qstack_cmd(&env)
+    qs_cmd(&env)
         .args(["list", "--categories", "--no-interactive"])
         .assert()
         .success()
@@ -326,7 +326,7 @@ fn test_list_categories_includes_closed_categories_with_zero_count() {
     )
     .expect("move to archive");
 
-    let output = qstack_cmd(&env)
+    let output = qs_cmd(&env)
         .args(["list", "--categories", "--no-interactive"])
         .assert()
         .success()
@@ -357,7 +357,7 @@ fn test_list_categories_one_per_line() {
     create_test_item(&env, "260102-BBB", "Feature", "open", &[], Some("features"));
     create_test_item(&env, "260103-CCC", "Uncategorized", "open", &[], None);
 
-    let output = qstack_cmd(&env)
+    let output = qs_cmd(&env)
         .args(["list", "--categories", "--no-interactive"])
         .assert()
         .success()
@@ -401,7 +401,7 @@ fn test_list_attachments_output_plain_format() {
         None,
     );
 
-    qstack_cmd(&env)
+    qs_cmd(&env)
         .args(["list", "--attachments", "--id", "260101"])
         .assert()
         .success()
@@ -423,7 +423,7 @@ fn test_list_attachments_empty_no_extra_output() {
 
     create_test_item(&env, "260101-AAA", "Task", "open", &[], None);
 
-    qstack_cmd(&env)
+    qs_cmd(&env)
         .args(["list", "--attachments", "--id", "260101"])
         .assert()
         .success()
@@ -449,7 +449,7 @@ fn test_list_attachments_one_per_line() {
         None,
     );
 
-    let output = qstack_cmd(&env)
+    let output = qs_cmd(&env)
         .args(["list", "--attachments", "--id", "260101"])
         .assert()
         .success()
@@ -469,7 +469,7 @@ fn test_list_attachments_requires_id() {
     env.write_global_config(&GlobalConfigBuilder::new().interactive(false).build());
     commands::init().expect("init");
 
-    qstack_cmd(&env)
+    qs_cmd(&env)
         .args(["list", "--attachments"])
         .assert()
         .failure()
@@ -495,7 +495,7 @@ fn test_list_meta_output_plain_format() {
         Some("bugs"),
     );
 
-    qstack_cmd(&env)
+    qs_cmd(&env)
         .args(["list", "--meta", "--id", "260101"])
         .assert()
         .success()
@@ -520,7 +520,7 @@ fn test_list_meta_empty_labels() {
 
     create_test_item(&env, "260101-AAA", "Task", "open", &[], None);
 
-    let output = qstack_cmd(&env)
+    let output = qs_cmd(&env)
         .args(["list", "--meta", "--id", "260101"])
         .assert()
         .success()
@@ -545,7 +545,7 @@ fn test_list_meta_no_category() {
 
     create_test_item(&env, "260101-AAA", "Task", "open", &[], None);
 
-    let output = qstack_cmd(&env)
+    let output = qs_cmd(&env)
         .args(["list", "--meta", "--id", "260101"])
         .assert()
         .success()
@@ -568,7 +568,7 @@ fn test_list_meta_requires_id() {
     env.write_global_config(&GlobalConfigBuilder::new().interactive(false).build());
     commands::init().expect("init");
 
-    qstack_cmd(&env)
+    qs_cmd(&env)
         .args(["list", "--meta"])
         .assert()
         .failure()
@@ -590,7 +590,7 @@ fn test_list_meta_with_attachments() {
         None,
     );
 
-    qstack_cmd(&env)
+    qs_cmd(&env)
         .args(["list", "--meta", "--id", "260101"])
         .assert()
         .success()
@@ -614,7 +614,7 @@ fn test_all_outputs_no_ansi_codes_when_not_tty() {
     create_test_item(&env, "260101-AAA", "Task", "open", &["bug"], Some("bugs"));
 
     // Check list items
-    let output = qstack_cmd(&env)
+    let output = qs_cmd(&env)
         .args(["list", "--no-interactive"])
         .assert()
         .success()
@@ -627,7 +627,7 @@ fn test_all_outputs_no_ansi_codes_when_not_tty() {
     );
 
     // Check list labels
-    let output = qstack_cmd(&env)
+    let output = qs_cmd(&env)
         .args(["list", "--labels", "--no-interactive"])
         .assert()
         .success()
@@ -640,7 +640,7 @@ fn test_all_outputs_no_ansi_codes_when_not_tty() {
     );
 
     // Check list categories
-    let output = qstack_cmd(&env)
+    let output = qs_cmd(&env)
         .args(["list", "--categories", "--no-interactive"])
         .assert()
         .success()
@@ -669,7 +669,7 @@ fn test_output_ends_with_newline() {
         vec!["list", "--attachments", "--id", "260101"],
         vec!["list", "--meta", "--id", "260101"],
     ] {
-        let output = qstack_cmd(&env)
+        let output = qs_cmd(&env)
             .args(&args)
             .assert()
             .success()
@@ -705,7 +705,7 @@ fn test_list_attachments_with_file_option() {
     );
 
     // Use --file instead of --id
-    qstack_cmd(&env)
+    qs_cmd(&env)
         .args([
             "list",
             "--attachments",
@@ -735,7 +735,7 @@ fn test_list_meta_with_file_option() {
     );
 
     // Use --file instead of --id
-    qstack_cmd(&env)
+    qs_cmd(&env)
         .args(["list", "--meta", "--file", item_path.to_str().unwrap()])
         .assert()
         .success()
@@ -754,7 +754,7 @@ fn test_update_with_file_option() {
     let item_path = create_test_item(&env, "260101-AAA", "Original Title", "open", &[], None);
 
     // Update using --file
-    qstack_cmd(&env)
+    qs_cmd(&env)
         .args([
             "update",
             "--file",
@@ -779,7 +779,7 @@ fn test_close_with_file_option() {
     let item_path = create_test_item(&env, "260101-AAA", "Task to Close", "open", &[], None);
 
     // Close using --file
-    qstack_cmd(&env)
+    qs_cmd(&env)
         .args(["close", "--file", item_path.to_str().unwrap()])
         .assert()
         .success();
@@ -800,7 +800,7 @@ fn test_reopen_with_file_option() {
 
     // Create and close an item
     create_test_item(&env, "260101-AAA", "Task to Reopen", "open", &[], None);
-    qstack_cmd(&env)
+    qs_cmd(&env)
         .args(["close", "--id", "260101"])
         .assert()
         .success();
@@ -809,7 +809,7 @@ fn test_reopen_with_file_option() {
     let archived_path = env.archive_path().join("260101-AAA-task-to-reopen.md");
 
     // Reopen using --file
-    qstack_cmd(&env)
+    qs_cmd(&env)
         .args(["reopen", "--file", archived_path.to_str().unwrap()])
         .assert()
         .success();
@@ -832,7 +832,7 @@ fn test_file_and_id_mutually_exclusive() {
     let item_path = create_test_item(&env, "260101-AAA", "Task", "open", &[], None);
 
     // Both --id and --file should fail
-    qstack_cmd(&env)
+    qs_cmd(&env)
         .args([
             "list",
             "--meta",
@@ -855,8 +855,8 @@ fn test_file_option_relative_path() {
     create_test_item(&env, "260101-AAA", "Task", "open", &["bug"], None);
 
     // Use relative path from project directory
-    qstack_cmd(&env)
-        .args(["list", "--meta", "--file", "qstack/260101-AAA-task.md"])
+    qs_cmd(&env)
+        .args(["list", "--meta", "--file", "queuestack/260101-AAA-task.md"])
         .assert()
         .success()
         .stdout(predicate::str::contains("id: 260101-AAA"))
@@ -869,8 +869,8 @@ fn test_file_option_nonexistent_file() {
     env.write_global_config(&GlobalConfigBuilder::new().interactive(false).build());
     commands::init().expect("init");
 
-    qstack_cmd(&env)
-        .args(["list", "--meta", "--file", "qstack/nonexistent-file.md"])
+    qs_cmd(&env)
+        .args(["list", "--meta", "--file", "queuestack/nonexistent-file.md"])
         .assert()
         .failure()
         .stderr(predicate::str::contains("not found").or(predicate::str::contains("No such file")));

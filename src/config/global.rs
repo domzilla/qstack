@@ -1,6 +1,6 @@
 //! # Global Configuration
 //!
-//! Handles the global user configuration stored at `~/.qstack`.
+//! Handles the global user configuration stored at `~/.queuestack`.
 //!
 //! Copyright (c) 2025 Dominic Rodemer. All rights reserved.
 //! Licensed under the MIT License.
@@ -88,7 +88,7 @@ fn get_home_override() -> Option<PathBuf> {
     HOME_OVERRIDE.with(|cell| cell.borrow().clone())
 }
 
-/// Global configuration stored at ~/.qstack
+/// Global configuration stored at ~/.queuestack
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct GlobalConfig {
     /// User's display name
@@ -111,7 +111,7 @@ pub struct GlobalConfig {
     #[serde(default = "default_id_pattern", alias = "default_id_pattern")]
     pub id_pattern: String,
 
-    /// Directory name for storing items (default: "qstack")
+    /// Directory name for storing items (default: "queuestack")
     #[serde(default)]
     pub stack_dir: Option<String>,
 
@@ -149,7 +149,7 @@ fn default_id_pattern() -> String {
 }
 
 impl GlobalConfig {
-    /// Returns the path to the global config file (~/.qstack)
+    /// Returns the path to the global config file (~/.queuestack)
     ///
     /// Checks for a thread-local home override first (used by tests),
     /// then falls back to the actual home directory.
@@ -161,18 +161,15 @@ impl GlobalConfig {
         dirs::home_dir().map(|home| home.join(GLOBAL_CONFIG_FILE))
     }
 
-    /// Loads the global config from ~/.qstack.
-    /// Fails if the config doesn't exist — user must run `qstack setup` first.
+    /// Loads the global config from ~/.queuestack.
+    /// Fails if the config doesn't exist — user must run `qs setup` first.
     pub fn load() -> Result<Self> {
         let Some(path) = Self::path() else {
             anyhow::bail!("Could not determine home directory");
         };
 
         if !path.exists() {
-            anyhow::bail!(
-                "Global config not found. Run {} first.",
-                "qstack setup".green()
-            );
+            anyhow::bail!("Global config not found. Run {} first.", "qs setup".green());
         }
 
         let content = fs::read_to_string(&path)
@@ -183,7 +180,7 @@ impl GlobalConfig {
     }
 
     /// Creates the global config with default values and comments.
-    /// Used by `qstack setup`. Returns true if created, false if already exists.
+    /// Used by `qs setup`. Returns true if created, false if already exists.
     pub fn create_default_if_missing() -> Result<bool> {
         let Some(path) = Self::path() else {
             anyhow::bail!("Could not determine home directory");
@@ -198,7 +195,7 @@ impl GlobalConfig {
         Ok(true)
     }
 
-    /// Saves the global config to ~/.qstack
+    /// Saves the global config to ~/.queuestack
     pub fn save(&self) -> Result<()> {
         let Some(path) = Self::path() else {
             anyhow::bail!("Could not determine home directory");
@@ -239,9 +236,9 @@ impl GlobalConfig {
         let id_pattern_line = format!("id_pattern = \"{}\"", config.id_pattern);
 
         let content = format!(
-            r#"# qstack Global Configuration
-# This file configures qstack behavior across all projects.
-# Location: ~/.qstack
+            r#"# queuestack Global Configuration
+# This file configures queuestack behavior across all projects.
+# Location: ~/.queuestack
 
 # Your display name used as the author when creating new items.
 # If not set, falls back to git user.name (if use_git_user is true).
@@ -284,15 +281,15 @@ interactive = {interactive}
 
 # Default directory name for storing items (relative to project root).
 # Used when initializing new projects. Can be overridden per-project.
-# Default: "qstack"
+# Default: "queuestack"
 {stack_dir_line}
 
-# Default subdirectory name for archived (closed) items within the qstack directory.
+# Default subdirectory name for archived (closed) items within the queuestack directory.
 # Used when initializing new projects. Can be overridden per-project.
 # Default: ".archive"
 {archive_dir_line}
 
-# Default subdirectory name for templates within the qstack directory.
+# Default subdirectory name for templates within the queuestack directory.
 # Used when initializing new projects. Can be overridden per-project.
 # Default: ".templates"
 {template_dir_line}
@@ -311,7 +308,7 @@ interactive = {interactive}
             .with_context(|| format!("Failed to write global config: {}", path.display()))
     }
 
-    /// Returns the effective qstack directory name
+    /// Returns the effective queuestack directory name
     pub fn stack_dir(&self) -> &str {
         self.stack_dir.as_deref().unwrap_or(DEFAULT_STACK_DIR)
     }
@@ -436,7 +433,7 @@ interactive = {interactive}
         eprintln!(
             "{} Saved user name to {}",
             "✓".green(),
-            Self::path().map_or_else(|| "~/.qstack".to_string(), |p| p.display().to_string())
+            Self::path().map_or_else(|| "~/.queuestack".to_string(), |p| p.display().to_string())
         );
 
         Ok(Some(name))
@@ -453,7 +450,7 @@ mod tests {
         assert!(config.use_git_user);
         assert!(config.interactive);
         assert_eq!(config.id_pattern, DEFAULT_PATTERN);
-        assert_eq!(config.stack_dir(), "qstack");
+        assert_eq!(config.stack_dir(), "queuestack");
         assert_eq!(config.archive_dir(), ".archive");
         assert_eq!(config.template_dir(), ".templates");
     }
@@ -487,12 +484,12 @@ default_id_pattern = "%y%j-%RRR"
         // Set thread-local override
         set_home_override(Some(temp.path().to_path_buf()));
         let path = GlobalConfig::path().unwrap();
-        assert_eq!(path, temp.path().join(".qstack"));
+        assert_eq!(path, temp.path().join(".queuestack"));
 
         // Clear override - should fall back to real home dir
         set_home_override(None);
         let path = GlobalConfig::path();
         assert!(path.is_some());
-        assert_ne!(path.unwrap(), temp.path().join(".qstack"));
+        assert_ne!(path.unwrap(), temp.path().join(".queuestack"));
     }
 }

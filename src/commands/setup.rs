@@ -1,6 +1,6 @@
 //! # Setup Command
 //!
-//! One-time setup for qstack: creates global config and installs shell completions.
+//! One-time setup for queuestack: creates global config and installs shell completions.
 //!
 //! Copyright (c) 2025 Dominic Rodemer. All rights reserved.
 //! Licensed under the MIT License.
@@ -37,7 +37,7 @@ use super::completions::generate_to_string;
 /// The `cmd` parameter should be a clone of the CLI command for generating completions.
 /// The `shell_override` parameter allows explicit shell specification, bypassing detection.
 pub fn execute(cmd: &mut Command, shell_override: Option<Shell>) -> Result<()> {
-    eprintln!("{}\n", "Setting up qstack...".bold());
+    eprintln!("{}\n", "Setting up queuestack...".bold());
 
     // Step 1: Ensure global config exists
     setup_global_config()?;
@@ -270,7 +270,7 @@ fn print_activation_instructions(shell: Shell, install_path: &Path) {
         }
         Shell::Elvish => {
             eprintln!("\n  {} Add to ~/.config/elvish/rc.elv:", "→".cyan(),);
-            eprintln!("    {}", "use qstack".dimmed());
+            eprintln!("    {}", "use qs".dimmed());
         }
         _ => {}
     }
@@ -289,13 +289,13 @@ fn print_manual_instructions(shell: Shell) {
             );
             eprintln!(
                 "    {}",
-                "Invoke-Expression (& qstack completions powershell | Out-String)".dimmed()
+                "Invoke-Expression (& qs completions powershell | Out-String)".dimmed()
             );
         }
         _ => {
             eprintln!(
                 "    Run: {} {} > <completions-file>",
-                "qstack completions".green(),
+                "qs completions".green(),
                 format!("{shell:?}").to_lowercase().cyan()
             );
         }

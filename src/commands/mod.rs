@@ -1,6 +1,6 @@
 //! # Commands
 //!
-//! CLI command implementations for qstack.
+//! CLI command implementations for queuestack.
 //!
 //! Copyright (c) 2025 Dominic Rodemer. All rights reserved.
 //! Licensed under the MIT License.

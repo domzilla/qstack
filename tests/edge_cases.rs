@@ -9,7 +9,7 @@
 mod common;
 
 use common::{create_test_item, GlobalConfigBuilder, TestEnv};
-use qstack::commands::{self, InteractiveArgs, NewArgs, UpdateArgs};
+use queuestack::commands::{self, InteractiveArgs, NewArgs, UpdateArgs};
 
 // =============================================================================
 // Special Characters and Unicode

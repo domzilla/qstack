@@ -14,7 +14,7 @@ use super::Item;
 
 /// Unified filter criteria for item filtering.
 ///
-/// Used by both CLI commands (`qstack list`) and TUI filter overlay.
+/// Used by both CLI commands (`qs list`) and TUI filter overlay.
 /// All fields are optional - empty/None means "match all".
 #[derive(Debug, Clone, Default)]
 pub struct FilterCriteria {

@@ -1,6 +1,6 @@
 //! # Labels Command Tests
 //!
-//! Tests for the `qstack list --labels` command.
+//! Tests for the `qs list --labels` command.
 //!
 //! Copyright (c) 2025 Dominic Rodemer. All rights reserved.
 //! Licensed under the MIT License.
@@ -8,7 +8,7 @@
 mod common;
 
 use common::{create_test_item, GlobalConfigBuilder, TestEnv};
-use qstack::commands::{self, InteractiveArgs, ListMode, ListOptions, SortBy, StatusFilter};
+use queuestack::commands::{self, InteractiveArgs, ListMode, ListOptions, SortBy, StatusFilter};
 
 #[test]
 fn test_labels_empty_project() {

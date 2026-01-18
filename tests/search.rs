@@ -1,6 +1,6 @@
 //! # Search Command Tests
 //!
-//! Tests for the `qstack search` command.
+//! Tests for the `qs search` command.
 //!
 //! Copyright (c) 2025 Dominic Rodemer. All rights reserved.
 //! Licensed under the MIT License.
@@ -8,7 +8,7 @@
 mod common;
 
 use common::{create_test_item, GlobalConfigBuilder, TestEnv};
-use qstack::commands::{self, InteractiveArgs, SearchArgs};
+use queuestack::commands::{self, InteractiveArgs, SearchArgs};
 
 #[test]
 fn test_search_by_title() {

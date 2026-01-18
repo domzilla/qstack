@@ -1,6 +1,6 @@
 //! # Update Command
 //!
-//! Updates an existing qstack item.
+//! Updates an existing queuestack item.
 //!
 //! Copyright (c) 2025 Dominic Rodemer. All rights reserved.
 //! Licensed under the MIT License.

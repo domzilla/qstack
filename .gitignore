@@ -15,7 +15,12 @@ Cargo.lock
 # Test artifacts
 *.log
 
-#qstack
+# queuestack
+/.queuestack
+/queuestack/
+/queuestack-testdata
+
+# Legacy (pre-rename)
 /.qstack
 /qstack/
 /qstack-testdata

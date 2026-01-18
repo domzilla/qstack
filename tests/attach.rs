@@ -1,6 +1,6 @@
 //! # Attachment Command Tests
 //!
-//! Tests for the `qstack attachments add`, `qstack attachments remove`, and `qstack list --attachments` commands.
+//! Tests for the `qs attachments add`, `qs attachments remove`, and `qs list --attachments` commands.
 //!
 //! Copyright (c) 2025 Dominic Rodemer. All rights reserved.
 //! Licensed under the MIT License.
@@ -8,7 +8,7 @@
 mod common;
 
 use common::{create_test_item, create_test_item_with_attachments, GlobalConfigBuilder, TestEnv};
-use qstack::commands::{
+use queuestack::commands::{
     self, AttachAddArgs, AttachRemoveArgs, InteractiveArgs, ListMode, ListOptions, SortBy,
     StatusFilter, UpdateArgs,
 };

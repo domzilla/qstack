@@ -1,6 +1,6 @@
-//! # qstack CLI
+//! # queuestack CLI
 //!
-//! Command-line interface for the qstack task/issue tracker.
+//! Command-line interface for the queuestack task/issue tracker.
 //!
 //! Copyright (c) 2025 Dominic Rodemer. All rights reserved.
 //! Licensed under the MIT License.
@@ -12,7 +12,7 @@ use owo_colors::OwoColorize;
 
 use clap::CommandFactory;
 use clap_complete::Shell;
-use qstack::commands::{
+use queuestack::commands::{
     self, AttachAddArgs, AttachRemoveArgs, InteractiveArgs, ListMode, ListOptions, NewArgs,
     SearchArgs, SortBy, StatusFilter, UpdateArgs,
 };
@@ -51,8 +51,8 @@ macro_rules! global_help {
         concat!(
             h!("Configuration Files:"),
             "\n  ",
-            "~/.qstack          Global configuration (user name, editor, ID pattern)\n  ",
-            ".qstack            Project configuration (qstack directory, archive directory)\n\n",
+            "~/.queuestack      Global configuration (user name, editor, ID pattern)\n  ",
+            ".queuestack        Project configuration (queuestack directory, archive directory)\n\n",
             h!("ID Pattern Tokens:"),
             "\n  ",
             "%y  Year (2 digits)           %m  Month (01-12)\n  ",
@@ -61,34 +61,34 @@ macro_rules! global_help {
             "%%  Literal percent sign\n\n",
             h!("Getting Started:"),
             "\n  ",
-            c!("qstack init"),
-            "                    Initialize project in current directory\n  ",
-            c!("qstack new "),
+            c!("qs init"),
+            "                        Initialize project in current directory\n  ",
+            c!("qs new "),
             a!("\"My first task\""),
-            "     Create a new item\n  ",
-            c!("qstack list"),
-            "                    List all open items\n  ",
-            c!("qstack close --id "),
+            "         Create a new item\n  ",
+            c!("qs list"),
+            "                        List all open items\n  ",
+            c!("qs close --id "),
             a!("<ID>"),
-            "         Close an item\n\n",
+            "             Close an item\n\n",
             h!("Learn more:"),
             "\n  ",
-            c!("qstack "),
+            c!("qs "),
             a!("<COMMAND>"),
             c!(" --help"),
-            "        Show detailed help for a command"
+            "            Show detailed help for a command"
         )
     };
 }
 
 #[derive(Parser)]
-#[command(name = "qstack")]
+#[command(name = "qs")]
 #[command(author = "Dominic Rodemer")]
 #[command(version)]
 #[command(styles = STYLES)]
 #[command(about = "Minimal, scriptable task and issue tracker for agent-driven workflows")]
 #[command(
-    long_about = "qstack is a minimal, scriptable task and issue tracker optimized for agent-driven \
+    long_about = "queuestack is a minimal, scriptable task and issue tracker optimized for agent-driven \
 project management. Items are stored as plain Markdown files, making them human-readable, \
 grep-friendly, and easy to integrate into any workflow.
 
@@ -102,19 +102,19 @@ struct Cli {
 
 #[derive(Subcommand)]
 enum Commands {
-    /// Initialize a new qstack project in the current directory
+    /// Initialize a new queuestack project in the current directory
     #[command(
-        long_about = "Initialize a new qstack project in the current directory.\n\n\
-Creates a .qstack configuration file and the qstack directory structure. \
+        long_about = "Initialize a new queuestack project in the current directory.\n\n\
+Creates a .queuestack configuration file and the queuestack directory structure. \
 The configuration file contains all available options with detailed comments.\n\n\
 Directory structure created:\n  \
-.qstack              Project configuration file\n  \
-qstack/              Directory for items\n  \
-qstack/.archive/     Archive directory for closed items",
+.queuestack              Project configuration file\n  \
+queuestack/              Directory for items\n  \
+queuestack/.archive/     Archive directory for closed items",
         after_help = concat!(
             h!("Examples:"), "\n  ",
-            c!("qstack init"), "                     Initialize in current directory\n  ",
-            c!("cd myproject && qstack init"), "     Initialize in a specific project\n\n",
+            c!("qs init"), "                         Initialize in current directory\n  ",
+            c!("cd myproject && qs init"), "         Initialize in a specific project\n\n",
             h!("Note:"), " Run this command once per project, typically at the repository root."
         )
     )]
@@ -128,23 +128,23 @@ your editor based on the 'interactive' config setting (default: true). Use -i to
 force the editor to open, or --no-interactive to skip it.\n\n\
 The filename is derived from the ID and a slugified title (e.g., '260109-0A2B3C4-fix-login-bug.md').\n\n\
 The author is determined from (in order):\n  \
-1. user_name in ~/.qstack\n  \
+1. user_name in ~/.queuestack\n  \
 2. git config user.name (if use_git_user is true)\n  \
-3. Interactive prompt (saved to ~/.qstack for future use)\n\n\
+3. Interactive prompt (saved to ~/.queuestack for future use)\n\n\
 Templates:\n  \
 --as-template     Create a template instead of an item\n  \
 --from-template   Create an item from an existing template",
         after_help = concat!(
             h!("Examples:"), "\n  ",
-            c!("qstack new "), a!("\"Fix login bug\""), "\n  ",
-            c!("qstack new "), a!("\"Add dark mode\""), c!(" --label "), a!("feature ui"), "\n  ",
-            c!("qstack new "), a!("\"Memory leak\""), c!(" --label "), a!("bug urgent"), c!(" --category "), a!("bugs"), "\n  ",
-            c!("qstack new "), a!("\"Bug report\""), c!(" --attachment "), a!("screenshot.png debug.log"), "\n  ",
-            c!("qstack new "), a!("\"Quick note\""), c!(" --no-interactive"), "       Skip editor\n\n",
+            c!("qs new "), a!("\"Fix login bug\""), "\n  ",
+            c!("qs new "), a!("\"Add dark mode\""), c!(" --label "), a!("feature ui"), "\n  ",
+            c!("qs new "), a!("\"Memory leak\""), c!(" --label "), a!("bug urgent"), c!(" --category "), a!("bugs"), "\n  ",
+            c!("qs new "), a!("\"Bug report\""), c!(" --attachment "), a!("screenshot.png debug.log"), "\n  ",
+            c!("qs new "), a!("\"Quick note\""), c!(" --no-interactive"), "       Skip editor\n\n",
             h!("Templates:"), "\n  ",
-            c!("qstack new --as-template "), a!("\"Bug Report\""), "  Create a template\n  ",
-            c!("qstack new --from-template "), a!("bug-report"), " ", a!("\"Fix login\""), "  From template\n  ",
-            c!("qstack new --from-template"), "                   Select template interactively\n\n",
+            c!("qs new --as-template "), a!("\"Bug Report\""), "      Create a template\n  ",
+            c!("qs new --from-template "), a!("bug-report"), " ", a!("\"Fix login\""), "  From template\n  ",
+            c!("qs new --from-template"), "                       Select template interactively\n\n",
             h!("Output:"), " Prints the relative path to the created file."
         )
     )]
@@ -211,17 +211,17 @@ Special modes:\n  \
 --templates     List all templates",
         after_help = concat!(
             h!("Examples:"), "\n  ",
-            c!("qstack list"), "                        List items, select one to open\n  ",
-            c!("qstack list --no-interactive"), "       Just print the list\n  ",
-            c!("qstack list --closed"), "               List archived/closed items\n  ",
-            c!("qstack list --label "), a!("bug"), "            Filter by label\n  ",
-            c!("qstack list --author "), a!("\"John\""), "        Filter by author\n  ",
-            c!("qstack list --sort "), a!("date"), "            Sort by creation date\n  ",
-            c!("qstack list --labels"), "               List all unique labels\n  ",
-            c!("qstack list --categories"), "           List all unique categories\n  ",
-            c!("qstack list --attachments --id "), a!("260109"), "  List attachments for item\n  ",
-            c!("qstack list --meta --id "), a!("260109"), "         Show item metadata\n  ",
-            c!("qstack list --templates"), "            List all templates\n\n",
+            c!("qs list"), "                            List items, select one to open\n  ",
+            c!("qs list --no-interactive"), "           Just print the list\n  ",
+            c!("qs list --closed"), "                   List archived/closed items\n  ",
+            c!("qs list --label "), a!("bug"), "                Filter by label\n  ",
+            c!("qs list --author "), a!("\"John\""), "            Filter by author\n  ",
+            c!("qs list --sort "), a!("date"), "                Sort by creation date\n  ",
+            c!("qs list --labels"), "                   List all unique labels\n  ",
+            c!("qs list --categories"), "               List all unique categories\n  ",
+            c!("qs list --attachments --id "), a!("260109"), "      List attachments for item\n  ",
+            c!("qs list --meta --id "), a!("260109"), "             Show item metadata\n  ",
+            c!("qs list --templates"), "                List all templates\n\n",
             h!("Interactive mode:"), " Use arrow keys to navigate, Enter to select, Esc to cancel."
         )
     )]
@@ -350,11 +350,11 @@ Search behavior:\n  \
 Use --full-text to also search within the markdown body content.",
         after_help = concat!(
             h!("Examples:"), "\n  ",
-            c!("qstack search "), a!("\"login bug\""), "             Search and select interactively\n  ",
-            c!("qstack search "), a!("\"260109-0A2B3C4\""), "        Search by ID\n  ",
-            c!("qstack search "), a!("\"auth\""), c!(" --full-text"), "      Include body content in search\n  ",
-            c!("qstack search "), a!("\"bug\""), c!(" --no-interactive"), "  Just list matching items\n  ",
-            c!("qstack search "), a!("\"old task\""), c!(" --closed"), "     Search in archived items\n\n",
+            c!("qs search "), a!("\"login bug\""), "                 Search and select interactively\n  ",
+            c!("qs search "), a!("\"260109-0A2B3C4\""), "            Search by ID\n  ",
+            c!("qs search "), a!("\"auth\""), c!(" --full-text"), "          Include body content in search\n  ",
+            c!("qs search "), a!("\"bug\""), c!(" --no-interactive"), "      Just list matching items\n  ",
+            c!("qs search "), a!("\"old task\""), c!(" --closed"), "         Search in archived items\n\n",
             h!("Interactive mode:"), " Use arrow keys to navigate, Enter to select, Esc to cancel."
         )
     )]
@@ -394,11 +394,11 @@ Labels are additive - new labels are added without removing existing ones. \
 To modify labels directly, edit the Markdown file.",
         after_help = concat!(
             h!("Examples:"), "\n  ",
-            c!("qstack update --id "), a!("260109-0A2B3C4"), c!(" --title "), a!("\"New title\""), "\n  ",
-            c!("qstack update --id "), a!("2601"), c!(" --label "), a!("urgent p1"), "  Partial ID\n  ",
-            c!("qstack update --id "), a!("260109-0A2B3C4"), c!(" --category "), a!("bugs"), "\n  ",
-            c!("qstack update --id "), a!("260109-0A2B3C4"), c!(" --remove-category"), "  Move to qstack root\n  ",
-            c!("qstack update --id "), a!("26"), c!(" --title "), a!("\"Fix\""), c!(" --label "), a!("done"), "  Partial ID\n\n",
+            c!("qs update --id "), a!("260109-0A2B3C4"), c!(" --title "), a!("\"New title\""), "\n  ",
+            c!("qs update --id "), a!("2601"), c!(" --label "), a!("urgent p1"), "      Partial ID\n  ",
+            c!("qs update --id "), a!("260109-0A2B3C4"), c!(" --category "), a!("bugs"), "\n  ",
+            c!("qs update --id "), a!("260109-0A2B3C4"), c!(" --remove-category"), "  Move to queuestack root\n  ",
+            c!("qs update --id "), a!("26"), c!(" --title "), a!("\"Fix\""), c!(" --label "), a!("done"), "      Partial ID\n\n",
             h!("Note:"), " The --id flag supports partial matching for convenience."
         ),
         group = ArgGroup::new("item_ref").required(true)
@@ -446,7 +446,7 @@ To modify labels directly, edit the Markdown file.",
         #[arg(
             long,
             conflicts_with = "category",
-            help = "Remove from category (move to qstack root)"
+            help = "Remove from category (move to queuestack root)"
         )]
         remove_category: bool,
     },
@@ -454,15 +454,15 @@ To modify labels directly, edit the Markdown file.",
     /// Close an item (move to archive)
     #[command(
         long_about = "Close an item by moving it to the archive directory.\n\n\
-Sets the item's status to 'closed' and moves it from the qstack directory to the \
+Sets the item's status to 'closed' and moves it from the queuestack directory to the \
 archive subdirectory. In Git repositories, uses 'git mv' to preserve history.\n\n\
-Closed items are excluded from 'qstack list' by default (use --closed to see them).",
+Closed items are excluded from 'qs list' by default (use --closed to see them).",
         after_help = concat!(
             h!("Examples:"), "\n  ",
-            c!("qstack close --id "), a!("260109-0A2B3C4"), "      Close by full ID\n  ",
-            c!("qstack close --id "), a!("2601"), "                Close by partial ID\n  ",
-            c!("qstack list --closed"), "                  View closed items\n  ",
-            c!("qstack reopen --id "), a!("260109-0A2B3C4"), "     Reopen if needed"
+            c!("qs close --id "), a!("260109-0A2B3C4"), "          Close by full ID\n  ",
+            c!("qs close --id "), a!("2601"), "                    Close by partial ID\n  ",
+            c!("qs list --closed"), "                      View closed items\n  ",
+            c!("qs reopen --id "), a!("260109-0A2B3C4"), "         Reopen if needed"
         ),
         group = ArgGroup::new("item_ref").required(true)
     )]
@@ -490,13 +490,13 @@ Closed items are excluded from 'qstack list' by default (use --closed to see the
     #[command(
         long_about = "Reopen a closed item by moving it back from the archive.\n\n\
 Sets the item's status to 'open' and moves it from the archive directory back \
-to qstack (or its original category). In Git repositories, uses 'git mv' to \
+to queuestack (or its original category). In Git repositories, uses 'git mv' to \
 preserve history.",
         after_help = concat!(
             h!("Examples:"), "\n  ",
-            c!("qstack reopen --id "), a!("260109-0A2B3C4"), "     Reopen by full ID\n  ",
-            c!("qstack reopen --id "), a!("2601"), "               Reopen by partial ID\n  ",
-            c!("qstack list"), "                           Verify item is back in open list"
+            c!("qs reopen --id "), a!("260109-0A2B3C4"), "         Reopen by full ID\n  ",
+            c!("qs reopen --id "), a!("2601"), "                   Reopen by partial ID\n  ",
+            c!("qs list"), "                               Verify item is back in open list"
         ),
         group = ArgGroup::new("item_ref").required(true)
     )]
@@ -525,13 +525,13 @@ preserve history.",
         long_about = "Manage attachments for items.\n\n\
 Attachments can be files (copied to item directory) or URLs (stored as references). \
 File attachments are renamed to follow the pattern: {ID}-Attachment-{N}-{name}.{ext}\n\n\
-To list attachments for an item, use: qstack list --attachments --id <ID>",
+To list attachments for an item, use: qs list --attachments --id <ID>",
         after_help = concat!(
             h!("Examples:"), "\n  ",
-            c!("qstack attachments add --id "), a!("260109-0A2B3C4"), " ", a!("screenshot.png"), "\n  ",
-            c!("qstack attachments add --id "), a!("260109-0A2B3C4"), " ", a!("https://github.com/issue/42"), "\n  ",
-            c!("qstack attachments remove --id "), a!("260109-0A2B3C4"), " ", a!("1"), " ", a!("2"), "\n\n",
-            h!("See also:"), " ", c!("qstack list --attachments --id "), a!("<ID>"), " to list attachments"
+            c!("qs attachments add --id "), a!("260109-0A2B3C4"), " ", a!("screenshot.png"), "\n  ",
+            c!("qs attachments add --id "), a!("260109-0A2B3C4"), " ", a!("https://github.com/issue/42"), "\n  ",
+            c!("qs attachments remove --id "), a!("260109-0A2B3C4"), " ", a!("1"), " ", a!("2"), "\n\n",
+            h!("See also:"), " ", c!("qs list --attachments --id "), a!("<ID>"), " to list attachments"
         )
     )]
     Attachments {
@@ -541,21 +541,21 @@ To list attachments for an item, use: qstack list --attachments --id <ID>",
 
     /// One-time setup: create global config and install shell completions
     #[command(
-        long_about = "One-time setup for qstack.\n\n\
-This command helps you get started with qstack by:\n  \
-1. Creating the global configuration file (~/.qstack) if it doesn't exist\n  \
+        long_about = "One-time setup for queuestack.\n\n\
+This command helps you get started with queuestack by:\n  \
+1. Creating the global configuration file (~/.queuestack) if it doesn't exist\n  \
 2. Installing tab completions for your shell\n\n\
 Shell detection tries (in order):\n  \
 1. --shell flag if provided\n  \
 2. Shell-specific env vars (FISH_VERSION, ZSH_VERSION, BASH_VERSION)\n  \
 3. $SHELL environment variable (login shell)\n\n\
-Run this once after installing qstack to enable tab completion for commands and arguments.\n\n\
+Run this once after installing queuestack to enable tab completion for commands and arguments.\n\n\
 The setup is idempotent - running it multiple times is safe and will just overwrite \
 the completion script with the latest version.",
         after_help = concat!(
             h!("Examples:"), "\n  ",
-            c!("qstack setup"), "                Run one-time setup (auto-detect shell)\n  ",
-            c!("qstack setup --shell fish"), "   Explicitly specify fish shell\n\n",
+            c!("qs setup"), "                    Run one-time setup (auto-detect shell)\n  ",
+            c!("qs setup --shell fish"), "       Explicitly specify fish shell\n\n",
             h!("Supported shells:"), " zsh, bash, fish, elvish, powershell\n\n",
             h!("Note:"), " If shell detection fails, use ", c!("--shell"), " to specify explicitly."
         )
@@ -571,16 +571,16 @@ the completion script with the latest version.",
         long_about = "Generate shell completion scripts for various shells.\n\n\
 Outputs the completion script to stdout. Redirect to a file or source directly \
 in your shell configuration.\n\n\
-For automatic installation, use 'qstack setup' instead.",
+For automatic installation, use 'qs setup' instead.",
         after_help = concat!(
             h!("Examples:"), "\n  ",
-            c!("qstack completions zsh"), " > ~/.zfunc/_qstack\n  ",
-            c!("qstack completions bash"), " > ~/.local/share/bash-completion/completions/qstack\n  ",
-            c!("qstack completions fish"), " > ~/.config/fish/completions/qstack.fish\n\n",
+            c!("qs completions zsh"), " > ~/.zfunc/_qs\n  ",
+            c!("qs completions bash"), " > ~/.local/share/bash-completion/completions/qs\n  ",
+            c!("qs completions fish"), " > ~/.config/fish/completions/qs.fish\n\n",
             h!("For zsh:"), " Add to ~/.zshrc:\n  ",
             "fpath=(~/.zfunc $fpath) && autoload -Uz compinit && compinit\n\n",
             h!("For bash:"), " Add to ~/.bashrc:\n  ",
-            "source ~/.local/share/bash-completion/completions/qstack"
+            "source ~/.local/share/bash-completion/completions/qs"
         )
     )]
     Completions {
@@ -597,9 +597,9 @@ enum AttachmentsAction {
     #[command(
         after_help = concat!(
             h!("Examples:"), "\n  ",
-            c!("qstack attachments add --id "), a!("260109-0A2B3C4"), " ", a!("screenshot.png"), "\n  ",
-            c!("qstack attachments add --id "), a!("260109-0A2B3C4"), " ", a!("file1.txt file2.txt"), "\n  ",
-            c!("qstack attachments add --id "), a!("260109-0A2B3C4"), " ", a!("https://github.com/issue/42"), "\n\n",
+            c!("qs attachments add --id "), a!("260109-0A2B3C4"), " ", a!("screenshot.png"), "\n  ",
+            c!("qs attachments add --id "), a!("260109-0A2B3C4"), " ", a!("file1.txt file2.txt"), "\n  ",
+            c!("qs attachments add --id "), a!("260109-0A2B3C4"), " ", a!("https://github.com/issue/42"), "\n\n",
             h!("Note:"), " Files are copied to the item directory. URLs are stored as references."
         ),
         group = ArgGroup::new("item_ref").required(true)
@@ -632,9 +632,9 @@ enum AttachmentsAction {
     #[command(
         after_help = concat!(
             h!("Examples:"), "\n  ",
-            c!("qstack attachments remove --id "), a!("260109-0A2B3C4"), " ", a!("1"), "\n  ",
-            c!("qstack attachments remove --id "), a!("260109-0A2B3C4"), " ", a!("1 2 3"), "    Remove multiple\n\n",
-            h!("Note:"), " Use ", c!("qstack list --attachments --id <ID>"), " to see indices."
+            c!("qs attachments remove --id "), a!("260109-0A2B3C4"), " ", a!("1"), "\n  ",
+            c!("qs attachments remove --id "), a!("260109-0A2B3C4"), " ", a!("1 2 3"), "    Remove multiple\n\n",
+            h!("Note:"), " Use ", c!("qs list --attachments --id <ID>"), " to see indices."
         ),
         group = ArgGroup::new("item_ref").required(true)
     )]

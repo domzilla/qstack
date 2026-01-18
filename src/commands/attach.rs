@@ -40,7 +40,7 @@ pub fn execute_add(args: &AttachAddArgs) -> Result<()> {
 
     // Check item is not closed
     if item.status() == crate::item::Status::Closed {
-        bail!("Cannot attach to a closed item. Use 'qstack reopen' first.");
+        bail!("Cannot attach to a closed item. Use 'qs reopen' first.");
     }
 
     // Process attachments
@@ -87,7 +87,7 @@ pub fn execute_remove(args: &AttachRemoveArgs) -> Result<()> {
     for &idx in &args.indices {
         if idx == 0 || idx > attachment_count {
             bail!(
-                "Invalid attachment index: {idx}. Item has {attachment_count} attachment(s). Use 'qstack list --attachments --id <ID>' to see the list."
+                "Invalid attachment index: {idx}. Item has {attachment_count} attachment(s). Use 'qs list --attachments --id <ID>' to see the list."
             );
         }
     }

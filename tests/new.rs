@@ -1,6 +1,6 @@
 //! # New Command Tests
 //!
-//! Tests for the `qstack new` command.
+//! Tests for the `qs new` command.
 //!
 //! Copyright (c) 2025 Dominic Rodemer. All rights reserved.
 //! Licensed under the MIT License.
@@ -8,7 +8,7 @@
 mod common;
 
 use common::{GlobalConfigBuilder, ProjectConfigBuilder, TestEnv};
-use qstack::commands::{self, InteractiveArgs, NewArgs};
+use queuestack::commands::{self, InteractiveArgs, NewArgs};
 
 #[test]
 fn test_new_creates_item() {

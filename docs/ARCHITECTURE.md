@@ -1,6 +1,6 @@
-# qstack Architecture
+# queuestack Architecture
 
-This document describes the internal architecture of qstack, a minimal task and issue tracker designed for scriptability and agent-driven workflows.
+This document describes the internal architecture of queuestack, a minimal task and issue tracker designed for scriptability and agent-driven workflows.
 
 ## Design Principles
 
@@ -38,7 +38,7 @@ This document describes the internal architecture of qstack, a minimal task and 
 │                 │ │                 │ │                 │
 │ • GlobalConfig  │ │ • Frontmatter   │ │ • walk_items()  │
 │ • ProjectConfig │ │ • Item          │ │ • find_by_id()  │
-│ • Config (merged)││ • parser       ││ • create_item()│
+│ • Config (merged)│ │ • parser       │ │ • create_item() │
 │                 │ │ • search        │ │ • archive_item()│
 │                 │ │ • slug          │ │ • Attachments   │
 └─────────────────┘ └─────────────────┘ └─────────────────┘
@@ -49,7 +49,7 @@ This document describes the internal architecture of qstack, a minimal task and 
 │                      Core Services                              │
 │  ┌──────────────┐ ┌──────────────┐ ┌──────────────┐             │
 │  │  ID Generator│ │ Git Integration│ │    Editor  │             │
-│  │  (src/id/)   │ │ (storage/git) ││ (src/editor) │             │
+│  │  (src/id/)   │ │ (storage/git) │ │ (src/editor) │             │
 │  └──────────────┘ └──────────────┘ └──────────────┘             │
 └─────────────────────────────────────────────────────────────────┘
                               │
@@ -196,8 +196,8 @@ Two-tier configuration with project overriding global.
 #### Resolution Order
 
 For each setting, the system checks:
-1. Project config (`.qstack`)
-2. Global config (`~/.qstack`)
+1. Project config (`.queuestack`)
+2. Global config (`~/.queuestack`)
 3. Default value
 
 ```rust
@@ -225,7 +225,7 @@ impl Config {
 | `editor` | `Option<String>` | `$EDITOR` | Editor command |
 | `interactive` | `bool` | `true` | TUI by default |
 | `id_pattern` | `String` | `%y%m%d-%T%RRR` | ID format |
-| `stack_dir` | `String` | `qstack` | Item directory |
+| `stack_dir` | `String` | `queuestack` | Item directory |
 | `archive_dir` | `String` | `.archive` | Archive subdirectory |
 | `template_dir` | `String` | `.templates` | Template subdirectory |
 
@@ -289,7 +289,7 @@ impl ItemRef {
 
 This enables:
 - Shell tab completion for file paths
-- Piping from `qstack list` output
+- Piping from `qs list` output
 - Working without knowing item IDs
 
 #### Attachment Handling
@@ -371,7 +371,7 @@ tui/
 
 #### Item Actions Screen (`item_actions.rs`)
 
-Full-featured interactive list for `qstack list` with:
+Full-featured interactive list for `qs list` with:
 
 - **Filter overlay** (`f` key) — Real-time filtering by search text, labels, category
 - **Action menu** (`Enter` key) — Quick actions: view, edit, close/reopen, delete
@@ -461,7 +461,7 @@ pub fn execute(filter: ListOptions, interactive: InteractiveArgs) -> Result<()> 
 
 | Command | File | Key Functions |
 |---------|------|---------------|
-| `init` | `init.rs` | Creates `.qstack` and qstack directory |
+| `init` | `init.rs` | Creates `.queuestack` and queuestack directory |
 | `new` | `new.rs` | Creates item/template, `--as-template`, `--from-template`, wizard |
 | `list` | `list.rs` | Lists items/templates (`--templates`), labels, categories, attachments, meta |
 | `search` | `search.rs` | Query matching with full-text option |
@@ -478,7 +478,7 @@ Centralized magic values:
 ```rust
 // File system
 pub const ITEM_FILE_EXTENSION: &str = "md";
-pub const DEFAULT_STACK_DIR: &str = "qstack";
+pub const DEFAULT_STACK_DIR: &str = "queuestack";
 pub const DEFAULT_ARCHIVE_DIR: &str = ".archive";
 pub const MAX_SLUG_LENGTH: usize = 50;
 pub const FRONTMATTER_DELIMITER: &str = "---";
@@ -511,7 +511,7 @@ Supports editor commands with arguments (e.g., `"code --wait"`).
 ### Creating an Item
 
 ```
-User: qstack new "Fix bug" --label urgent
+User: qs new "Fix bug" --label urgent
 
 1. main.rs parses CLI args via clap
 2. commands::new::execute() called
@@ -527,7 +527,7 @@ User: qstack new "Fix bug" --label urgent
 ### Interactive Selection
 
 ```
-User: qstack list
+User: qs list
 
 1. Config::load()
 2. storage::walk_items() finds all .md files
@@ -542,7 +542,7 @@ User: qstack list
 ### Archiving an Item
 
 ```
-User: qstack close --id 260109
+User: qs close --id 260109
 
 1. storage::find_by_id() locates item (partial match)
 2. Item::load() parses file
@@ -558,7 +558,7 @@ User: qstack close --id 260109
 ### Reopening an Item
 
 ```
-User: qstack reopen --id 260109
+User: qs reopen --id 260109
 
 1. storage::find_by_id() locates item in archive
 2. Item::load() parses file
@@ -574,7 +574,7 @@ User: qstack reopen --id 260109
 ### Creating from Template
 
 ```
-User: qstack new "Login Bug" --from-template "Bug Report"
+User: qs new "Login Bug" --from-template "Bug Report"
 
 1. main.rs parses CLI args via clap
 2. commands::new::execute_from_template() called
@@ -599,8 +599,8 @@ User: qstack new "Login Bug" --from-template "Bug Report"
 
 ```
 project/
-├── .qstack                 # Project config (TOML)
-└── qstack/                 # qstack directory
+├── .queuestack             # Project config (TOML)
+└── queuestack/             # queuestack directory
     ├── .archive/           # Closed items (preserves category structure)
     │   ├── bugs/           # Archived items from bugs category
     │   │   └── 260108-...-old-bug.md
@@ -632,7 +632,7 @@ pub struct TestEnv {
 }
 
 impl TestEnv {
-    pub fn run_qstack(&self, args: &[&str]) -> Output { ... }
+    pub fn run_qs(&self, args: &[&str]) -> Output { ... }
     pub fn stack_path(&self) -> PathBuf { ... }
     // ...
 }

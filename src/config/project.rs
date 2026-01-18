@@ -1,6 +1,6 @@
 //! # Project Configuration
 //!
-//! Handles the project-level configuration stored at `.qstack` in the project root.
+//! Handles the project-level configuration stored at `.queuestack` in the project root.
 //!
 //! Copyright (c) 2025 Dominic Rodemer. All rights reserved.
 //! Licensed under the MIT License.
@@ -14,9 +14,9 @@ use anyhow::{Context, Result};
 use serde::{Deserialize, Serialize};
 
 /// Project configuration file name
-pub const PROJECT_CONFIG_FILE: &str = ".qstack";
+pub const PROJECT_CONFIG_FILE: &str = ".queuestack";
 
-/// Project configuration stored at .qstack in project root
+/// Project configuration stored at .queuestack in project root
 ///
 /// All fields are optional. When not set, values fall back to global config.
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
@@ -55,7 +55,7 @@ pub struct ProjectConfig {
 }
 
 impl ProjectConfig {
-    /// Finds the project root by searching for .qstack file upward
+    /// Finds the project root by searching for .queuestack file upward
     pub fn find_project_root() -> Option<PathBuf> {
         let mut current = env::current_dir().ok()?;
 
@@ -75,7 +75,7 @@ impl ProjectConfig {
         project_root.join(PROJECT_CONFIG_FILE)
     }
 
-    /// Loads the project config from .qstack in the given directory
+    /// Loads the project config from .queuestack in the given directory
     pub fn load(project_root: &Path) -> Result<Self> {
         let path = Self::path(project_root);
 
@@ -90,7 +90,7 @@ impl ProjectConfig {
             .with_context(|| format!("Failed to parse project config: {}", path.display()))
     }
 
-    /// Saves the project config to .qstack
+    /// Saves the project config to .queuestack
     pub fn save(&self, project_root: &Path) -> Result<()> {
         let path = Self::path(project_root);
         let content = toml::to_string_pretty(self).context("Failed to serialize project config")?;
@@ -106,10 +106,10 @@ impl ProjectConfig {
     pub fn save_with_comments(project_root: &Path) -> Result<()> {
         let path = Self::path(project_root);
 
-        let content = r#"# qstack Project Configuration
-# This file configures qstack for this specific project.
-# All settings here override the global config (~/.qstack).
-# Location: <project-root>/.qstack
+        let content = r#"# queuestack Project Configuration
+# This file configures queuestack for this specific project.
+# All settings here override the global config (~/.queuestack).
+# Location: <project-root>/.queuestack
 
 # User's display name for item authorship.
 # If not set, falls back to global config.
@@ -142,14 +142,14 @@ impl ProjectConfig {
 # id_pattern = "%y%m%d-%T%RRR"
 
 # Directory name for storing items (relative to project root).
-# If not set, falls back to global config (default: "qstack").
-# stack_dir = "qstack"
+# If not set, falls back to global config (default: "queuestack").
+# stack_dir = "queuestack"
 
-# Subdirectory name for archived (closed) items within the qstack directory.
+# Subdirectory name for archived (closed) items within the queuestack directory.
 # If not set, falls back to global config (default: ".archive").
 # archive_dir = ".archive"
 
-# Subdirectory name for templates within the qstack directory.
+# Subdirectory name for templates within the queuestack directory.
 # If not set, falls back to global config (default: ".templates").
 # template_dir = ".templates"
 "#;

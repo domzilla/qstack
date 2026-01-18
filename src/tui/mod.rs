@@ -1,4 +1,4 @@
-//! Terminal User Interface module for qstack.
+//! Terminal User Interface module for queuestack.
 //!
 //! Provides interactive TUI components using ratatui.
 

@@ -1,4 +1,4 @@
-# qstack
+# queuestack
 
 A minimal, scriptable task and issue tracker optimized for agent-driven project management.
 
@@ -21,7 +21,7 @@ Items are stored as plain Markdown files—human-readable, grep-friendly, and ea
 
 ```bash
 brew tap domzilla/tap
-brew install qstack
+brew install queuestack
 ```
 
 ### From Source
@@ -35,56 +35,56 @@ cargo install --path .
 Run the one-time setup to create your config and install shell completions:
 
 ```bash
-qstack setup
+qs setup
 ```
 
 ## Quick Start
 
 ```bash
 # Initialize a project
-qstack init
+qs init
 
 # Create items
-qstack new "Fix login bug" --label bug
-qstack new "Add dark mode" --label feature --category enhancements
-qstack new                                   # Launch wizard
+qs new "Fix login bug" --label bug
+qs new "Add dark mode" --label feature --category enhancements
+qs new                                   # Launch wizard
 
 # List and filter
-qstack list                                  # Interactive selection
-qstack list --label bug --sort date          # Filter and sort
-qstack list --category bugs                  # Filter by category
-qstack list --closed                         # Show archived items
+qs list                                  # Interactive selection
+qs list --label bug --sort date          # Filter and sort
+qs list --category bugs                  # Filter by category
+qs list --closed                         # Show archived items
 
 # Search
-qstack search "login"                        # Search titles and IDs
-qstack search "memory" --full-text           # Search body content too
+qs search "login"                        # Search titles and IDs
+qs search "memory" --full-text           # Search body content too
 
 # Update
-qstack update --id 260109 --title "New title"
-qstack update --id 26 --label urgent         # Partial ID match
-qstack update --id 26 --remove-label bug     # Remove a label
-qstack update --id 26 --remove-category      # Move to qstack root
+qs update --id 260109 --title "New title"
+qs update --id 26 --label urgent         # Partial ID match
+qs update --id 26 --remove-label bug     # Remove a label
+qs update --id 26 --remove-category      # Move to queuestack root
 
 # Attachments
-qstack attachments add --id 260109 screenshot.png
-qstack attachments add --id 260109 https://github.com/org/repo/issues/42
-qstack attachments list --id 260109
+qs attachments add --id 260109 screenshot.png
+qs attachments add --id 260109 https://github.com/org/repo/issues/42
+qs attachments list --id 260109
 
 # Archive and restore
-qstack close --id 260109
-qstack reopen --id 260109
+qs close --id 260109
+qs reopen --id 260109
 
 # Templates
-qstack new "Bug Report" --as-template          # Create a template
-qstack list --templates                        # List all templates
-qstack new "Login Bug" --from-template "Bug Report"  # Create from template
+qs new "Bug Report" --as-template          # Create a template
+qs list --templates                        # List all templates
+qs new "Login Bug" --from-template "Bug Report"  # Create from template
 ```
 
 ## Commands
 
 | Command | Description |
 |---------|-------------|
-| `init` | Initialize a new qstack project |
+| `init` | Initialize a new queuestack project |
 | `new [title]` | Create a new item (omit title for wizard) |
 | `new --as-template` | Create a reusable template |
 | `new --from-template <ref>` | Create item from template (by ID, title, or slug) |
@@ -97,14 +97,14 @@ qstack new "Login Bug" --from-template "Bug Report"  # Create from template
 | `close --id <id>` | Archive an item |
 | `reopen --id <id>` | Restore from archive |
 | `attachments` | List, add, or remove attachments |
-| `setup` | Configure qstack and install completions |
+| `setup` | Configure queuestack and install completions |
 | `completions <shell>` | Generate shell completion script |
 
-Run `qstack <command> --help` for detailed options.
+Run `qs <command> --help` for detailed options.
 
 ## TUI Keybindings
 
-### Item List (`qstack list`)
+### Item List (`qs list`)
 
 | Key | Action |
 |-----|--------|
@@ -118,7 +118,7 @@ Run `qstack <command> --help` for detailed options.
 
 **Action menu** (`Enter`): Quick actions on the selected item — view, edit, close/reopen, delete.
 
-### New Item Wizard (`qstack new`)
+### New Item Wizard (`qs new`)
 
 | Key | Action |
 |-----|--------|
@@ -138,13 +138,13 @@ Every command supports `--no-interactive` for scripting:
 
 ```bash
 # Create without opening editor
-qstack new "Automated task" --label bot --no-interactive
+qs new "Automated task" --label bot --no-interactive
 
 # List without selector
-qstack list --no-interactive
+qs list --no-interactive
 
 # Search and get results as text
-qstack search "bug" --no-interactive
+qs search "bug" --no-interactive
 ```
 
 ## Storage Format
@@ -152,7 +152,7 @@ qstack search "bug" --no-interactive
 Items are Markdown files with YAML frontmatter:
 
 ```
-qstack/
+queuestack/
 ├── 260109-0A2B3C4-fix-login-bug.md
 ├── bugs/
 │   └── 260110-0B3C4D5-memory-leak.md
@@ -187,7 +187,7 @@ Description and notes in Markdown.
 3. See console error
 ```
 
-**Note:** Category is derived from the folder path, not stored in frontmatter. An item in `qstack/bugs/` has category `bugs`. Status can be `open`, `closed`, or `template`.
+**Note:** Category is derived from the folder path, not stored in frontmatter. An item in `queuestack/bugs/` has category `bugs`. Status can be `open`, `closed`, or `template`.
 
 ## Configuration
 
@@ -195,8 +195,8 @@ Two config files (TOML format):
 
 | File | Scope |
 |------|-------|
-| `~/.qstack` | Global defaults (user name, editor, ID pattern) |
-| `.qstack` | Project overrides (qstack directory, archive directory) |
+| `~/.queuestack` | Global defaults (user name, editor, ID pattern) |
+| `.queuestack` | Project overrides (queuestack directory, archive directory) |
 
 Project settings override global settings.
 
@@ -209,7 +209,7 @@ Project settings override global settings.
 | `editor` | `$EDITOR` | Editor command (supports args, e.g., `nvim -c ":normal G"`) |
 | `interactive` | `true` | Enable TUI by default |
 | `id_pattern` | `%y%m%d-%T%RRR` | ID format pattern |
-| `stack_dir` | `qstack` | Directory for items |
+| `stack_dir` | `queuestack` | Directory for items |
 | `archive_dir` | `.archive` | Subdirectory for closed items |
 | `template_dir` | `.templates` | Subdirectory for templates |
 
@@ -227,14 +227,14 @@ Project settings override global settings.
 
 ## Shell Completions
 
-Completions are installed automatically by `qstack setup`. Supported shells:
+Completions are installed automatically by `qs setup`. Supported shells:
 
 - Bash
 - Zsh
 - Fish
 - PowerShell
 
-After updating qstack, run `qstack setup` again to refresh completions.
+After updating queuestack, run `qs setup` again to refresh completions.
 
 ## Integration Examples
 
@@ -242,20 +242,20 @@ After updating qstack, run `qstack setup` again to refresh completions.
 
 ```bash
 # Find all items mentioning "API"
-grep -r "API" qstack/
+grep -r "API" queuestack/
 
 # Find urgent bugs
-grep -l "urgent" qstack/*.md | xargs grep -l "bug"
+grep -l "urgent" queuestack/*.md | xargs grep -l "bug"
 ```
 
 ### With git
 
 ```bash
 # See item history
-git log --oneline -- qstack/
+git log --oneline -- queuestack/
 
 # Who worked on what
-git log --author="Alice" -- qstack/
+git log --author="Alice" -- queuestack/
 ```
 
 ### With scripts
@@ -263,11 +263,11 @@ git log --author="Alice" -- qstack/
 ```bash
 # Create items from a list
 while read -r title; do
-  qstack new "$title" --label imported --no-interactive
+  qs new "$title" --label imported --no-interactive
 done < tasks.txt
 
 # Export open items
-qstack list --no-interactive | tail -n +3 > report.txt
+qs list --no-interactive | tail -n +3 > report.txt
 ```
 
 ## License

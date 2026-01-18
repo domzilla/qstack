@@ -1,6 +1,6 @@
 //! # List Command Tests
 //!
-//! Tests for the `qstack list` command.
+//! Tests for the `qs list` command.
 //!
 //! Copyright (c) 2025 Dominic Rodemer. All rights reserved.
 //! Licensed under the MIT License.
@@ -8,7 +8,7 @@
 mod common;
 
 use common::{create_test_item, GlobalConfigBuilder, TestEnv};
-use qstack::commands::{self, InteractiveArgs, ListMode, ListOptions, SortBy, StatusFilter};
+use queuestack::commands::{self, InteractiveArgs, ListMode, ListOptions, SortBy, StatusFilter};
 
 #[test]
 fn test_list_empty_project() {

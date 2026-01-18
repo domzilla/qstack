@@ -1,6 +1,6 @@
 //! # Storage
 //!
-//! File system operations for qstack items.
+//! File system operations for queuestack items.
 //!
 //! Copyright (c) 2025 Dominic Rodemer. All rights reserved.
 //! Licensed under the MIT License.
@@ -39,7 +39,7 @@ fn walk_markdown_files(
         .map(walkdir::DirEntry::into_path)
 }
 
-/// Walks all item files in the qstack directory.
+/// Walks all item files in the queuestack directory.
 ///
 /// Excludes items in the archive and template directories.
 pub fn walk_items(config: &Config) -> impl Iterator<Item = PathBuf> {
@@ -307,7 +307,7 @@ pub fn target_directory(config: &Config, category: Option<&str>) -> PathBuf {
 /// Derives the category from an item's file path.
 ///
 /// Returns `Some(category)` if the item is in a category subdirectory,
-/// or `None` if it's in the root of qstack/archive/templates.
+/// or `None` if it's in the root of queuestack/archive/templates.
 ///
 /// Works for active items (in `stack_path`), archived items (in `archive_path`),
 /// and templates (in `template_path`).
@@ -322,7 +322,7 @@ pub fn derive_category(config: &Config, path: &Path) -> Option<String> {
     let archive_path = archive_path.canonicalize().unwrap_or(archive_path);
     let template_path = template_path.canonicalize().unwrap_or(template_path);
 
-    // Determine base path (template, archive, or qstack)
+    // Determine base path (template, archive, or queuestack)
     let relative = if path.starts_with(&template_path) {
         path.strip_prefix(&template_path).ok()?
     } else if path.starts_with(&archive_path) {
@@ -436,7 +436,7 @@ pub fn archive_item(config: &Config, path: &Path) -> Result<(PathBuf, Vec<String
     move_item_to_dir(config, path, &dest_dir)
 }
 
-/// Moves an item from the archive back to qstack.
+/// Moves an item from the archive back to queuestack.
 ///
 /// Derives category from archive path structure and restores to same category.
 /// Returns the new path and any warnings from moving attachments.
@@ -476,8 +476,8 @@ pub fn move_to_category(
 /// Removes an empty category directory if it's safe to do so.
 ///
 /// Only removes directories that:
-/// - Are inside the qstack directory (including archive)
-/// - Are not the qstack root or archive root
+/// - Are inside the queuestack directory (including archive)
+/// - Are not the queuestack root or archive root
 /// - Are empty
 fn cleanup_empty_category_dir(config: &Config, dir: &Path) {
     let stack_path = config.stack_path();
@@ -488,7 +488,7 @@ fn cleanup_empty_category_dir(config: &Config, dir: &Path) {
         return;
     }
 
-    // Only clean up directories inside qstack (which includes archive)
+    // Only clean up directories inside queuestack (which includes archive)
     if !dir.starts_with(&stack_path) {
         return;
     }

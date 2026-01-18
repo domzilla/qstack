@@ -9,8 +9,8 @@
 mod common;
 
 use common::{create_test_item, GlobalConfigBuilder, ProjectConfigBuilder, TestEnv};
-use qstack::commands::{self, execute_close, InteractiveArgs, NewArgs};
-use qstack::config::GlobalConfig;
+use queuestack::commands::{self, execute_close, InteractiveArgs, NewArgs};
+use queuestack::config::GlobalConfig;
 
 // =============================================================================
 // Config Combination Tests (interactive + no_interactive)
@@ -246,7 +246,7 @@ fn test_editor_with_arguments() {
 /// Tests that Config::editor() returns the configured value.
 #[test]
 fn test_config_editor_resolution() {
-    use qstack::Config;
+    use queuestack::Config;
 
     let env = TestEnv::new();
     env.write_global_config(

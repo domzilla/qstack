@@ -1,6 +1,6 @@
 //! # New Command
 //!
-//! Creates a new qstack item with the given title.
+//! Creates a new queuestack item with the given title.
 //!
 //! Copyright (c) 2025 Dominic Rodemer. All rights reserved.
 //! Licensed under the MIT License.
@@ -499,7 +499,7 @@ fn select_template(config: &Config) -> Result<Option<Item>> {
 
     if templates.is_empty() {
         anyhow::bail!(
-            "No templates found. Create one with: qstack new --as-template \"Template Name\""
+            "No templates found. Create one with: qs new --as-template \"Template Name\""
         );
     }
 

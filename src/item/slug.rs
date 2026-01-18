@@ -26,7 +26,7 @@ use crate::constants::MAX_SLUG_LENGTH;
 ///
 /// # Example
 /// ```
-/// use qstack::item::slug::slugify;
+/// use queuestack::item::slug::slugify;
 /// assert_eq!(slugify("Fix Login Bug!"), "fix-login-bug");
 /// assert_eq!(slugify("Über Änderung"), "über-änderung");
 /// ```

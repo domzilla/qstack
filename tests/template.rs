@@ -9,7 +9,7 @@
 mod common;
 
 use common::{GlobalConfigBuilder, TestEnv};
-use qstack::commands::{self, InteractiveArgs, ListMode, ListOptions, NewArgs, StatusFilter};
+use queuestack::commands::{self, InteractiveArgs, ListMode, ListOptions, NewArgs, StatusFilter};
 
 // =============================================================================
 // Creating Templates

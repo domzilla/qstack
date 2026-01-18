@@ -1,6 +1,6 @@
 //! # Init Command
 //!
-//! Initializes a new qstack project in the current directory.
+//! Initializes a new queuestack project in the current directory.
 //!
 //! Copyright (c) 2025 Dominic Rodemer. All rights reserved.
 //! Licensed under the MIT License.
@@ -33,11 +33,11 @@ pub fn execute() -> Result<()> {
     // Create project config with comments (all options commented out, using global defaults)
     ProjectConfig::save_with_comments(config.project_root())?;
 
-    // Create qstack directory
+    // Create queuestack directory
     let stack_path = config.project_root().join(stack_dir);
     fs::create_dir_all(&stack_path).with_context(|| {
         format!(
-            "Failed to create qstack directory: {}",
+            "Failed to create queuestack directory: {}",
             stack_path.display()
         )
     })?;
@@ -60,9 +60,9 @@ pub fn execute() -> Result<()> {
         )
     })?;
 
-    println!("{} Initialized qstack project", "✓".green());
+    println!("{} Initialized queuestack project", "✓".green());
     println!("  {} {}", "Config:".dimmed(), config_path.display());
-    println!("  {} {}", "qstack:".dimmed(), stack_path.display());
+    println!("  {} {}", "Items:".dimmed(), stack_path.display());
 
     Ok(())
 }

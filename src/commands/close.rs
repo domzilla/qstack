@@ -1,6 +1,6 @@
 //! # Close/Reopen Commands
 //!
-//! Closes or reopens qstack items, moving them to/from the archive.
+//! Closes or reopens queuestack items, moving them to/from the archive.
 //!
 //! Copyright (c) 2025 Dominic Rodemer. All rights reserved.
 //! Licensed under the MIT License.

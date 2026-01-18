@@ -1,6 +1,6 @@
 //! # Configuration
 //!
-//! Merged configuration system combining global (~/.qstack) and project (.qstack) settings.
+//! Merged configuration system combining global (~/.queuestack) and project (.queuestack) settings.
 //! Project settings override global settings when specified.
 //!
 //! Copyright (c) 2025 Dominic Rodemer. All rights reserved.
@@ -37,8 +37,9 @@ impl Config {
     pub fn load() -> Result<Self> {
         let global = GlobalConfig::load()?;
 
-        let project_root = ProjectConfig::find_project_root()
-            .ok_or_else(|| anyhow::anyhow!("Not in a qstack project (no .qstack file found)"))?;
+        let project_root = ProjectConfig::find_project_root().ok_or_else(|| {
+            anyhow::anyhow!("Not in a queuestack project (no .queuestack file found)")
+        })?;
 
         let project = ProjectConfig::load(&project_root)?;
 
@@ -75,7 +76,7 @@ impl Config {
             .unwrap_or(&self.global.id_pattern)
     }
 
-    /// Returns the effective qstack directory name (project overrides global)
+    /// Returns the effective queuestack directory name (project overrides global)
     pub fn stack_dir(&self) -> &str {
         self.project
             .stack_dir
@@ -145,7 +146,7 @@ impl Config {
         }
 
         anyhow::bail!(
-            "No user name available. Set user_name in ~/.qstack or configure git user.name"
+            "No user name available. Set user_name in ~/.queuestack or configure git user.name"
         )
     }
 
@@ -168,7 +169,7 @@ impl Config {
         &self.project_root
     }
 
-    /// Returns the qstack directory path
+    /// Returns the queuestack directory path
     pub fn stack_path(&self) -> PathBuf {
         self.project_root.join(self.stack_dir())
     }
@@ -183,7 +184,7 @@ impl Config {
         self.stack_path().join(self.template_dir())
     }
 
-    /// Returns path to a category subdirectory within qstack
+    /// Returns path to a category subdirectory within queuestack
     pub fn category_path(&self, category: &str) -> PathBuf {
         self.stack_path().join(category)
     }

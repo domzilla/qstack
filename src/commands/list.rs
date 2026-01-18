@@ -1,6 +1,6 @@
 //! # List Command
 //!
-//! Lists qstack items with filtering and sorting options.
+//! Lists queuestack items with filtering and sorting options.
 //! Also supports listing labels, categories, attachments, and item metadata.
 //!
 //! Copyright (c) 2025 Dominic Rodemer. All rights reserved.

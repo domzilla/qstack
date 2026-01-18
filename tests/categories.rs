@@ -1,6 +1,6 @@
 //! # Categories Command Tests
 //!
-//! Tests for the `qstack list --categories` command.
+//! Tests for the `qs list --categories` command.
 //!
 //! Copyright (c) 2025 Dominic Rodemer. All rights reserved.
 //! Licensed under the MIT License.
@@ -8,7 +8,7 @@
 mod common;
 
 use common::{create_test_item, GlobalConfigBuilder, TestEnv};
-use qstack::commands::{self, InteractiveArgs, ListMode, ListOptions, SortBy, StatusFilter};
+use queuestack::commands::{self, InteractiveArgs, ListMode, ListOptions, SortBy, StatusFilter};
 
 #[test]
 fn test_categories_empty_project() {

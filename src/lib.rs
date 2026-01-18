@@ -1,4 +1,4 @@
-//! # qstack
+//! # queuestack
 //!
 //! A minimal, scriptable task and issue tracker for agent-driven workflows.
 //!
